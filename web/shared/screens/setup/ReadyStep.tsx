@@ -26,6 +26,7 @@ import {
   untilWords,
   type Place,
 } from "./ready-logic";
+import { stroke } from "../../ui/stroke";
 
 interface ReadyStepProps {
   api: ApiClient;
@@ -179,7 +180,7 @@ export function ReadyStep({ api, onMenu, onTill }: ReadyStepProps) {
           <Button onClick={onTill}>Go to the till</Button>
           <Button variant="primary" className="min-w-44" onClick={onMenu}>
             Add your menu
-            <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={2.2} />
+            <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={stroke.bold} />
           </Button>
         </div>
       </div>
@@ -196,9 +197,9 @@ function PlaceBand({ place, named }: { place: Place; named: boolean }) {
   const address = typed(place.url);
   return (
     <div className="flex flex-wrap items-center gap-5 rounded-card bg-sunken px-5 py-4">
-      {place.svg && <img src={svgSrc(place.svg)} alt={`QR code for ${address}`} width={132} height={132} className="size-33 shrink-0 rounded bg-white" />}
+      {place.svg && <img src={svgSrc(place.svg)} alt={`QR code for ${address}`} width={132} height={132} className="size-33 shrink-0 rounded" />}
       <div className="min-w-0 flex-1">
-        {named && place.adapter && <p className="text-meta font-bold uppercase tracking-[.16em] text-fg-muted">On {place.adapter}</p>}
+        {named && place.adapter && <p className="text-meta font-bold uppercase text-fg-muted">On {place.adapter}</p>}
         <p className="break-all font-mono text-total font-semibold tabular-nums text-fg-heading xl:text-display">{address}</p>
       </div>
     </div>

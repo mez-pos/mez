@@ -23,10 +23,10 @@ function PlaceBand({ place, named }: { place: PairingPlaceResponse; named: boole
   const address = typedAddress(place.url);
   return (
     <div className="flex flex-wrap items-center gap-5 rounded-card bg-sunken px-5 py-4" data-testid="pairing-place">
-      {place.svg && <img src={svgSrc(place.svg)} alt={`QR code for ${address}`} width={132} height={132} className="size-33 shrink-0 rounded bg-white" />}
+      {place.svg && <img src={svgSrc(place.svg)} alt={`QR code for ${address}`} width={132} height={132} className="size-33 shrink-0 rounded" />}
       <div className="min-w-0 flex-1">
-        {named && place.adapter && <p className="text-meta font-bold uppercase tracking-[.16em] text-fg-muted">On {place.adapter}</p>}
-        <p className="break-all font-mono text-lg font-semibold tabular-nums text-heading">{address}</p>
+        {named && place.adapter && <p className="text-meta font-bold uppercase text-fg-muted">On {place.adapter}</p>}
+        <p className="break-all font-mono text-lg font-semibold tabular-nums text-fg-heading">{address}</p>
       </div>
     </div>
   );
@@ -111,10 +111,10 @@ export function PairModal({ onPair, onClose }: PairModalProps) {
             </p>
           )}
           <div className="flex flex-col items-center gap-2 text-center">
-            <p className="text-meta font-bold uppercase tracking-[.16em] text-fg-muted">Pairing code</p>
+            <p className="text-meta font-bold uppercase text-fg-muted">Pairing code</p>
             <p
               aria-label={`Pairing code ${code.code.replace("-", " ")}`}
-              className="font-mono text-display tracking-widest text-heading"
+              className="font-mono text-display tracking-widest text-fg-heading"
               data-testid="pairing-code"
             >
               {code.code}

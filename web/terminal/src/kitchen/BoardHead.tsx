@@ -27,7 +27,7 @@ export function BoardHeader({ stationName, now }: BoardHeaderProps) {
     <header className="flex min-h-23 shrink-0 items-center gap-6 border-b border-line bg-chrome px-7 py-2 short:min-h-14 short:gap-4 short:px-5 short:py-1">
       <Logo className="h-9 shrink-0 short:h-8" />
       <h1 className="flex min-w-0 flex-1 items-center justify-center gap-3 font-serif text-total leading-tight 2xl:text-display">
-        <ChefHatIcon aria-hidden="true" size={30} strokeWidth={1.7} className="shrink-0 text-attention" />
+        <ChefHatIcon aria-hidden="true" size={30} className="shrink-0 text-attention" />
         <span className="truncate">{stationName}</span>
       </h1>
       <div className="flex shrink-0 items-center gap-4">

@@ -9,6 +9,7 @@ import { useClock } from "../use-clock";
 import { useMirror } from "../use-mirror";
 import { useRealtime } from "../use-realtime";
 import { connectionText, venueSilent } from "./status-logic";
+import { stroke } from "../ui/stroke";
 
 const toneClass = {
   success: "text-success",
@@ -36,7 +37,7 @@ export function ConnectionWord({ brief = false, className }: ConnectionWordProps
 
   return (
     <span className={cx("inline-flex items-center gap-1.5 whitespace-nowrap font-semibold", toneClass[link.tone], className)}>
-      <Wifi aria-hidden="true" size={15} strokeWidth={2} className="shrink-0" />
+      <Wifi aria-hidden="true" size={15} strokeWidth={stroke.bold} className="shrink-0" />
       {/* In a bar with no room it is cut short with an ellipsis and never pushes its neighbours out.
           Only the word is a live region: it changes when the connection does, and is said once.
           The detail beside it counts down every second, and is read only when it is reached (TECH-11). */}

@@ -11,6 +11,7 @@ import type { CloudPairResponse } from "../../api-types";
 import { backOfficeAddress, cleanCode, codeRefusal, pairRefusal, pairToCloud, pairedLines } from "../../cloud-pair";
 import { Button } from "../../ui";
 import { TextField } from "./fields";
+import { stroke } from "../../ui/stroke";
 
 export function CloudStep({ api, onDone }: { api: ApiClient; onDone: (paired: boolean) => void }) {
   const [typed, setTyped] = useState("");
@@ -54,7 +55,7 @@ export function CloudStep({ api, onDone }: { api: ApiClient; onDone: (paired: bo
         <div className="mt-auto flex flex-wrap items-center justify-end gap-3 pt-6">
           <Button variant="primary" className="min-w-44" onClick={() => onDone(true)}>
             Continue
-            <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={2.2} />
+            <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={stroke.bold} />
           </Button>
         </div>
       </div>

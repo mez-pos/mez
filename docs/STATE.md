@@ -13,7 +13,7 @@ the UI audit (`docs/design/ui-audit-2026-10-31.md`). Tasks 1 and 4 to
 12 are done: at the human's word the device-fit pass came first, built
 and seen at 1024x768, 1366x768 and 1920x1080 on 2026-10-31 (ADR-381,
 ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s,
-Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 30 and 31a (ADR-384 to ADR-404; ADR-400 was out of phase). It runs before Phase 16, which is mostly
+Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 30, 31a and 31b (ADR-384 to ADR-405; ADR-400 was out of phase). It runs before Phase 16, which is mostly
 `mez-cloud`'s.
 
 Before it, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
@@ -28,21 +28,19 @@ list below.
 
 ## Last completed task
 
-**Phase 17, Task 31a: the back office's rows, heads and drawer** (BO-12,
-BO-13, BO-16, BO-17, BO-18, ADR-404), 2026-11-01. Task 31 is split in four
-(31a to 31d) in the phase file. A staff row is named as the person, a line
-above the table says a pick shows their role's permissions, and a chevron
-ends each row; Add staff starts on "Choose a role" and refuses without one,
-roles by their names as people read them; the menu list has no placeholder
-tile and no "Active" on every row; heads are the nav's names ("Menu",
-"Staff") in the serif total, and every Add is terracotta; the phone drawer
-has a Close, takes focus, and gives it back. Seen at 1024, 1366 and 600.
+**Phase 17, Task 31b: dead classes, a check for them, and one stroke**
+(TECH-21, TECH-22, ADR-405), 2026-11-01. `make build-web` now fails on a
+class that renders nothing (`web/scripts/check-classes.mjs`, which reads
+the built CSS); the seven there were are gone (`bg-white` behind QR codes,
+`text-heading`). Icon strokes are the kit's four (`web/shared/ui/stroke.ts`:
+1.75 by default, 1, 1.5, 2.25), never a number, which a test holds; the
+tagline and the meta labels take `text-meta`'s own tracking. Seen on the
+lock screen and the till at 1024 and 1366.
 
 ## Next task
 
-**Here: Phase 17 Task 31b, dead classes, a check for them, and one stroke
-(TECH-21, TECH-22)**, then 31c and 31d, then Task 32; Tasks 1 to 30 and 31a
-are done. Each screen is checked by eye at
+**Here: Phase 17 Task 31c, one keypad, one input, one switch, one pill
+(TECH-23)**, then 31d, then Task 32; Tasks 1 to 30, 31a and 31b are done. Each screen is checked by eye at
 1024x768 and 1366x768 before it is ticked: the audit's walk (a demo venue
 from `mez setup -demo-menu` in a scratch data directory, a scripted
 Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel

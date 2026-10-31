@@ -14,6 +14,7 @@ import { KitchenApp } from "./kitchen/KitchenApp";
 import { readPrefs, surfaceOf } from "./kitchen/board-prefs";
 import { readStation, stationKey } from "./kitchen/kitchen-logic";
 import "./index.css";
+import { stroke } from "../../shared/ui/stroke";
 
 const root = document.getElementById("root");
 if (!root) {
@@ -74,7 +75,7 @@ createRoot(root).render(
         <RealtimeProvider connection={realtime}>
           <AuthProvider store={store} realtime={realtime}>
             {/* The design's line icons: 1.75px strokes (tokens.md, Icons). */}
-            <LucideProvider strokeWidth={1.75}>
+            <LucideProvider strokeWidth={stroke.base}>
               <ToastProvider placement="top">
                 <Screen />
               </ToastProvider>

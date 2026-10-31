@@ -8,6 +8,16 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 31a: the back office's rows, heads and drawer** (BO-12,
+BO-13, BO-16, BO-17, BO-18, ADR-404), 2026-11-01. Task 31 is split in four
+(31a to 31d) in the phase file. A staff row is named as the person, a line
+above the table says a pick shows their role's permissions, and a chevron
+ends each row; Add staff starts on "Choose a role" and refuses without one,
+roles by their names as people read them; the menu list has no placeholder
+tile and no "Active" on every row; heads are the nav's names ("Menu",
+"Staff") in the serif total, and every Add is terracotta; the phone drawer
+has a Close, takes focus, and gives it back. Seen at 1024, 1366 and 600.
+
 **Phase 17, Task 30: one focus rule, one field rule** (TECH-10, TECH-11,
 TECH-12, TECH-14, TECH-20, ADR-403), 2026-11-01. Every pressable thing
 takes `focusButton` (a 3px outline in `--focus-ring`, terracotta on paper,

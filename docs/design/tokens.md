@@ -292,7 +292,10 @@ Minimum mark size 20px. The mono files are for thermal printers.
 ## Icons
 
 Line icons in `currentColor`, 1.75px stroke, round caps and joins, on a
-24px grid. Never filled, except status dots and the diet mark: a square with
+24px grid. The stroke is set once per app; the only others are the kit's
+(`web/shared/ui/stroke.ts`, ADR-405): 1 for a faint watermark, 1.5 for an
+icon drawn at 30px or more, 2.25 for a mark read at a glance (an arrow or a
+plus on a filled button, a check, a cross). Never filled, except status dots and the diet mark: a square with
 a dot for veg and vegan, a square with a triangle for non-veg, as FSSAI marks
 them, so shape tells them apart as well as colour (ADR-389).
 

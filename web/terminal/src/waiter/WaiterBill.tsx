@@ -428,7 +428,7 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
           {due <= 0 && (
             <div aria-live="polite" className="flex flex-col items-center px-4 py-8 text-center">
               <span aria-hidden="true" className="flex size-16 items-center justify-center rounded-round bg-chip-success-bg text-chip-success-fg">
-                <CircleCheckIcon size={34} strokeWidth={1.75} />
+                <CircleCheckIcon size={34} />
               </span>
               <h2 className="mt-4 font-serif text-total">Paid in full</h2>
               <p className="mt-2 text-base text-fg-2">{[methods, invoice ? `Invoice ${invoice.invoice_no}` : null].filter(Boolean).join(" · ")}</p>

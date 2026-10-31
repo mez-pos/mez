@@ -13,6 +13,7 @@ import { cx } from "../../../shared/ui/cx";
 import type { NumKey } from "../../../shared/ui/numpad-keys";
 import { AmountField } from "./AmountField";
 import { quickShown } from "./tender-logic";
+import { stroke } from "../../../shared/ui/stroke";
 
 interface AmountCardProps {
   method: PaymentMethod;
@@ -100,7 +101,7 @@ export function AmountCard(props: AmountCardProps) {
             <Money amount={change ?? money(0)} variant="total" tone="accent" className="block text-left leading-tight" />
           </div>
           <span aria-hidden="true" className="flex size-14 shrink-0 items-center justify-center rounded bg-chip-success-bg text-accent-text">
-            <BanknoteIcon size={28} strokeWidth={1.5} />
+            <BanknoteIcon size={28} strokeWidth={stroke.large} />
           </span>
         </div>
       )}

@@ -46,6 +46,7 @@ import { closingCsvPath } from "./closing-logic";
 import { csvPath } from "./sales-logic";
 import { useCsvDownload, useCsvFile } from "./use-csv-download";
 import { useRangeSales } from "./use-range-sales";
+import { stroke } from "../../../shared/ui/stroke";
 
 /** How many items the performance card lists; "What sold" under it has them all. */
 const performanceRows = 8;
@@ -264,7 +265,7 @@ function Trend({ change, against, failed }: { change: Change | null | undefined;
   return (
     <span className={cx("flex items-center gap-1.5 text-sm font-bold", ink)} title={changeText(change, against)}>
       <span className="sr-only">{changeText(change, against)}</span>
-      <Icon aria-hidden="true" size={15} strokeWidth={2.2} />
+      <Icon aria-hidden="true" size={15} strokeWidth={stroke.bold} />
       <span aria-hidden="true">{change.direction === "same" ? "Level" : `${change.percent}%`}</span>
     </span>
   );

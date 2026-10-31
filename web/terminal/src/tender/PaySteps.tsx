@@ -102,7 +102,7 @@ export function MethodTiles({ method, disabled, onChoose }: MethodTilesProps) {
               on ? "border-accent bg-accent-tint font-bold text-accent-text" : "border-line-strong bg-raised font-semibold text-fg hover:bg-raised-high",
             )}
           >
-            <Icon aria-hidden="true" size={30} strokeWidth={1.7} />
+            <Icon aria-hidden="true" size={30} />
             {methodNames[m]}
           </button>
         );

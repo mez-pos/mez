@@ -15548,3 +15548,36 @@ a waiter without noticing); "Menu Management" as the nav's name too (a nav entry
 Because: each of these is a place where the screen said something other than what it meant, or
 said it on every row so that nothing stood out.
 Cost: the D18 and D20 heads are departed from; the specs say so.
+
+## ADR-405 - No class that renders nothing, and the kit's strokes
+2026-11 · Status: accepted. Phase 17 Task 31b (TECH-21, TECH-22).
+Context: Tailwind writes CSS for the classes it knows and keeps the rest in the markup, doing
+nothing. Seven such were in the apps: `bg-white` behind five QR codes and a placeholder (the
+preset replaces Tailwind's colours, so there is no white) and `text-heading` on the pairing
+window's address and code (the colour is `fg-heading`). Nothing in the build said so. Icons
+took 53 stroke overrides in eleven values, from 1 to 3.2, against tokens.md's one line of 1.75;
+and the tagline "Good food brings people together" was set in three trackings.
+Decision:
+  - **The build fails on a class that renders nothing**: `web/scripts/check-classes.mjs`, run
+    by `make build-web` after the bundles are built, reads every string in the sources, takes
+    those that are lists of classes (nearly every word class-like, most of them in the built
+    CSS), and names every word in them the CSS has no selector for. Prose, icon paths and
+    single words are not lists and are not judged. A class meant to style nothing is named in
+    the script, with why; `group` and `peer` are.
+  - **The seven are gone**: the QR images lose `bg-white` (the server's SVG paints its own
+    white), the guest's placeholder is a well, and the pairing window's address and code are
+    `text-fg-heading`.
+  - **The kit's strokes**, `web/shared/ui/stroke.ts`: `base` 1.75, set once on each app's
+    LucideProvider; `hairline` 1 for a faint watermark (the leaf); `large` 1.5 for an icon drawn
+    at 30px or more; `bold` 2.25 for a mark read at a glance (an arrow or a plus on a filled
+    button, a check, a cross). The near-defaults (1.7, 1.85, 1.9) are the default; 2 to 3.2 are
+    bold. A test fails on a stroke written as a number.
+  - **The meta text's tracking is its token's**: `text-meta` carries `.16em`; the tagline and
+    the pairing window's labels write none of their own, and the tagline is bold everywhere,
+    as the meta size is.
+Rejected: a lint rule over the class strings (eslint's Tailwind plugins do not read Tailwind
+4's CSS-first theme, so they cannot know `bg-white` is gone); checking every string word by
+word (prose and SVG paths would fail the build).
+Because: a class that renders nothing is a design decision that silently did not happen, and
+eleven strokes for one line make every screen a little different from the next.
+Cost: the check reads the built CSS, so it runs in `make build-web`, not `make check`.

@@ -23,6 +23,7 @@ import { cx } from "../../../shared/ui/cx";
 import { useClock } from "../../../shared/use-clock";
 import { clockText } from "../../../shared/venue-text";
 import { agoText, latePercent, metaText, timerText, timerTone, toneWord, whereParts, whereText, type TimerTone } from "./kitchen-logic";
+import { stroke } from "../../../shared/ui/stroke";
 
 /** Which column a card is in. */
 export type CardStage = "fresh" | "preparing" | "ready";
@@ -121,7 +122,7 @@ export const TicketCard = memo(function TicketCard({
           {isNew && <span className="shrink-0 rounded-pill bg-attention px-2.5 text-lg font-bold uppercase text-attention-fg">New</span>}
           {/* A later course or add-on, so a table sent to twice does not look like the same ticket twice (KDS-12). */}
           {chip && <span className="shrink-0 rounded-pill bg-chip-info-bg px-2.5 text-lg font-bold text-chip-info-fg">{chip}</span>}
-          <Icon aria-hidden="true" size={18} strokeWidth={1.9} className="shrink-0" />
+          <Icon aria-hidden="true" size={18} className="shrink-0" />
           <span className="min-w-0">{[metaText(t), placed].filter(Boolean).join(" · ")}</span>
         </p>
       </header>
@@ -159,7 +160,11 @@ export const TicketCard = memo(function TicketCard({
 
       {onAct && stage === "fresh" && (
         <button type="button" disabled={disabled} onClick={() => onAct(t, stage)} className={cx(action, "bg-accent text-accent-fg hover:bg-accent-hover")}>
-          {skipPreparing ? <CheckIcon aria-hidden="true" size={22} strokeWidth={2.4} /> : <PlayIcon aria-hidden="true" size={22} strokeWidth={2.2} />}
+          {skipPreparing ? (
+            <CheckIcon aria-hidden="true" size={22} strokeWidth={stroke.bold} />
+          ) : (
+            <PlayIcon aria-hidden="true" size={22} strokeWidth={stroke.bold} />
+          )}
           {busy ? (skipPreparing ? "Marking" : "Starting") : skipPreparing ? "Mark ready" : "Start preparing"}
         </button>
       )}
@@ -170,7 +175,7 @@ export const TicketCard = memo(function TicketCard({
           onClick={() => onAct(t, stage)}
           className={cx(action, "border border-line-strong bg-raised hover:bg-raised-high")}
         >
-          <CheckIcon aria-hidden="true" size={22} strokeWidth={2.4} />
+          <CheckIcon aria-hidden="true" size={22} strokeWidth={stroke.bold} />
           {busy ? "Marking" : "Mark ready"}
         </button>
       )}
@@ -185,7 +190,7 @@ export const TicketCard = memo(function TicketCard({
           }}
           className={cx(action, armed ? "bg-attention text-attention-fg" : "bg-accent-tint text-accent-text hover:bg-raised-high")}
         >
-          <Undo2Icon aria-hidden="true" size={22} strokeWidth={2.2} />
+          <Undo2Icon aria-hidden="true" size={22} strokeWidth={stroke.bold} />
           {busy ? "Recalling" : armed ? "Tap again to recall" : "Recall"}
         </button>
       )}

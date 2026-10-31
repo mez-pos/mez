@@ -232,8 +232,8 @@ function UpiQr({ code, amountMinor, alt }: { code: string; amountMinor: number; 
       if (shown !== null) URL.revokeObjectURL(shown);
     };
   }, [code, amountMinor]);
-  if (src === null) return <div aria-hidden="true" className="mx-auto mt-2 block size-58 rounded bg-white" />;
-  return <img src={src} alt={alt} width={232} height={232} className="mx-auto mt-2 block size-58 rounded bg-white" />;
+  if (src === null) return <div aria-hidden="true" className="mx-auto mt-2 block size-58 rounded bg-sunken" />;
+  return <img src={src} alt={alt} width={232} height={232} className="mx-auto mt-2 block size-58 rounded" />;
 }
 
 /**

@@ -104,9 +104,10 @@ endif
 
 ## build-web: check formatting, test, typecheck and build the three frontends
 ##            into web/*/dist, then fail if the guest bundle is over 60 KB
-##            gzipped. Needs Node 22.
+##            gzipped, or if a class in the sources renders nothing (ADR-405).
+##            Needs Node 22.
 build-web: web/node_modules/.package-lock.json
-	@cd web && npm run format:check --silent && npm test --silent && npm run build --silent && npm run size --silent
+	@cd web && npm run format:check --silent && npm test --silent && npm run build --silent && npm run size --silent && npm run classes --silent
 
 ## fmt-web: format the frontends with Prettier (web/.prettierrc.json)
 fmt-web: web/node_modules/.package-lock.json

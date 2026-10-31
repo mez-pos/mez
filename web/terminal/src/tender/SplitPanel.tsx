@@ -127,7 +127,7 @@ export function SplitPanel({ order, title, draft, onDraft, onUse, onBack }: Spli
             )}
           >
             {/* Below 1280 the icons give way, so the three words fit beside the title. */}
-            <Icon aria-hidden="true" size={18} strokeWidth={1.9} className="hidden xl:block" />
+            <Icon aria-hidden="true" size={18} className="hidden xl:block" />
             {splitNames[kind]}
           </button>
         );
@@ -308,7 +308,7 @@ export function SplitPanel({ order, title, draft, onDraft, onUse, onBack }: Spli
               }}
               className="flex min-h-40 flex-col items-center justify-center gap-2.5 rounded-card border border-dashed border-line-strong p-4 text-base font-semibold text-fg-muted outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3 disabled:opacity-40"
             >
-              <UserPlusIcon aria-hidden="true" size={26} strokeWidth={1.75} />
+              <UserPlusIcon aria-hidden="true" size={26} />
               Add another guest
             </button>
           )}

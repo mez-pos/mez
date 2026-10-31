@@ -17,7 +17,7 @@ export function BrandPanel({ version }: { version: string | null }) {
       <div className="absolute -right-36 -top-20 bottom-0 w-[620px] rounded-t-[999px] bg-line" />
       <div className="relative">
         <Logo className="h-14" />
-        <p className="mt-3 text-meta font-bold uppercase tracking-[.22em] text-fg-muted">Good food brings people together</p>
+        <p className="mt-3 text-meta font-bold uppercase text-fg-muted">Good food brings people together</p>
         <h2 className="mt-14 font-serif text-display leading-[1.02] 2xl:text-hero">
           Great Food
           <br />
@@ -29,7 +29,7 @@ export function BrandPanel({ version }: { version: string | null }) {
           New Stories. ♡
         </p>
       </div>
-      <p className="relative mt-auto flex gap-10 pt-8 text-meta font-bold uppercase tracking-[.14em] text-fg-muted">
+      <p className="relative mt-auto flex gap-10 pt-8 text-meta font-bold uppercase text-fg-muted">
         <span>{versionText(version)}</span>
         <span>A small place for big moments</span>
       </p>

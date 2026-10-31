@@ -6,6 +6,7 @@ import { LeafIcon, MinusIcon, TrendingDownIcon, TrendingUpIcon, type LucideIcon 
 import type { ReactNode } from "react";
 import { cx } from "../../../shared/ui/cx";
 import { changeText, yesterday, type Change } from "./dashboard-logic";
+import { stroke } from "../../../shared/ui/stroke";
 
 const rounds = {
   success: "bg-chip-success-bg text-accent",
@@ -33,7 +34,7 @@ export function StatTile({ icon: Icon, tone, label, children, note, featured = f
         featured ? "border-chip-success-border bg-accent-tint" : "border-line bg-raised shadow-card",
       )}
     >
-      {featured && <LeafIcon aria-hidden="true" size={110} strokeWidth={1} className="absolute -bottom-4 -right-4 text-accent opacity-15" />}
+      {featured && <LeafIcon aria-hidden="true" size={110} strokeWidth={stroke.hairline} className="absolute -bottom-4 -right-4 text-accent opacity-15" />}
       <span aria-hidden="true" className={cx("relative flex size-12 shrink-0 items-center justify-center rounded-round 2xl:size-14", rounds[tone])}>
         <Icon size={24} />
       </span>
@@ -64,7 +65,7 @@ export function ChangeNote({ change, against = yesterday }: { change: Change | n
     <span className="flex flex-wrap items-center gap-x-1.5">
       <span className="sr-only">{changeText(change, against)}</span>
       <span aria-hidden="true" className={cx("flex items-center gap-1.5 font-bold", ink)}>
-        <Icon size={14} strokeWidth={2.4} />
+        <Icon size={14} strokeWidth={stroke.bold} />
         {change.percent}%
       </span>
       <span aria-hidden="true">

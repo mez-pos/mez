@@ -110,7 +110,7 @@ interface ShareStripProps {
 export function ShareStrip({ split, amountsKeyed, paid, current, stale, disabled, onShares }: ShareStripProps) {
   return (
     <section aria-label="Split" className="flex flex-wrap items-center gap-3 rounded-card border border-line bg-raised px-4 py-2">
-      <UsersIcon aria-hidden="true" size={19} strokeWidth={1.9} className="shrink-0 text-fg-muted" />
+      <UsersIcon aria-hidden="true" size={19} className="shrink-0 text-fg-muted" />
       {stale ? (
         <p role="alert" className="min-w-0 flex-1 text-base text-danger">
           {staleText}

@@ -290,7 +290,7 @@ function QRModal({
       )}
       {qr && (
         <div className="flex flex-col items-center gap-3 text-center">
-          <img src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(qr.svg)}`} alt={alt} width={240} height={240} className="size-60 rounded bg-white" />
+          <img src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(qr.svg)}`} alt={alt} width={240} height={240} className="size-60 rounded" />
           <p className="font-mono text-sm break-all text-fg-2">{qr.url}</p>
           <p className="text-base text-fg-2">{line}</p>
         </div>

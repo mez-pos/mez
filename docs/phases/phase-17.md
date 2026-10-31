@@ -218,8 +218,8 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
     read it; the menu list drops the placeholder tile and the "Active" on
     every row; page heads say the screen's name from the nav, and Add is
     one colour; the phone drawer has a Close and takes focus.
-  - [ ] **31b - Dead classes, a check for them, and one stroke (TECH-21,
-    TECH-22).** Classes that render nothing are gone and a test fails on
+  - [x] **31b - Dead classes, a check for them, and one stroke (TECH-21,
+    TECH-22).** Done 2026-11-01 (ADR-405). Classes that render nothing are gone and a test fails on
     one; icon strokes come to the kit's few; the tagline has one tracking.
   - [ ] **31c - One keypad, one input, one switch, one pill (TECH-23).**
     The copies outside `shared/ui` use the kit's.

@@ -8,6 +8,7 @@ import type { Permission } from "../../../shared/api-types";
 import { Card } from "../../../shared/ui";
 import { useOnMirror } from "../../../shared/use-mirror";
 import { canOpen, section, type SectionId } from "../shell/nav-logic";
+import { stroke } from "../../../shared/ui/stroke";
 
 // The design's first shortcut is "Add menu item"; the link opens the menu, so it says that.
 // `reading` is the label on a mirror, where the section opens and nothing in it is changed (ADR-330).
@@ -53,7 +54,7 @@ export function BrandCard() {
       aria-hidden="true"
       className="relative flex min-h-28 flex-1 items-center overflow-hidden rounded-card border border-chip-success-border bg-accent-tint p-6"
     >
-      <LeafIcon size={140} strokeWidth={1} className="absolute -bottom-6 -left-6 text-accent opacity-15" />
+      <LeafIcon size={140} strokeWidth={stroke.hairline} className="absolute -bottom-6 -left-6 text-accent opacity-15" />
       <p className="relative ml-auto text-right font-script text-total leading-tight text-fg-2">
         Good Food,
         <br />

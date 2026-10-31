@@ -71,7 +71,7 @@ export function RefundSheet({ order, credit, onDone, onClose }: RefundSheetProps
         )
       }
       danger
-      modal={{ icon: <RotateCcwIcon size={26} strokeWidth={1.9} /> }}
+      modal={{ icon: <RotateCcwIcon size={26} /> }}
       ready={problem === null && !preview.isFetching}
       problem={problem}
       onSubmit={async (approval) => {
@@ -198,7 +198,7 @@ export function RefundSheet({ order, credit, onDone, onClose }: RefundSheetProps
         <ReasonPicker label="Reason (required)" reasons={refundReasons} chosen={reason} onChoose={setReason} />
 
         <p className="flex gap-3 rounded border border-chip-warning-border bg-chip-warning-bg p-3.5 text-sm text-fg">
-          <ShieldAlertIcon aria-hidden="true" size={19} strokeWidth={1.9} className="shrink-0 text-chip-warning-fg" />
+          <ShieldAlertIcon aria-hidden="true" size={19} className="shrink-0 text-chip-warning-fg" />
           Refunds appear on the Z-report and in the manager&apos;s audit trail.
         </p>
       </div>

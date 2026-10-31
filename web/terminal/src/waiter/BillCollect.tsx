@@ -18,6 +18,7 @@ import { TipNote } from "../tender/TipCard";
 import { methodNames, quickShown, tipFor, tipPercents, type TenderPlan } from "../tender/tender-logic";
 import { billMethods } from "./bill-logic";
 import { radioGroup } from "../../../shared/ui/radio-group";
+import { stroke } from "../../../shared/ui/stroke";
 
 const icons: Readonly<Record<PaymentMethod, LucideIcon>> = { upi: QrCodeIcon, card: CreditCardIcon, cash: BanknoteIcon, other: BanknoteIcon };
 
@@ -119,7 +120,7 @@ export function BillCollect(props: BillCollectProps) {
                 on ? "border-accent bg-accent-tint font-bold text-accent-text" : "border-line-strong bg-raised font-semibold hover:bg-raised-high",
               )}
             >
-              <Tile aria-hidden="true" size={24} strokeWidth={on ? 1.9 : 1.75} />
+              <Tile aria-hidden="true" size={24} />
               {methodNames[m]}
             </button>
           );
@@ -187,7 +188,7 @@ export function BillCollect(props: BillCollectProps) {
         ) : (
           <div className="flex items-center gap-4">
             <span aria-hidden="true" className="flex size-24 shrink-0 items-center justify-center rounded bg-sunken text-fg-2">
-              <Icon size={44} strokeWidth={1.5} />
+              <Icon size={44} strokeWidth={stroke.large} />
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-base font-bold">{method === "upi" ? `Show the venue's UPI code to ${who}` : "Key this on the card machine"}</p>

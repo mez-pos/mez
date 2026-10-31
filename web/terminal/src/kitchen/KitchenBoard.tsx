@@ -36,6 +36,7 @@ import { allDay, boardColumns, comingRows, isNewTicket, moveFailure, readFailure
 import { TicketCard, type CardStage } from "./TicketCard";
 import { useChime } from "./use-chime";
 import { useKitchenBoard } from "./use-kitchen-board";
+import { stroke } from "../../../shared/ui/stroke";
 
 interface KitchenBoardProps {
   station: StationResponse;
@@ -240,7 +241,7 @@ function Column({ title, icon: Icon, band, count, watchNew = false, children }: 
   return (
     <section aria-label={`${title}, ${count}`} className="relative flex min-h-0 flex-col overflow-hidden rounded-card border border-line bg-chrome">
       <header className={cx("flex min-h-16 shrink-0 items-center gap-3 px-5 short:min-h-12 short:px-4", band)}>
-        <Icon aria-hidden="true" size={24} strokeWidth={1.9} />
+        <Icon aria-hidden="true" size={24} />
         <h2 className="font-serif text-xl text-current">{title}</h2>
         <span className="ml-auto flex size-10 items-center justify-center rounded-round bg-current/20 font-mono text-lg font-bold tabular-nums">{count}</span>
       </header>
@@ -253,7 +254,7 @@ function Column({ title, icon: Icon, band, count, watchNew = false, children }: 
           onClick={below.show}
           className="absolute bottom-3 left-1/2 inline-flex min-h-tap -translate-x-1/2 items-center gap-2 rounded-pill bg-attention px-5 text-lg font-bold text-attention-fg shadow-modal outline-offset-2 outline-focus focus-visible:outline-3"
         >
-          <ArrowDownIcon aria-hidden="true" size={20} strokeWidth={2.2} />
+          <ArrowDownIcon aria-hidden="true" size={20} strokeWidth={stroke.bold} />
           {below.count === 1 ? "1 new below" : `${below.count} new below`}
         </button>
       )}

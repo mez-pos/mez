@@ -12,6 +12,7 @@ import { ArrowRightIcon, DeleteIcon } from "lucide-react";
 import { cx } from "../../ui/cx";
 import type { NumKey } from "../../ui/numpad-keys";
 import { minPin } from "../PinDots";
+import { stroke } from "../../ui/stroke";
 
 const digits: NumKey[][] = [
   ["1", "2", "3"],
@@ -78,7 +79,7 @@ export function LoginPad({ name, length, disabled, canSubmit, busy, onKey, onSub
           )}
         >
           {busy ? "Signing in" : "Login"}
-          {!busy && <ArrowRightIcon aria-hidden="true" size={20} strokeWidth={2.2} />}
+          {!busy && <ArrowRightIcon aria-hidden="true" size={20} strokeWidth={stroke.bold} />}
         </button>
       </div>
     </div>

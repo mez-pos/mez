@@ -5,11 +5,12 @@
 import { CircleAlertIcon, LeafIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Card } from "../../../shared/ui";
+import { stroke } from "../../../shared/ui/stroke";
 
 export function ShiftStage({ main, aside }: { main: ReactNode; aside: ReactNode }) {
   return (
     <div className="relative flex min-w-0 flex-1 overflow-hidden">
-      <LeafIcon aria-hidden="true" strokeWidth={1} className="pointer-events-none absolute -bottom-10 -left-10 size-72 text-accent opacity-10" />
+      <LeafIcon aria-hidden="true" strokeWidth={stroke.hairline} className="pointer-events-none absolute -bottom-10 -left-10 size-72 text-accent opacity-10" />
       <div className="relative flex min-w-0 flex-1 justify-center overflow-y-auto px-6 py-8 xl:px-11 xl:py-11">
         <div className="flex w-full max-w-300 flex-col gap-7 xl:flex-row xl:items-start">
           <div className="min-w-0 flex-1 rounded-sheet border border-line bg-raised p-6 shadow-card sm:p-9">{main}</div>

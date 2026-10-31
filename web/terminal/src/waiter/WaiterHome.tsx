@@ -28,6 +28,7 @@ import { SeatTable } from "./SeatTable";
 import { TableCard } from "./TableCard";
 import { cardOpens } from "./table-logic";
 import { filterCounts, firstName, greeting, groupOrder, hourIn, tableGroups, tablesShown, type TableFilter } from "./waiter-logic";
+import { stroke } from "../../../shared/ui/stroke";
 
 export function WaiterHome() {
   const auth = useAuth();
@@ -89,7 +90,12 @@ export function WaiterHome() {
   return (
     <div className="flex min-w-0 flex-1 flex-col">
       <div className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-7 py-6 short:py-4">
-        <LeafIcon aria-hidden="true" size={230} strokeWidth={1} className="pointer-events-none absolute -left-8 bottom-14 text-accent opacity-10" />
+        <LeafIcon
+          aria-hidden="true"
+          size={230}
+          strokeWidth={stroke.hairline}
+          className="pointer-events-none absolute -left-8 bottom-14 text-accent opacity-10"
+        />
 
         {/* One wrapping row: the greeting and its garnish, then (after the break) the
             pills and the search. On a screen 820px tall or less the promo card goes and
@@ -117,7 +123,7 @@ export function WaiterHome() {
               <p className="mt-1.5 text-sm text-fg">Let's make them delicious.</p>
             </div>
             <span aria-hidden="true" className="flex size-16 shrink-0 items-center justify-center rounded bg-chip-success-bg text-accent">
-              <LeafIcon size={30} strokeWidth={1.5} />
+              <LeafIcon size={30} strokeWidth={stroke.large} />
             </span>
           </div>
           <SearchField label="Search table number" onSearch={setQuery} debounceMs={100} className="order-3 ml-auto w-64 self-center short:order-0" />
@@ -197,7 +203,7 @@ export function WaiterHome() {
             navigate(route.order);
           }}
         >
-          <PlusIcon aria-hidden="true" size={22} strokeWidth={2.2} />
+          <PlusIcon aria-hidden="true" size={22} strokeWidth={stroke.bold} />
           New Order
         </Button>
       </footer>

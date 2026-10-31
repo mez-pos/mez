@@ -17,6 +17,7 @@
     "test": "vitest run",
     "build": "npm run build --workspaces --if-present",
     "size": "node scripts/check-size.mjs",
+    "classes": "node scripts/check-classes.mjs",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx}\""
   },

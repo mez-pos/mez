@@ -10,6 +10,7 @@ import { initials, roleText } from "../../auth/format";
 import { cx } from "../../ui/cx";
 import { pageOf, perPage, tilePage } from "./login-logic";
 import { useSlotsAcross } from "./use-slots-across";
+import { stroke } from "../../ui/stroke";
 
 interface ProfileTilesProps {
   people: readonly StaffResponse[];
@@ -76,7 +77,7 @@ export function ProfileTiles({ people, selectedId, page, onChoose, onPage }: Pro
             className={cx(slot, "flex flex-col items-center pt-3 text-center outline-offset-4 outline-focus focus-visible:outline-3 2xl:pt-6")}
           >
             <span className="flex size-14 items-center justify-center rounded-round border border-line-strong bg-raised hover:bg-raised-high">
-              <ChevronLeftIcon aria-hidden="true" size={24} strokeWidth={2} />
+              <ChevronLeftIcon aria-hidden="true" size={24} strokeWidth={stroke.bold} />
             </span>
             <span className="mt-2.5 text-sm text-fg-muted">Back</span>
           </button>
@@ -91,7 +92,7 @@ export function ProfileTiles({ people, selectedId, page, onChoose, onPage }: Pro
             className={cx(slot, "flex flex-col items-center pt-3 text-center outline-offset-4 outline-focus focus-visible:outline-3 2xl:pt-6")}
           >
             <span className="flex size-14 items-center justify-center rounded-round border border-line-strong bg-raised hover:bg-raised-high">
-              <ChevronRightIcon aria-hidden="true" size={24} strokeWidth={2} />
+              <ChevronRightIcon aria-hidden="true" size={24} strokeWidth={stroke.bold} />
             </span>
             <span className="mt-2.5 text-sm text-fg-muted">More</span>
           </button>

@@ -56,7 +56,7 @@ export function BoardFoot({ prefs, onPrefs, onChangeStation, signedIn }: BoardFo
         }}
         className={armed ? cx(shape, "bg-attention text-attention-fg hover:bg-attention-hover") : plain}
       >
-        <Settings2Icon aria-hidden="true" size={19} strokeWidth={1.85} />
+        <Settings2Icon aria-hidden="true" size={19} />
         {armed ? "Tap again to change station" : "Change station"}
       </button>
       {/* A switch like its neighbours: "Sound off" on a button read as a command (KDS-16). */}
@@ -66,7 +66,7 @@ export function BoardFoot({ prefs, onPrefs, onChangeStation, signedIn }: BoardFo
       <Switch label="Night mode" on={prefs.night} onChange={(night) => onPrefs({ ...prefs, night })} />
       {signedIn && (
         <button type="button" onClick={signedIn.onLock} className={cx(plain, "ml-auto border border-line-strong")}>
-          <LockIcon aria-hidden="true" size={19} strokeWidth={1.85} />
+          <LockIcon aria-hidden="true" size={19} />
           Lock · {signedIn.name}
         </button>
       )}

@@ -9,6 +9,7 @@ import { cx } from "../../../shared/ui/cx";
 import { WantsToOrder } from "../floor/FloorPlan";
 import { toneClasses } from "../floor/tones";
 import { cardMeta, cardWords } from "./waiter-logic";
+import { stroke } from "../../../shared/ui/stroke";
 
 interface TableCardProps {
   table: LiveTableResponse;
@@ -33,7 +34,7 @@ export function TableCard({ table, names, onOpen, wants = false }: TableCardProp
       )}
     >
       <span aria-hidden="true" className={cx("flex size-20 shrink-0 items-center justify-center rounded", tone.fill, tone.ink)}>
-        <ArmchairIcon size={34} strokeWidth={1.5} />
+        <ArmchairIcon size={34} strokeWidth={stroke.large} />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate font-serif text-xl leading-none">{table.name}</span>

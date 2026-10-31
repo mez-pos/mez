@@ -16,6 +16,7 @@ import { cx } from "../../../shared/ui/cx";
 import { DietMark } from "../../../shared/ui/DietMark";
 import { CategoryIcon } from "./CategoryIcon";
 import { cardLabel, choiceCount, choicesText, type CardTap, type CategoryIconKey } from "./register-logic";
+import { stroke } from "../../../shared/ui/stroke";
 
 interface ItemGridProps {
   items: readonly MenuItemResponse[];
@@ -118,7 +119,7 @@ export function ItemGrid({ items, groupsFor, iconFor, onTap, soldOut, dense = fa
                   "bg-attention text-attention-fg hover:bg-attention-hover",
                 )}
               >
-                <PlusIcon aria-hidden="true" size={20} strokeWidth={2.4} />
+                <PlusIcon aria-hidden="true" size={20} strokeWidth={stroke.bold} />
               </button>
             )}
           </li>

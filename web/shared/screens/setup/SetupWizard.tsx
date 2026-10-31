@@ -43,6 +43,7 @@ import { TaxesStep, VenueStep, YouStep } from "./steps";
 import { browserPage, forgetSetupToken, takeSetupToken } from "./setup-token";
 import { menuAddress } from "./ready-logic";
 import { useSetupStatus } from "./use-setup-status";
+import { stroke } from "../../ui/stroke";
 
 const lead = `${allSteps.length} steps. You can change everything later in Settings.`;
 
@@ -307,7 +308,7 @@ function Questions({ token, onBegin }: { token: string | null; onBegin: () => vo
             )}
             <Button type="submit" variant="primary" className="min-w-44">
               {last ? "Create the venue" : "Continue"}
-              <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={2.2} />
+              <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={stroke.bold} />
             </Button>
           </div>
         </div>

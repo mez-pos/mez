@@ -31,7 +31,7 @@ export function BoardSide({ rows, coming, comingMore }: BoardSideProps) {
       {coming.length > 0 && (
         <section aria-label="Coming next" className="flex min-h-0 flex-col rounded-card border border-line bg-chrome p-5 short:p-4">
           <h2 className="flex items-center gap-2.5 font-serif text-xl">
-            <TimerIcon aria-hidden="true" size={20} strokeWidth={1.9} className="shrink-0 text-attention" />
+            <TimerIcon aria-hidden="true" size={20} className="shrink-0 text-attention" />
             Coming next ({coming.length + comingMore})
           </h2>
           <ul className="mt-3.5 grid min-h-0 content-start gap-2.5 overflow-y-auto">

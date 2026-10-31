@@ -13,6 +13,7 @@ import { useRef, type ReactNode } from "react";
 import { Logo } from "../../ui";
 import { cx } from "../../ui/cx";
 import { useStepArrival } from "./use-step-arrival";
+import { stroke } from "../../ui/stroke";
 
 export interface FrameStep {
   readonly key: string;
@@ -55,7 +56,7 @@ export function SetupFrame({ lead, leadWhenShort = true, steps, current = 0, ski
       <div className="relative mx-auto flex min-h-screen w-full max-w-232 flex-col gap-6 p-6 short:gap-4 short:p-4 md:p-8">
         <header>
           <Logo className="h-12 short:h-9" />
-          <p className="mt-2 text-meta font-bold uppercase tracking-[.2em] text-fg-muted short:hidden">Good food brings people together</p>
+          <p className="mt-2 text-meta font-bold uppercase text-fg-muted short:hidden">Good food brings people together</p>
           <h1 className="mt-6 font-serif text-total leading-tight short:mt-3">Welcome. Let&rsquo;s set up your venue.</h1>
           <p className={cx("mt-2 max-w-xl text-base text-fg", !leadWhenShort && "short:hidden")}>{lead}</p>
         </header>
@@ -115,14 +116,14 @@ function Steps({ steps, current, skipped, onStep }: StepsProps) {
                   aria-label={`Back to step ${i + 1}, ${step.name}`}
                   className={cx(round, "outline-offset-2 outline-focus hover:bg-accent-hover focus-visible:outline-3")}
                 >
-                  <CheckIcon aria-hidden="true" size={20} strokeWidth={3} />
+                  <CheckIcon aria-hidden="true" size={20} strokeWidth={stroke.bold} />
                 </button>
               ) : (
                 <span className={round}>
                   {skip ? (
-                    <MinusIcon aria-hidden="true" size={20} strokeWidth={3} />
+                    <MinusIcon aria-hidden="true" size={20} strokeWidth={stroke.bold} />
                   ) : done ? (
-                    <CheckIcon aria-hidden="true" size={20} strokeWidth={3} />
+                    <CheckIcon aria-hidden="true" size={20} strokeWidth={stroke.bold} />
                   ) : (
                     i + 1
                   )}

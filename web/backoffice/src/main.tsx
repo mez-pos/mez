@@ -11,6 +11,7 @@ import { MirrorProvider } from "../../shared/use-mirror";
 import { RealtimeProvider } from "../../shared/use-realtime";
 import { App } from "./App";
 import "./index.css";
+import { stroke } from "../../shared/ui/stroke";
 
 const root = document.getElementById("root");
 if (!root) {
@@ -32,7 +33,7 @@ createRoot(root).render(
           <AuthProvider store={store} realtime={realtime}>
             <MirrorProvider watch={mirror}>
               {/* The design's line icons: 1.75px strokes (tokens.md, Icons). */}
-              <LucideProvider strokeWidth={1.75}>
+              <LucideProvider strokeWidth={stroke.base}>
                 <ToastProvider>
                   <App />
                 </ToastProvider>

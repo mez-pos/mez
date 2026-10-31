@@ -15,6 +15,7 @@ import { Button, Money } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { useClock } from "../../../shared/use-clock";
 import { elapsedClock, methodNames } from "./tender-logic";
+import { stroke } from "../../../shared/ui/stroke";
 
 const card = "mx-auto w-full max-w-120 rounded-card border p-6 short:p-5";
 const eyebrow = "text-meta font-bold uppercase";
@@ -48,7 +49,7 @@ export function WaitingCard({ method, charge, tip, reference, since, busy, onRef
         aria-hidden="true"
         className="mx-auto my-5 flex size-32 items-center justify-center rounded-round border-8 border-chip-success-bg bg-accent-tint text-accent-text short:my-3 short:size-24"
       >
-        <Icon size={52} strokeWidth={1.5} />
+        <Icon size={52} strokeWidth={stroke.large} />
       </span>
       <p>
         <Money amount={charge} variant="total" className="leading-tight" />
@@ -111,7 +112,7 @@ export function RefusedCard({ method, reason, busy, onOther, onRetry }: RefusedC
       <Outcome
         mark={
           <Mark className="bg-chip-danger-bg text-danger">
-            <XIcon size={24} strokeWidth={2.4} />
+            <XIcon size={24} strokeWidth={stroke.bold} />
           </Mark>
         }
         title="Payment not recorded"
@@ -153,7 +154,7 @@ export function UncertainCard({ method, amount, checking, onCheck }: UncertainCa
       <Outcome
         mark={
           <Mark className="bg-highlight text-highlight-fg">
-            <RefreshCwIcon size={22} strokeWidth={2.4} className={checking ? "motion-safe:animate-spin" : undefined} />
+            <RefreshCwIcon size={22} strokeWidth={stroke.bold} className={checking ? "motion-safe:animate-spin" : undefined} />
           </Mark>
         }
         title="The payment may have been recorded"
@@ -198,7 +199,7 @@ export function ReceivedCard({ received, next, onNext }: ReceivedCardProps) {
       <Outcome
         mark={
           <Mark className="bg-accent text-accent-fg">
-            <CheckIcon size={24} strokeWidth={3} />
+            <CheckIcon size={24} strokeWidth={stroke.bold} />
           </Mark>
         }
         title={

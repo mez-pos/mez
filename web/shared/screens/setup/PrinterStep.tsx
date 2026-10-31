@@ -25,6 +25,7 @@ import {
   type TestOutcome,
 } from "./printer-logic";
 import { radioGroup } from "../../ui/radio-group";
+import { stroke } from "../../ui/stroke";
 
 /** The key of the choice that is "enter an address", which no found printer can have. */
 const typedKey = "typed";
@@ -209,7 +210,7 @@ export function PrinterStep({ api, onDone }: { api: ApiClient; onDone: (kept: bo
               </Button>
               <Button variant="primary" className="min-w-44" onClick={() => onDone(true)}>
                 It printed
-                <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={2.2} />
+                <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={stroke.bold} />
               </Button>
             </>
           ) : (

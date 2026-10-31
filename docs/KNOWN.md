@@ -10,6 +10,16 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **No class that renders nothing, and the kit's strokes** (ADR-405, Phase 17
+  Task 31b; 2026-11-01). Seen in a scripted Chromium on a demo venue: the
+  lock screen's tagline at 11px, 700, `.16em`; the till drawing only 1.75
+  and 2.25 strokes. The class check passes on every build with 1009 classes
+  in the built CSS, and named the seven it was written for before they were
+  mended. **Not seen:** the setup wizard's tagline, the pay screen's, the
+  kitchen board's icons and the QR codes without `bg-white` (the SVG paints
+  its own white). **Left as is:** a class built from a template
+  (`text-${tone}`) is not judged by the check.
+
 - **The back office's rows, heads and drawer** (ADR-404, Phase 17 Task 31a;
   2026-11-01). Seen in a scripted Chromium on a demo venue at 1366 and 1024:
   the staff rows named as the person and described by the hint, the shown

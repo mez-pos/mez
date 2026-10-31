@@ -18,6 +18,7 @@ import { radioGroup } from "../../../shared/ui/radio-group";
 import { useDialog } from "../../../shared/ui/use-dialog";
 import { DietMark } from "../../../shared/ui/DietMark";
 import { firstUnmet, groupHint, groupState, initialSelection, lineTotal, toggle, toModifiers, type GroupState } from "../../../shared/modifier-selection";
+import { stroke } from "../../../shared/ui/stroke";
 
 /** What the modal hands back: the line as the person wants it. */
 export interface ItemChoice {
@@ -171,7 +172,7 @@ export function ItemModal({ item, groups, courses, line, error, blocked, busy = 
                 disabled={shut}
                 onClick={() => onConfirm({ modifiers: chosen, qty, course, note: note.trim() })}
               >
-                {!editing && <PlusIcon aria-hidden="true" size={19} strokeWidth={2.2} />}
+                {!editing && <PlusIcon aria-hidden="true" size={19} strokeWidth={stroke.bold} />}
                 <span>{editing ? "Save changes" : "Add to Order"}</span>
                 <span aria-hidden="true">·</span>
                 <Money amount={lineTotal(item.price, chosen, qty)} />
@@ -247,7 +248,7 @@ function GroupPicker({ group, picked, state, onTap }: GroupPickerProps) {
                   on ? (single ? "border-accent" : "border-accent bg-accent text-accent-fg") : "border-line-strong",
                 )}
               >
-                {on && (single ? <span className="size-2.5 rounded-round bg-accent" /> : <CheckIcon size={14} strokeWidth={3.2} />)}
+                {on && (single ? <span className="size-2.5 rounded-round bg-accent" /> : <CheckIcon size={14} strokeWidth={stroke.bold} />)}
               </span>
               {single ? (
                 <span className="min-w-0">

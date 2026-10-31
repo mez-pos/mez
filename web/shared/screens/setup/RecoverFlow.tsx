@@ -43,6 +43,7 @@ import {
   type RecoverStepKey,
 } from "./recover-logic";
 import { radioGroup } from "../../ui/radio-group";
+import { stroke } from "../../ui/stroke";
 
 export interface RecoverFlowProps {
   api: ApiClient;
@@ -262,7 +263,7 @@ export function RecoverFlow({ api, token, pair, onStep, onBegun, onNewVenue, onL
           </Button>
           <Button type="submit" variant="primary" className="min-w-44" disabled={busy}>
             {busy ? "Sending" : "Send the code"}
-            {!busy && <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={2.2} />}
+            {!busy && <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={stroke.bold} />}
           </Button>
         </Foot>
       </form>
@@ -302,7 +303,7 @@ export function RecoverFlow({ api, token, pair, onStep, onBegun, onNewVenue, onL
           </Button>
           <Button type="submit" variant="primary" className="min-w-44" disabled={busy}>
             {busy ? "Checking" : "Continue"}
-            {!busy && <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={2.2} />}
+            {!busy && <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={stroke.bold} />}
           </Button>
         </Foot>
       </form>
@@ -365,7 +366,7 @@ export function RecoverFlow({ api, token, pair, onStep, onBegun, onNewVenue, onL
           {any && (
             <Button type="submit" variant="primary" className="min-w-44">
               Bring it back
-              <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={2.2} />
+              <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={stroke.bold} />
             </Button>
           )}
         </Foot>
@@ -420,7 +421,7 @@ export function RecoverFlow({ api, token, pair, onStep, onBegun, onNewVenue, onL
       <Foot>
         <Button variant="primary" className="min-w-44" onClick={onLeave}>
           {stage.paired ? "Sign in" : "Open mez"}
-          <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={2.2} />
+          <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={stroke.bold} />
         </Button>
       </Foot>
     </div>

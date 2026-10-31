@@ -94,7 +94,7 @@ export function PaidPanel({ order, title, change, busy, message, onPrint, unsent
         )}
       </div>
 
-      <p className="mt-auto pt-8 text-center text-meta uppercase text-fg-faint short:pt-5">Good food brings people together</p>
+      <p className="mt-auto pt-8 text-center text-meta font-bold uppercase text-fg-muted short:pt-5">Good food brings people together</p>
     </aside>
   );
 }
