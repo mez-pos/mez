@@ -68,7 +68,7 @@ it.
   - an error line when the server refused
 - **On the floor:** a table with a request waiting shows a terracotta mark,
   a bell and a word, where its state chip is: "Request" on a tile under
-  1536px wide and "Wants to order" from there, in the Table List's state
+  1536px wide and "Wants to order" from there, in the Table list's state
   column, and on the waiter's card under the group's word. The tile's
   spoken label ends ", wants to order".
 

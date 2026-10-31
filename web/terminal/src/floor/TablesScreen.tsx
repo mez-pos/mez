@@ -207,7 +207,7 @@ interface AreaPillsProps {
 }
 
 function AreaPills({ areas, chosen, onChoose }: AreaPillsProps) {
-  const pills: readonly { id: number | "all"; name: string }[] = [...areas, { id: "all", name: "All Areas" }];
+  const pills: readonly { id: number | "all"; name: string }[] = [...areas, { id: "all", name: "All areas" }];
   return (
     <div role="group" aria-label="Areas" className="flex flex-wrap gap-2.5">
       {pills.map((a) => (

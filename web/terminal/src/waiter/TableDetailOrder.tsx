@@ -198,7 +198,7 @@ export function TableDetailOrder({ table, title, orderId, sendWaits, onAddItems,
           onClick={() => setSheet("send")}
         >
           <SendIcon aria-hidden="true" size={20} />
-          {plan.waiting > 0 ? `Send to Kitchen (${plan.waiting})` : "Sent"}
+          {plan.waiting > 0 ? `Send to kitchen (${plan.waiting})` : "Sent"}
         </Button>
       </div>
 

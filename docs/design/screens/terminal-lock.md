@@ -1,4 +1,4 @@
-# Terminal: Staff Login, and pairing
+# Terminal: Staff login, and pairing
 
 The sign-in screen everyone starts a shift on, and before it the pairing
 screen a device sees once. Rebuilt from D01 in the rebuild's Task 2 (ADR-148).
@@ -13,7 +13,7 @@ plainly when that cannot happen, and send them on to their own work.
 
 ## Layout
 
-**Staff Login**, two columns from 1280px wide and one under it; nothing
+**Staff login**, two columns from 1280px wide and one under it; nothing
 scrolls at 1024x768 or 1366x768:
 
 - **Left, 46% wide, on the sunken ground** (`BrandPanel`), from 1280px wide:
@@ -29,7 +29,7 @@ scrolls at 1024x768 or 1366x768:
     ("Good Teams, Great Service"), from 768px wide. The script sits beside
     the title, never over it.
   - The logo above the title, only where the left panel is hidden.
-  - **Staff Login** in the serif, and "Select your profile and enter your PIN".
+  - **Staff login** in the serif, and "Select your profile and enter your PIN".
   - A notice, when the last session ended on its own.
   - **The profiles** (`ProfileTiles`): as many to a page as one row holds,
     never a fixed count (ADR-255, TILL-21). The row's width is measured and
@@ -96,7 +96,7 @@ The words follow the app: terminal, back office, kitchen display.
 | Wrong PIN | | "That PIN isn't right. Try again." The PIN is cleared |
 | Locked out (429) | | "Too many wrong PINs. Try again in 14:41." counting down from `Retry-After`; the pad and Login wait until it ends |
 | Server unreachable | | "Can't reach the mez server at host. Check this device is on the venue's network. Your PIN wasn't checked." |
-| Pair | `POST /devices/pair` once the code is whole | Paired: the Gate goes to Staff Login |
+| Pair | `POST /devices/pair` once the code is whole | Paired: the Gate goes to Staff login |
 
 Enter signs in from anywhere on the screen, except on a focused button or
 link, where it is that control's own click: a profile is chosen, More pages.

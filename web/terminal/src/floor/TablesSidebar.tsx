@@ -17,8 +17,8 @@ interface TablesSidebarProps {
 }
 
 const views: readonly { view: TablesView; label: string; icon: LucideIcon }[] = [
-  { view: "plan", label: "Floor Plan", icon: LayoutGridIcon },
-  { view: "list", label: "Table List", icon: ListIcon },
+  { view: "plan", label: "Floor plan", icon: LayoutGridIcon },
+  { view: "list", label: "Table list", icon: ListIcon },
 ];
 
 const entry = "flex min-h-tap w-full items-center gap-3 rounded px-3 text-left text-base outline-offset-2 outline-focus focus-visible:outline-3 2xl:px-4";

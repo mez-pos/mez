@@ -101,7 +101,7 @@ export function OrderScreen() {
     return filterItems(base, diet);
   }, [items, searching, query, view, diet]);
   const filtering = dietFilterActive(diet);
-  const title = searching ? "Search results" : (entries.find((e) => e.view === view)?.label ?? "All Items");
+  const title = searching ? "Search results" : (entries.find((e) => e.view === view)?.label ?? "All items");
 
   const iconFor = useMemo(() => {
     const byCategory = new Map(categories.map((c) => [c.id, categoryIconKey(c.name)]));

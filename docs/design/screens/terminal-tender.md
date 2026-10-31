@@ -19,20 +19,20 @@ glance what is still owed and what change to hand back.
 ## Layout
 
 Inside the frame (`terminal-shell.md`), from **Pay** on the order screen or
-**Settle Bill** on Tables. The order is down the left, the work in the
+**Settle bill** on Tables. The order is down the left, the work in the
 middle, and once the bill is paid a panel on the right.
 
-- **The order, `w-rail`, chrome:** **Back to Order**; where it is in the
+- **The order, `w-rail`, chrome:** **Back to order**; where it is in the
   serif ("Table T4") with how it is served as a pill; the guests and the
   order's id; then, scrolling, the lines that are not voided, each with its
-  choices, "×2" and what it comes to, and **Add Discount** and **Add order
+  choices, "×2" and what it comes to, and **Add discount** and **Add order
   note** under them until the bill is paid or invoiced. **Pinned at the
   foot**, as the order rail's are, so the Balance never scrolls away
   (ADR-381): the totals, tax by tax, as on the order screen, and **Payments
   taken**, a row each ("Paid · Card · 4417", and "Tip, apart from the bill"
   under it), which scroll on their own past about five rows.
 - **The steps**, across the top of the middle: **1 Payment**, **2 Split
-  Bill**, **3 Complete**. The one in hand is green. Payment and Split Bill
+  Bill**, **3 Complete**. The one in hand is green. Payment and Split bill
   are buttons on the sunken fill; Complete is where a paid bill arrives,
   never a button, so it is a plain label with no fill. A paid bill shows no
   strip: "Paid in full" heads the invoice (ADR-381), so nothing wraps beside
@@ -88,7 +88,7 @@ then two); at 1366 one row.
   change to return, "₹553.00 is still owed on this bill.", and **Next
   payment** or **Next share**.
 
-**Step 2, Split Bill** (D08a), a card filling the middle:
+**Step 2, Split bill** (D08a), a card filling the middle:
 
 - **The head:** "Split bill · Table T4", the mode, and the total, or "Still
   owed" after a payment. The mode is a segmented control (ADR-381): **By
@@ -144,7 +144,7 @@ cards are under them, one across at 1024 and two at 1366.
   served and by what; tips, apart; **Change to return** when cash is owed
   back; a script thank-you; a table's lines the kitchen has not seen, as a
   warning with **Send now** (TILL-1); **Print receipt**; and **Next order**
-  (terracotta, 56px), New Order until ADR-383. Its gaps step down on a short
+  (terracotta, 56px), New order until ADR-383. Its gaps step down on a short
   screen.
 - **Lines the kitchen has not seen** (TILL-1, ADR-383), over Select payment
   method: on a counter sale with no table a quiet line, "2 items go to the
@@ -211,7 +211,7 @@ cards are under them, one across at 1024 and two at 1366.
 | Collect by Card or UPI | Starts the wait; nothing is sent | | The Waiting card |
 | Mark as paid | Sends the payment, with the reference | `payment.tendered` | As above. Refused: the Not recorded card |
 | Cancel (waiting) | Nothing recorded | | Back to the amount |
-| Split Bill | Opens the split, By item, 2 guests (Equally once anything is paid) | | The cards come from the server |
+| Split bill | Opens the split, By item, 2 guests (Equally once anything is paid) | | The cards come from the server |
 | Complete split | Fixes the shares | | Collect on each card; Guest 1's is next |
 | Collect on a card | Step 1 for that share | | Paid, the card says so and the next share is green |
 | Change the split | Drops the split | | The whole balance again |
@@ -219,8 +219,8 @@ cards are under them, one across at 1024 and two at 1366.
 | Print receipt | A reason, then an approver and their PIN | `invoice.reprinted` | A DUPLICATE prints; "Reprinted 1 time" |
 | Next order | Closes a table's ticket; a counter sale is closed already, so it only moves on | `order.closed` for a table's | The order screen, on a new order |
 | Send now | Sends a table's waiting lines to their stations | `ticket.sent` | The warning goes |
-| Add Discount, Add order note | The order screen's sheets | `discount.applied`, `note.added` | The totals redraw |
-| Back to Order | Returns to the order screen | | The order shows its payments and balance |
+| Add discount, Add order note | The order screen's sheets | `discount.applied`, `note.added` | The totals redraw |
+| Back to order | Returns to the order screen | | The order shows its payments and balance |
 
 ## States
 

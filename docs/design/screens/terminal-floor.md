@@ -34,17 +34,17 @@ and only once a table is picked (ADR-381, TBS-4).
   be tapped; Done brings it back. Under 820px tall (`short:`) the section's
   padding and gaps and the panel's head and foot step down.
 
-- **Sidebar, 240px, chrome:** **Floor Plan** and **Table List**, two ways to
+- **Sidebar, 240px, chrome:** **Floor plan** and **Table list**, two ways to
   look at the same tables, the chosen one the terracotta fill; **Order
   History**, which opens the day's orders; a script line at the foot.
 - **The floor, the rest:**
   - **Areas** as 48px pills when the venue has more than one, the chosen one
-    terracotta, with **All Areas** last. At the right, "9 tables · 3 free · 4
+    terracotta, with **All areas** last. At the right, "9 tables · 3 free · 4
     seated · 1 paying · 1 to clear": the tables shown, counted as the bars
     count them, a table paid in full as paid (TBS-14, ADR-394).
   - **The banner**, while moving or joining: what to tap next, and **Done**.
   - The error line.
-  - **Floor Plan:** the area as the back office drew it, on the sunken ground
+  - **Floor plan:** the area as the back office drew it, on the sunken ground
     in a card. Empty rows and columns are taken out, so the tiles share the
     room. A tile is at least 92px wide and as tall as its lines, and grows to
     fill; a floor too big for that scrolls. Each tile: the table's shape faint in its state's
@@ -56,10 +56,10 @@ and only once a table is picked (ADR-381, TBS-4).
     and under it what is owed ("₹930.00"): side by side they ran past a
     narrow tile's edge. The border is
     the state's tone; the picked tile has the terracotta outline. Under
-    "All Areas" each area has its name over its grid.
+    "All areas" each area has its name over its grid.
   - **The legend** under the plan: a dot and a word for each of the five
     states.
-  - **Table List:** a card, **Table availability**, with a count and a bar
+  - **Table list:** a card, **Table availability**, with a count and a bar
     for each state and for Paid, apart from Paying, as the line over the
     floor counts them; then a table of rows: Table, Area, Guests, Status, Time,
     Balance from 1280px wide. Below that (TBS-5): Table, Guests with the time
@@ -77,21 +77,21 @@ and only once a table is picked (ADR-381, TBS-4).
     guests**.
   - **A table to clear:** "The guests have paid and gone. Clear it once it is
     laid again, and it is free." and **Clear table**.
-  - **A table with one order:** two tabs, **Current Order** and **Notes**
-    (with a count). Current Order is the lines, each with its quantity, name,
+  - **A table with one order:** two tabs, **Current order** and **Notes**
+    (with a count). Current order is the lines, each with its quantity, name,
     choices, a Ready, Void or Comped chip and what it comes to, then the totals as
     on the order screen, tax by tax. Notes lists each note under what it is
-    about, an item or "The order". A saved order says "Saved. Add Items
+    about, an item or "The order". A saved order says "Saved. Add items
     brings it back."
-  - **The foot of an order:** **Add Items** and **Send to Kitchen**; then
-    **More Actions** and **Settle Bill** with what is owed (the primary). A
+  - **The foot of an order:** **Add items** and **Send to kitchen**; then
+    **More actions** and **Settle bill** with what is owed (the primary). A
     paid order still open reads **Invoice and close** or **Close order**.
-    Under them, why Settle Bill is shut when it is.
+    Under them, why Settle bill is shut when it is.
   - **A table with several orders:** "2 orders are open at this table. Pick
     one.", each with its id, item count, total and age; once one is picked,
     "All 2 orders at this table" leads back.
 
-**More Actions** opens upward: **Move to another table**, **Join tables**,
+**More actions** opens upward: **Move to another table**, **Join tables**,
 **Part tables** for a joined party, **Fire course N** when one is held back,
 **Order history**, and **Guests left** for a table seated with nothing
 ordered.
@@ -116,7 +116,7 @@ terracotta.
 
 ## Move, Join and Part (ADR-088)
 
-Started from More Actions on the table in the panel, so the party's table is
+Started from More actions on the table in the panel, so the party's table is
 already chosen. A banner says what to tap next; taps on tiles then do the
 mode's work until **Done**.
 
@@ -160,9 +160,9 @@ cannot be moved from here.
 | The panel's X, below 1280px | Lets go of the table | | The panel goes; the whole floor is in view |
 | Seat 4 guests | Opens an order at the table | `order.opened` | Stays on Tables; the button waits until the tile reads Seated, so a second tap cannot open a second order |
 | Seat and order | The same, then the order screen | `order.opened` | The order screen, on the new order |
-| Add Items | Brings the order to the front, off hold if it was saved | `order.resumed` if saved | The order screen |
-| Send to Kitchen | Sends what waits | `ticket.sent`, `course.fired` | "Sent". Shut while this device still has items on their way to that order |
-| Settle Bill | Opens `/pay/:id` | | `terminal-tender.md` |
+| Add items | Brings the order to the front, off hold if it was saved | `order.resumed` if saved | The order screen |
+| Send to kitchen | Sends what waits | `ticket.sent`, `course.fired` | "Sent". Shut while this device still has items on their way to that order |
+| Settle bill | Opens `/pay/:id` | | `terminal-tender.md` |
 | Guests left | Closes the empty order and frees the table | `order.closed` | The tile turns Free |
 | Clear table | | | The tile turns Free |
 | Move, then a free table | | `order.table_changed` | The panel follows |
@@ -171,7 +171,7 @@ cannot be moved from here.
 | Order history | Opens the order's history sheet | | |
 | Today's orders (sidebar) | Opens `/orders` | | |
 
-The lines are read here and changed on the order screen, where Add Items
+The lines are read here and changed on the order screen, where Add items
 goes.
 
 ## States
@@ -186,14 +186,14 @@ goes.
 - **Refused:** the server's words in the panel, over its buttons
   ("Something is on this table's order: void it or take the payment
   first.").
-- **Settle Bill is shut:** the same words as Pay on the order screen.
+- **Settle bill is shut:** the same words as Pay on the order screen.
 - **Permission denied:** the floor needs `order.open`, which everyone who
   reaches this screen holds.
 
 ## Constraints
 
 - Colour and a word on every tile and row, never colour alone.
-- Every button is 48px; Seat and Settle Bill are 56px; numbers are tabular.
+- Every button is 48px; Seat and Settle bill are 56px; numbers are tabular.
 - No drag and no long press: every action is a tap.
 - At 1024 and at 1366 wide a floor of up to seven columns fits with no
   table off screen; a bigger one scrolls sideways (ADR-381). Nothing on a
@@ -222,5 +222,5 @@ bar.
 
 Kept, though not drawn (rule 4): Seat and Seat and order on a free table
 (ADR-158); Clear table; Move, Join, Part, Fire course, Order history and
-Guests left under More Actions; the choice between several orders at one
+Guests left under More actions; the choice between several orders at one
 table.

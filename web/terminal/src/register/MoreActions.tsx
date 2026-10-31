@@ -96,7 +96,7 @@ export function MoreActions({ orderCount, hasOrder, canDiscount, nextCourse, onO
   );
 }
 
-/** One row of a "More Actions" menu: an icon, what it does, and a count if it has one. */
+/** One row of a "More actions" menu: an icon, what it does, and a count if it has one. */
 export function ActionItem({
   icon: Icon,
   label,

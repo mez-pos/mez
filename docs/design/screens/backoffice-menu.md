@@ -300,7 +300,7 @@ item.
 |---|---|---|
 | A category | Shows its items | The search is a look through every category |
 | A row | Opens it in the editor | |
-| Add New Item | Opens an empty editor, in the category chosen | The first station, course and tax class are chosen |
+| Add new item | Opens an empty editor, in the category chosen | The first station, course and tax class are chosen |
 | Save changes | Saves the item, then its choices and photo | A toast: "Saved.", or "Saved. Orders already open keep their prices." when the price changed |
 | Sold out today, Back on sale | Marks it until the trading day turns | Every order screen learns at once |
 | Retire, Bring back (an item) | No confirm: it is one click back | |
@@ -333,7 +333,7 @@ the tax settings link items still without an HSN code this way.
 
 ## Constraints
 
-- One primary: Save in the editor. Add New Item is terracotta. Retire item
+- One primary: Save in the editor. Add new item is terracotta. Retire item
   is the danger button in the editor, though it asks nothing: it is undone
   in one click.
 - Every number tabular and right-aligned: prices, counts, HSN.
@@ -354,7 +354,7 @@ categories and their choices, as the venue last backed them up.", and "This
 is a copy to read. Changes are made at the venue." is over the three views.
 
 - **Items:** search, Show and Order stay: they change nothing. There is no
-  Add New Item. The Spreadsheet pill offers Export the menu alone. The
+  Add new item. The Spreadsheet pill offers Export the menu alone. The
   categories card has no Add a category and the chosen category no Rename,
   arrows or Retire. An item's row opens it and has no "...". The form's
   title is "Menu item"; every field, the photo and the tags are disabled;

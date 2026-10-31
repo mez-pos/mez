@@ -54,7 +54,7 @@ export function areaToShow(floor: LiveFloorResponse, chosen: number | null): num
   return floor.areas[0]?.id ?? null;
 }
 
-/** The areas to draw: the one chosen, or every one under "All Areas". */
+/** The areas to draw: the one chosen, or every one under "All areas". */
 export type AreaChoice = number | "all" | null;
 
 export function areasShown(floor: LiveFloorResponse, choice: AreaChoice): readonly AreaResponse[] {

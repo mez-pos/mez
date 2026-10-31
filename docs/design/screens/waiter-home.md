@@ -20,7 +20,7 @@ does not. A faint leaf sits behind.
   AM is still last night). Under it, "Here are the tables for tonight." At
   the right, a script line from 1280px and a green card ("Same Tables. New
   Stories.") from 1024px, on a screen taller than 820px.
-- **The pills**, 52px, each with its count: **All Tables**, then
+- **The pills**, 52px, each with its count: **All tables**, then
   **Seated**, **Ordered**, **Paying**, **To clear**, **Free**: the till's own
   words, so the tablet and the till name a table one way (TBS-11, ADR-381,
   ADR-394), each with a dot in its tone. The pressed one is green. At the right, the search, "Search
@@ -32,15 +32,15 @@ does not. A faint leaf sits behind.
   (`terminal-requests.md`), and a line of small print with what is owed after it: "No guests · 4
   seats", "3 guests · No order yet", "3 guests · ₹930.00", "With T4". A
   chevron at the right.
-- **The bar, 96px, chrome:** **Active Orders** with the count of open orders
-  at the venue; a script line; and **New Order** (the primary, 64px).
+- **The bar, 96px, chrome:** **Active orders** with the count of open orders
+  at the venue; a script line; and **New order** (the primary, 64px).
 
 **On a screen 820px tall or less** (`short:`, the 1024x768 tablet and the
 1366x768 laptop), the home is a working screen and its decoration gives way
 (tokens.md, TBS-12): the green card is not drawn, and the search takes its
 place at the right of the greeting, so it costs no row of its own; the pills
 are 48px; the paddings step down; the bar is 72px, without its script line,
-New Order 56px. The tables start under the pills at about y=235 instead of
+New order 56px. The tables start under the pills at about y=235 instead of
 350.
 
 - **At 1024x768:** the greeting with the search beside it, the five pills in
@@ -78,8 +78,8 @@ New Order 56px. The tables start under the pills at about y=235 instead of
 | A card to clear | Asks "Clear Table T4?" | | Confirmed, the card turns Free |
 | A joined table's card | Stands for the party's own table | | |
 | A table with several orders | Opens Tables with it picked | | Its panel asks which |
-| Active Orders | Opens the day's orders | | `terminal-past-bills.md` |
-| New Order | Starts a fresh order and opens the order screen | | Its bar asks for a table and how it is served |
+| Active orders | Opens the day's orders | | `terminal-past-bills.md` |
+| New order | Starts a fresh order and opens the order screen | | Its bar asks for a table and how it is served |
 
 ## States
 
@@ -97,7 +97,7 @@ New Order 56px. The tables start under the pills at about y=235 instead of
 - Colour and a word on every card and pill, never colour alone.
 - Every target is 48px or more; the cards are far past it, for a hand that is
   not looking.
-- One primary: New Order.
+- One primary: New order.
 - Every table at the venue is listed, not this waiter's own: no table is
   assigned to anyone. So the line reads "the tables", not "your tables".
 

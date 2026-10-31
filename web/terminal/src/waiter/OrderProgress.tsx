@@ -16,7 +16,7 @@ export function OrderProgress({ order, timezone }: { order: OrderResponse; timez
   return (
     <section aria-label="Order status" className="rounded-card border border-line bg-raised p-4">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-serif text-lg">Order Status</h2>
+        <h2 className="font-serif text-lg">Order status</h2>
         <span className="inline-flex min-h-7 items-center gap-1.5 rounded-pill bg-chip-success-bg px-3 text-sm font-bold text-chip-success-fg">
           <span aria-hidden="true" className="size-2 rounded-round bg-chip-success-fg" />
           Live

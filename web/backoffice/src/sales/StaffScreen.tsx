@@ -31,7 +31,7 @@ export function StaffScreen() {
 
   return (
     <div className="flex flex-col gap-4">
-      <ReportHead tab="staff" title="Staff Reports">
+      <ReportHead tab="staff" title="Staff reports">
         <ExportMenu file={file} files={[{ label: "Staff", path: staffCsv }]} disabled={!shown || stale} />
       </ReportHead>
 

@@ -10,6 +10,18 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **One casing** (ADR-407, Phase 17 Task 31d; 2026-11-01). Seen in a
+  scripted Chromium on a demo venue at 1366 and 1024: the sign-in screen's
+  "Staff login", the register's "All items" and "Send to kitchen", the pay
+  screen's "Split bill", "Back to order" and "Add discount", the floor's
+  "Floor plan", "Table list" and "All areas", the back office's "Add new
+  item" and "Sales reports". **Not seen:** the waiter's screens ("Active
+  orders", "New order", "Order status", "Group by course", "Add item"), the
+  kitchen's "New orders" and the item reports' head. **Left as is:** the
+  brand's script lines in Title Case, as display art; a label in a string
+  that is not drawn as JSX text (an aria-label, a toast) is not judged by
+  the test.
+
 - **One keypad, one input, one switch, one pill** (ADR-406, Phase 17 Task
   31c; 2026-11-01). Seen in a scripted Chromium on a demo venue at 1366 and
   1024: the sign-in keypad on the kit's NumPad, keys 54px at 768 tall with

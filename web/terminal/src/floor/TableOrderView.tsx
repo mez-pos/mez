@@ -64,11 +64,11 @@ export function TableOrderView({ table, orderId, onAddItems, onSettle, onMode, o
   const plan = sendPlan(order);
   const held = order.status === "held";
   const block = chargeBlock(order, 0);
-  // "Settle Bill" while money is owed or nothing can be done; a paid order still
+  // "Settle bill" while money is owed or nothing can be done; a paid order still
   // open says what the button finishes, as the order screen's Pay does.
   const finishing = block === null && chargeLabel(order) !== "Pay" ? chargeLabel(order) : null;
   const tabs: readonly { id: Tab; label: string }[] = [
-    { id: "order", label: "Current Order" },
+    { id: "order", label: "Current order" },
     { id: "notes", label: order.notes.length > 0 ? `Notes (${order.notes.length})` : "Notes" },
   ];
 
@@ -105,7 +105,7 @@ export function TableOrderView({ table, orderId, onAddItems, onSettle, onMode, o
       <div id="table-tabpanel" role="tabpanel" aria-labelledby={`table-tab-${tab}`} className="min-h-0 flex-1 overflow-y-auto px-5 py-3">
         {held && (
           <p role="status" className="mb-2 flex items-center gap-2 text-sm text-fg-2">
-            <StatusChip status={{ kind: "order", status: "held" }} /> Saved. Add Items brings it back.
+            <StatusChip status={{ kind: "order", status: "held" }} /> Saved. Add items brings it back.
           </p>
         )}
         {tab === "order" ? <Lines order={order} /> : <Notes order={order} />}
@@ -125,7 +125,7 @@ export function TableOrderView({ table, orderId, onAddItems, onSettle, onMode, o
         <div className="flex gap-3">
           <Button className="flex-1 px-3" disabled={busy || order.status === "closed"} onClick={() => run(() => onAddItems(order.id, held))}>
             <PlusIcon aria-hidden="true" size={17} />
-            Add Items
+            Add items
           </Button>
           <Button className="flex-1 px-3" disabled={busy || held || sendWaits || plan.waiting === 0} onClick={() => run(send)}>
             <SendIcon aria-hidden="true" size={17} />
@@ -156,7 +156,7 @@ export function TableOrderView({ table, orderId, onAddItems, onSettle, onMode, o
             aria-describedby={block ? "settle-block" : undefined}
             onClick={() => onSettle(order.id)}
           >
-            {finishing ?? "Settle Bill"}
+            {finishing ?? "Settle bill"}
             {finishing === null && order.lines.length > 0 && <Money amount={amountOwed(order.totals, order.currency)} className="text-base 2xl:text-lg" />}
             <ArrowRightIcon aria-hidden="true" size={19} className="shrink-0" />
           </Button>
@@ -181,7 +181,7 @@ function Lines({ order }: { order: OrderResponse }) {
     return (
       <div className="py-12 text-center">
         <p className="font-serif text-xl text-fg-muted">No items yet</p>
-        <p className="mt-1.5 text-sm text-fg-muted">Add Items to start the order</p>
+        <p className="mt-1.5 text-sm text-fg-muted">Add items to start the order</p>
       </div>
     );
   }

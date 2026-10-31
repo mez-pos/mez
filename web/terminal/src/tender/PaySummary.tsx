@@ -36,7 +36,7 @@ export function PaySummary({ order, title, busy, onDiscount, onNote, onBack }: P
       <header className="px-5 pb-4 pt-5 short:pb-3 short:pt-4">
         <Button disabled={busy} onClick={onBack} className="w-full justify-start">
           <ArrowLeftIcon aria-hidden="true" size={18} />
-          Back to Order
+          Back to order
         </Button>
         <div className="mt-5 flex items-center gap-3 short:mt-3">
           <h1 className="min-w-0 truncate font-serif text-total leading-tight">{title}</h1>
@@ -81,7 +81,7 @@ export function PaySummary({ order, title, busy, onDiscount, onNote, onBack }: P
             {onDiscount && (
               <Button disabled={busy} onClick={onDiscount} className="w-full justify-start">
                 <TagIcon aria-hidden="true" size={17} />
-                Add Discount
+                Add discount
               </Button>
             )}
             {onNote && (

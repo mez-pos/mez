@@ -40,7 +40,7 @@ export function TableActions({ joined, nextCourse, canRelease, disabled, onMove,
         className={cx(buttonClass("secondary", null), "min-h-charge px-4 text-base", open && "bg-raised-high")}
       >
         {/* "More" where the rail is narrow: the chevron says the rest. */}
-        <span className="hidden 2xl:inline">More Actions</span>
+        <span className="hidden 2xl:inline">More actions</span>
         <span className="2xl:hidden">More</span>
         <ChevronDownIcon aria-hidden="true" size={16} className={cx(open && "rotate-180")} />
       </button>

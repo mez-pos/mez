@@ -73,7 +73,7 @@ export function ItemsScreen() {
 
   return (
     <div className="flex flex-col gap-4">
-      <ReportHead tab="items" title="Item and Inventory Reports">
+      <ReportHead tab="items" title="Item and inventory reports">
         <ExportMenu
           file={file}
           files={[

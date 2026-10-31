@@ -31,7 +31,7 @@ export interface ProgressStep {
 
 const items = (n: number) => `${n} ${n === 1 ? "item" : "items"}`;
 
-/** The order's way through the kitchen, step by step, for "Order Status". */
+/** The order's way through the kitchen, step by step, for "Order status". */
 export function orderProgress(order: OrderResponse): ProgressStep[] {
   const lines = order.lines.filter((l) => l.status !== "voided");
   const atPass = readyLines(order);

@@ -11,7 +11,7 @@ describe("sendPlan", () => {
   it("fires the first course while nothing has gone", () => {
     const plan = sendPlan(order([line(2, 1), line(3, 2), line(4, 1, { station: "bar" })]));
     expect(plan).toEqual({ waiting: 2, firing: 1, next: null });
-    expect(sendLabel(plan)).toBe("Send to Kitchen");
+    expect(sendLabel(plan)).toBe("Send to kitchen");
   });
 
   it("sends what was added to a fired course, and offers the next course", () => {
@@ -29,8 +29,8 @@ describe("sendPlan", () => {
     expect(sendLabel(plan)).toBe("Sent");
   });
 
-  it("says Send to Kitchen, not Sent, on an order with nothing on it (TBS-10)", () => {
-    expect(sendLabel(sendPlan(order([])), false)).toBe("Send to Kitchen");
+  it("says Send to kitchen, not Sent, on an order with nothing on it (TBS-10)", () => {
+    expect(sendLabel(sendPlan(order([])), false)).toBe("Send to kitchen");
   });
 
   it("is nothing without an order", () => {

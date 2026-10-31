@@ -57,7 +57,7 @@ draws nothing for it.
 | Spec | Screen | Path | Design |
 |---|---|---|---|
 | `waiter-home.md` | The tables as cards | `/waiter` | T01 |
-| `waiter-order.md` | Order taking, Confirm and send, Course View | `/pos` | T02, T04 |
+| `waiter-order.md` | Order taking, Confirm and send, Course view | `/pos` | T02, T04 |
 | `waiter-table.md` | A table, and Transfer and merge | `/waiter/table/:id` | T03, T06 |
 | `waiter-bill.md` | The bill at the table | `/pay/:id` | T05 |
 | `waiter-shift.md` | Your shift | `/waiter/shift` | T08 |

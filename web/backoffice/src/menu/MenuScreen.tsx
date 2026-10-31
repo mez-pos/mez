@@ -170,7 +170,7 @@ export function MenuScreen() {
             {!mirror && (
               <Button variant="attention" disabled={!menu} onClick={() => menu && leave(() => addItem(menu))}>
                 <PlusIcon aria-hidden="true" size={18} />
-                Add New Item
+                Add new item
               </Button>
             )}
           </div>
@@ -312,7 +312,7 @@ export function MenuScreen() {
                   <EmptyState
                     icon={<InboxIcon />}
                     line={menu.items.length === 0 ? "No items yet. Add the first one." : "Pick an item to edit it, or add a new one."}
-                    action={{ label: "Add New Item", onClick: () => addItem(menu) }}
+                    action={{ label: "Add new item", onClick: () => addItem(menu) }}
                   />
                 )}
               </Card>

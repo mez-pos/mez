@@ -62,7 +62,7 @@ type gets smaller.
 
 | Column | Band | Holds | Order | Its button |
 |---|---|---|---|---|
-| New Orders | terracotta | sent, untouched | oldest first | **Start preparing** (green) |
+| New orders | terracotta | sent, untouched | oldest first | **Start preparing** (green) |
 | Preparing | mustard | a cook has it | oldest first | **Mark ready** (outlined) |
 | Ready for pickup | green | on the pass, while it can be recalled | latest on top | **Recall** (green tint) |
 
@@ -164,13 +164,13 @@ differs.
 | Choose a station | Keeps it on the device | | The board. The wall display reloads, to listen to that station alone; a terminal does not need to |
 | Start preparing | `.../start` | `ticket.started` | The card moves to Preparing |
 | Mark ready | `.../bump` | `ticket.bumped` | The card moves to Ready for pickup; the order's lines read Ready on the order screen |
-| Recall | Asks for a second tap: "Tap again to recall", for 4 s (KDS-15); then `.../recall` | `ticket.recalled` | The card is back in New Orders |
-| Sound | Toggles the chime | | Two rising notes, twice, half a second apart, when a ticket arrives in New Orders (ADR-391) |
+| Recall | Asks for a second tap: "Tap again to recall", for 4 s (KDS-15); then `.../recall` | `ticket.recalled` | The card is back in New orders |
+| Sound | Toggles the chime | | Two rising notes, twice, half a second apart, when a ticket arrives in New orders (ADR-391) |
 | Group by table | Toggles | | In each column an order's tickets sit together, at the place of its first |
-| Skip preparing | Toggles, off to start | | New Orders' button is **Mark ready**: one tap puts the ticket on the pass, for a bar (KDS-17, ADR-392) |
+| Skip preparing | Toggles, off to start | | New orders' button is **Mark ready**: one tap puts the ticket on the pass, for a bar (KDS-17, ADR-392) |
 | Night mode | Toggles the surface, on to start | | Off is paper, for a bright kitchen. Kept across a reload |
 | Change station | Asks for a second tap: "Tap again to change station", for 4 s (KDS-15); then back to the choice | | |
-| Lock (a terminal) | Signs the cook out | | Staff Login, on paper |
+| Lock (a terminal) | Signs the cook out | | Staff login, on paper |
 
 One move at a time: while one is on its way every button waits, and its own
 says "Starting", "Marking" or "Recalling". A tap within 700 ms of the board
@@ -179,7 +179,7 @@ place (KDS-3, ADR-391). On night every action button has a 2px edge in the
 muted ink, 5:1 on the card (KDS-9).
 
 A ticket that arrived in the last minute says **New** before its meta line;
-when one is under New Orders' fold, a terracotta button at the column's foot
+when one is under New orders' fold, a terracotta button at the column's foot
 says "1 new below" and scrolls to it (KDS-1).
 
 ## States

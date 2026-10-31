@@ -148,7 +148,7 @@ export function LockScreen() {
           <div className="min-w-0">
             <Logo className="mb-6 h-10 short:mb-3 xl:hidden" />
             <h1 id="lock-title" className="font-serif text-display leading-tight">
-              Staff Login
+              Staff login
             </h1>
             <p className="mt-2 text-lg text-fg-muted">Select your profile and enter your PIN</p>
           </div>

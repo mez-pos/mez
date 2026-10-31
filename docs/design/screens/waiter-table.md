@@ -25,16 +25,16 @@ Three columns under the bar; only the notes and the items scroll.
   - **Table Notes (2):** each note on the order, and **Add note**; a script
     line under them.
 - **Middle, the rest:** a card.
-  - **All Items (8)** as a green pill, and **Group by Course**, a toggle, on
+  - **All items (8)** as a green pill, and **Group by course**, a toggle, on
     to start.
   - By course: each course with an icon, its name and count, a chip (With
     the kitchen, To send, Held), and **Fire** on the next one held back.
     Each line: its quantity, name, choices, a chip (**Ready**, **In the
     kitchen**, **Not sent**) and what it comes to. Ungrouped: the same
     lines as one list.
-  - **Add Item** along the foot.
+  - **Add item** along the foot.
 - **Right, 300px:**
-  - **Order Status**, with a "Live" pill: four steps, each done (green),
+  - **Order status**, with a "Live" pill: four steps, each done (green),
     where the order is now (mustard, ringed) or not reached: **Order
     placed**, **Sent to kitchen**, **In preparation**, **Ready to serve**,
     each with a time where the order has one and a line of detail ("3
@@ -42,7 +42,7 @@ Three columns under the bar; only the notes and the items scroll.
   - Four tiles: **Bill and pay** (terracotta tint), **Details**,
     **Transfer**, **Merge**. Under them, why the bill is shut when it is.
   - The totals, tax by tax.
-  - **Send to Kitchen (3)** (the primary, 56px), or "Sent".
+  - **Send to kitchen (3)** (the primary, 56px), or "Sent".
 
 ## Transfer and merge (T06)
 
@@ -78,10 +78,10 @@ title.
 |---|---|---|---|
 | Back | The tables | | |
 | Add note | The order's note sheet | `note.added` | Listed under Table Notes |
-| Group by Course | Toggles the grouping | | |
+| Group by course | Toggles the grouping | | |
 | Fire | Fires that course | `course.fired` | |
-| Add Item | Brings the order to the order screen, off hold if it was saved | `order.resumed` if saved | `waiter-order.md`; its back arrow returns here |
-| Send to Kitchen (3) | Opens Confirm and send | `ticket.sent` on sending | `waiter-order.md` |
+| Add item | Brings the order to the order screen, off hold if it was saved | `order.resumed` if saved | `waiter-order.md`; its back arrow returns here |
+| Send to kitchen (3) | Opens Confirm and send | `ticket.sent` on sending | `waiter-order.md` |
 | Bill and pay | Opens the bill | | `waiter-bill.md`. Reads **Invoice and close** or **Close order** for a paid order still open |
 | Details | The order's history sheet | | |
 | Transfer, a free table, Move to T5 | Moves the party | `order.table_changed` | This screen follows it to T5 |
@@ -106,8 +106,8 @@ title.
 ## Constraints
 
 - Colour and a word on every chip and step.
-- The tiles are 56px; Send to Kitchen is 56px; everything else 48px or more.
-- One green commit: Send to Kitchen. Bill and pay is the terracotta tint.
+- The tiles are 56px; Send to kitchen is 56px; everything else 48px or more.
+- One green commit: Send to kitchen. Bill and pay is the terracotta tint.
 - Lines are read here and changed on the order screen.
 - A note keeps neither a time nor a name, so none is shown.
 
@@ -119,7 +119,7 @@ Merge (line 489). Left out, and why:
 - **Guest QR orders, the "Rohan" and "QR Order" tabs, the QR chip on a line,
   and "(5 waiter, 3 QR)":** nothing feeds them before the guest channel
   (phase 11), and a line does not say who rang it up.
-- **Preferences, Split Bill, Print KOT, and the pencil on the name:** nothing
+- **Preferences, Split bill, Print KOT, and the pencil on the name:** nothing
   does them from here. A split is made on the bill.
 - **Mark as Served, and the Completed step:** no such step is kept
   (ADR-090).
@@ -131,5 +131,5 @@ Merge (line 489). Left out, and why:
 
 Changed: "Request Bill" is **Bill and pay**, since the waiter takes the
 payment. The design's "Active" pill is the table's group, **Occupied**. Its
-second "Course View" button under the items is the Group by Course toggle
+second "Course view" button under the items is the Group by course toggle
 above them.

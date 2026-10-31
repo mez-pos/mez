@@ -179,7 +179,7 @@ describe("dietSummary", () => {
   const cases: [string, Partial<typeof noDietFilter>, string][] = [
     ["nothing on", {}, "Diet"],
     ["one diet", { veg: true }, "Diet: Veg"],
-    ["gluten free alone", { glutenFree: true }, "Diet: Gluten Free"],
+    ["gluten free alone", { glutenFree: true }, "Diet: Gluten free"],
     ["two on", { veg: true, vegan: true }, "Diet: 2 on"],
     ["all four", { veg: true, nonVeg: true, vegan: true, glutenFree: true }, "Diet: 4 on"],
   ];
@@ -225,9 +225,9 @@ describe("sidebarEntries and itemsForView", () => {
   ];
   const menu = [item(1, "Fries", { category_id: 1, popular: true }), item(2, "Chai", { category_id: 2 }), item(3, "Soup", { category_id: 1 })];
 
-  it("lists All Items, Popular and the categories with their counts", () => {
+  it("lists All items, Popular and the categories with their counts", () => {
     expect(sidebarEntries(categories, menu).map((e) => [e.view, e.label, e.count])).toEqual([
-      ["all", "All Items", 3],
+      ["all", "All items", 3],
       ["popular", "Popular", 1],
       [1, "Starters", 2],
       [2, "Beverages", 1],

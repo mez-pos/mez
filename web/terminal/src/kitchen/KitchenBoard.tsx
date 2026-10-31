@@ -46,7 +46,7 @@ interface KitchenBoardProps {
 }
 
 const columns: readonly { stage: CardStage; title: string; icon: LucideIcon; band: string; empty: string }[] = [
-  { stage: "fresh", title: "New Orders", icon: BellIcon, band: "bg-attention text-attention-fg", empty: "Nothing new." },
+  { stage: "fresh", title: "New orders", icon: BellIcon, band: "bg-attention text-attention-fg", empty: "Nothing new." },
   { stage: "preparing", title: "Preparing", icon: ChefHatIcon, band: "bg-highlight text-highlight-fg", empty: "Nothing on the go." },
   { stage: "ready", title: "Ready for pickup", icon: UtensilsIcon, band: "bg-accent text-accent-fg", empty: "The pass is clear." },
 ];

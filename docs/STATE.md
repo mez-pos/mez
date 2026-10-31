@@ -13,7 +13,7 @@ the UI audit (`docs/design/ui-audit-2026-10-31.md`). Tasks 1 and 4 to
 12 are done: at the human's word the device-fit pass came first, built
 and seen at 1024x768, 1366x768 and 1920x1080 on 2026-10-31 (ADR-381,
 ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s,
-Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 30 and 31a to 31c (ADR-384 to ADR-406; ADR-400 was out of phase). It runs before Phase 16, which is mostly
+Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 31 (ADR-384 to ADR-407; ADR-400 was out of phase). It runs before Phase 16, which is mostly
 `mez-cloud`'s.
 
 Before it, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
@@ -28,20 +28,18 @@ list below.
 
 ## Last completed task
 
-**Phase 17, Task 31c: one keypad, one input, one switch, one pill**
-(TECH-23, ADR-406), 2026-11-01. The sign-in screen's keypad is the kit's
-`NumPad` (size `signin`, Login as its `action`); every field is the kit's
-`fieldClass` or `inputClass`; the kitchen's and a role's switches are the
-kit's `Switch`; the till's toggle pills are `pillClass` (40 or 48px, green
-or terracotta) and its action pills `Button` or `buttonClass`. A test fails
-on a copy. Seen on a demo venue: signing in by taps and keys (no digit
-counted twice), the areas, the permission switches, at 1366 and 1024.
+**Phase 17, Task 31d: one casing** (TECH-24, ADR-407), 2026-11-01, which
+ends Task 31. Every label and heading is in sentence case ("Send to
+kitchen", "Split bill", "Floor plan", "Staff login" and about 30 more); the
+brand's script lines keep the designs' words, as display art. The specs say
+what mez shows (106 mentions), but for lines quoting a reference design.
+A test fails on a Title Case label in what a component draws. Seen on a
+demo venue at 1366 and 1024.
 
 ## Next task
 
-**Here: Phase 17 Task 31d, one casing (TECH-24)**: its case in
-DECISIONS.md first, as it overturns screen specs; then Task 32. Tasks 1 to
-30 and 31a to 31c are done. Each screen is checked by eye at
+**Here: Phase 17 Task 32, split the terminal bundle (TECH-25)**, then
+Task 33, the audit again; Tasks 1 to 31 are done. Each screen is checked by eye at
 1024x768 and 1366x768 before it is ticked: the audit's walk (a demo venue
 from `mez setup -demo-menu` in a scratch data directory, a scripted
 Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel

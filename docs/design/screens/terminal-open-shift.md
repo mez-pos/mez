@@ -79,7 +79,7 @@ it, the right column dropping below.
 | Type in a row's box | Sets how many of that note | The row's value and the total redraw. Digits only; anything else typed or pasted is dropped |
 | Focus a box | Selects what is in it | Typing replaces it |
 | Open shift & start selling | `POST /shift/open` | A toast, "The shift is open with ₹2,000.00.", and the gate goes to the order screen |
-| Cancel, Lock | Ends the session | Staff Login |
+| Cancel, Lock | Ends the session | Staff login |
 | View the report | Opens `/shift/z/:n` | The Z-report, with Back to here |
 | Review the menu | Leaves for the back office's Menu | |
 

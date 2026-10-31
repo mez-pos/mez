@@ -1,7 +1,7 @@
-# Waiter: Order taking, Confirm and send, Course View
+# Waiter: Order taking, Confirm and send, Course view
 
 The order screen as a waiter has it: the same screen as the cashier's,
-rearranged for a tablet at the table, ending in Send to Kitchen where the
+rearranged for a tablet at the table, ending in Send to kitchen where the
 cashier's ends in Pay. Built from T02 and T04 in the rebuild's Task 12
 (ADR-165 to ADR-168). The waiter's variant of `web/terminal/src/register/`
 (`OrderScreen.tsx`, `CategorySidebar.tsx`, `OrderRail.tsx`, `RailFooter.tsx`),
@@ -45,17 +45,17 @@ and send it.
 - **Popular is where it starts**, on a menu that marks anything popular.
 - **Cards are narrower**, `minmax(13rem, 1fr)`, so three fit beside the rail
   at 1366 wide.
-- **The rail has two tabs:** **Current Order (5)** and **Course View**.
+- **The rail has two tabs:** **Current order (5)** and **Course view**.
 - **Each line says its course** in terracotta small print ("Main Course").
 - **Clear**, a danger pill under the lines, when the kitchen has not seen
   something.
-- **The foot is Save and Send to Kitchen.** Sending is the one green here;
-  there is no Pay button. Below 1280px Send to Kitchen drops its icon so the
+- **The foot is Save and Send to kitchen.** Sending is the one green here;
+  there is no Pay button. Below 1280px Send to kitchen drops its icon so the
   words fit, and the two sit 8px apart.
 - **The "..." menu** leads with **Bill and pay**, and has no Fire course: a
-  waiter fires from Course View, where the course is named (ADR-168).
+  waiter fires from Course view, where the course is named (ADR-168).
 
-## Course View
+## Course view
 
 The order by course, to see what the kitchen has and what is held, and to let
 the next course go. Nothing is changed here but by Fire.
@@ -73,7 +73,7 @@ the next course go. Nothing is changed here but by Fire.
 
 ## Confirm and send (T04)
 
-A modal from Send to Kitchen, here and on the table's screen: what one tap
+A modal from Send to kitchen, here and on the table's screen: what one tap
 will put in front of the kitchen, read before it goes.
 
 - **A green banner:** "3 new items will be sent to the kitchen"; "5 items are
@@ -99,7 +99,7 @@ decides again on Send.
 | The back arrow | An order at a table: its table's screen. Otherwise the tables | | Nothing is saved or lost; the order stays as it is |
 | The table pill | Opens Tables | | A table is picked, or the party moved |
 | Clear | Asks "Clear the order?": "The 2 items the kitchen has not seen will be taken off. Anything already sent stays." | `line.voided` each | They stay on the rail, struck through |
-| Send to Kitchen | Opens Confirm and send | | |
+| Send to kitchen | Opens Confirm and send | | |
 | Send 3 items to kitchen | Sends | `ticket.sent`, `course.fired` | A toast, "Order sent to kitchen · Table T4"; the button reads "Sent" |
 | Fire Main Course | Fires that course | `course.fired` | Its chip turns With the kitchen |
 | Save | An order at a table is left as it is; any other order is parked (`saveParks`) | `order.held` for one with no table | The tables |
@@ -109,7 +109,7 @@ decides again on Send.
 
 As the cashier's, and:
 
-- **Nothing to send:** Send to Kitchen is shut; once everything has gone it
+- **Nothing to send:** Send to kitchen is shut; once everything has gone it
   reads "Sent".
 - **A saved order:** Fire is not offered, and Clear is not drawn.
 - **Send refused:** the server's words in the modal; nothing was sent.
@@ -118,9 +118,9 @@ As the cashier's, and:
 ## Constraints
 
 - The top bar's controls are 56px; a waiter's hand is not steady.
-- One green: Send to Kitchen, and in the modal Send N items.
+- One green: Send to kitchen, and in the modal Send N items.
 - Items added and not sent stay unsent after Save, and the table's card does
-  not say so: the table's screen does, under Order Status.
+  not say so: the table's screen does, under Order status.
 
 ## Reference
 
@@ -138,5 +138,5 @@ As the cashier's, and:
   ticket at all; the banner counts them.
 
 Changed: the design has no way back in the order's bar, and a waiter needs
-one, so an arrow stands first. Course View's layout is ours: the design
+one, so an arrow stands first. Course view's layout is ours: the design
 draws the tab's name and nothing under it.

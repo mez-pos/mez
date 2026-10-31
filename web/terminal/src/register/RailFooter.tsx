@@ -66,7 +66,7 @@ export function RailFooter({ order, currency, sendPlan, chargeBlock, chargeLabel
           <Button variant="primary" size="charge" className="min-w-0 flex-1 px-4 2xl:px-7" disabled={!canSend} onClick={onSend}>
             {/* Below xl the words need the icon's room: the rail is 320px at 1024. */}
             <SendIcon aria-hidden="true" size={19} className="hidden shrink-0 xl:block" />
-            {live ? sendLabel(sendPlan) : "Send to Kitchen"}
+            {live ? sendLabel(sendPlan) : "Send to kitchen"}
           </Button>
         </div>
       </footer>

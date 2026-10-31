@@ -133,7 +133,7 @@ export function WaiterHome() {
           <div role="group" aria-label="Show tables" className="order-2 flex flex-wrap gap-2.5">
             <FilterPill pressed={filter === "all"} count={counts.all} onPick={() => setFilter("all")}>
               <LayoutGridIcon aria-hidden="true" size={19} />
-              All Tables
+              All tables
             </FilterPill>
             {groupOrder.map((group) => {
               const tone = toneClasses(tableGroups[group].tone);
@@ -184,7 +184,7 @@ export function WaiterHome() {
       <footer className="flex h-24 shrink-0 items-center gap-3.5 border-t border-line bg-chrome px-7 short:h-18">
         <Link href={route.orders} className={cx(buttonClass("secondary", null), "min-h-charge gap-2.5 px-5 text-base")}>
           <TimerIcon aria-hidden="true" size={20} />
-          Active Orders
+          Active orders
           <span className="flex h-6.5 min-w-6.5 items-center justify-center rounded-pill bg-accent px-2 font-mono text-sm tabular-nums text-accent-fg">
             {active}
           </span>
@@ -203,7 +203,7 @@ export function WaiterHome() {
           }}
         >
           <PlusIcon aria-hidden="true" size={22} strokeWidth={stroke.bold} />
-          New Order
+          New order
         </Button>
       </footer>
     </div>

@@ -8,6 +8,15 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 31c: one keypad, one input, one switch, one pill**
+(TECH-23, ADR-406), 2026-11-01. The sign-in screen's keypad is the kit's
+`NumPad` (size `signin`, Login as its `action`); every field is the kit's
+`fieldClass` or `inputClass`; the kitchen's and a role's switches are the
+kit's `Switch`; the till's toggle pills are `pillClass` (40 or 48px, green
+or terracotta) and its action pills `Button` or `buttonClass`. A test fails
+on a copy. Seen on a demo venue: signing in by taps and keys (no digit
+counted twice), the areas, the permission switches, at 1366 and 1024.
+
 **Phase 17, Task 31b: dead classes, a check for them, and one stroke**
 (TECH-21, TECH-22, ADR-405), 2026-11-01. `make build-web` now fails on a
 class that renders nothing (`web/scripts/check-classes.mjs`, which reads

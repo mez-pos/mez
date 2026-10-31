@@ -25,8 +25,8 @@ whose numbers are the ones on the screen.
 ## The head, on every tab
 
 - **The tabs** as pills: **Sales**, **Items and inventory**, **Staff**.
-- **The title** in the serif ("Sales Reports", "Item and Inventory Reports",
-  "Staff Reports"), and under it "Insight into 7 days of trading".
+- **The title** in the serif ("Sales reports", "Item and inventory reports",
+  "Staff reports"), and under it "Insight into 7 days of trading".
 - At the right, **the range** as one pill, "29 Sep – 5 Oct 2026" with a
   chevron. It opens:
   - the quick ranges as toggles: **Today**, **7 days**, **30 days**, **This

@@ -25,15 +25,15 @@ closes up and the type does not (ADR-381): see "At 1024x768 and 1366x768"
 below.
 
 - **Categories, `w-side`, chrome:** the search field on top ("Search"), then
-  **All Items**, **Popular** when the menu marks anything popular, then each
+  **All items**, **Popular** when the menu marks anything popular, then each
   category in menu order. Each is 48px: an icon guessed from the category's
   name, the name, and its count in the numeral face. The chosen one is the
   terracotta fill. They stack and scroll down, never sideways.
 - **The menu, the rest:**
-  - **The head, one row:** what is showing in the serif ("All Items", a
+  - **The head, one row:** what is showing in the serif ("All items", a
     category's name, "Search results") and the dietary filters. From `xl`
-    (1280) they are four pills beside the title, **Veg**, **Non-Veg**,
-    **Vegan**, **Gluten Free**, each its own tone with a tick when on. Below
+    (1280) they are four pills beside the title, **Veg**, **Non-veg**,
+    **Vegan**, **Gluten free**, each its own tone with a tick when on. Below
     `xl` they wait behind one **Diet** button at the right, which says what is
     on ("Diet", "Diet: Veg", "Diet: 2 on", in the green tint while any is) and
     opens the four pills under it; a tap elsewhere closes them.
@@ -65,7 +65,7 @@ below.
     line but its stepper and bin opens it.
   - Under the lines: each note on the order, and **Add a note to this
     order**.
-  - **The foot, never scrolls:** **Send to Kitchen**, only while something
+  - **The foot, never scrolls:** **Send to kitchen**, only while something
     waits to go; the totals; then **Save** and **Pay** with what is owed (the
     one primary, 56px). Pay has the rest of the row: below `2xl` Save is the
     word and a bookmark, and from `2xl` it reads **Save Order** and Pay gains
@@ -100,7 +100,7 @@ of a six-item order at 1366, with no label cut off at 1024 (TILL-2, TILL-3).
   tax; a tap on the subtotal and that row (together 48px) opens the rows out
   under it, and another folds them. One tax row, or none, has nothing to
   fold. Rows close up to 8px.
-- **The foot:** while something waits to go, Send to Kitchen joins the button
+- **The foot:** while something waits to go, Send to kitchen joins the button
   row as **Send**, between **Save** and **Pay**, and Pay drops its amount
   (the total is just above it), so the three words fit 288px. Beside
   "Invoice and close" there is no room, so Send keeps its own row there.
@@ -134,7 +134,7 @@ without one.
   - **Course**, a select, for a new line on a menu with more than one course.
   - **Kitchen note**, up to 200 characters.
   - **The foot:** a reserved line for what is in the way; the stepper (1 to
-    99); **Cancel**; and **Add to Order · ₹240.00**, or **Save changes ·
+    99); **Cancel**; and **Add to order · ₹240.00**, or **Save changes ·
     ₹240.00** for a line being changed, with the line's price live.
 
 The head and the foot stay in view and the choices scroll between them; on a
@@ -197,11 +197,11 @@ Side panels on a desktop, bottom sheets on touch; one at a time.
 |---|---|---|---|
 | Tap a category | Shows its items; empties the search | | |
 | Type in search | Finds items in every category whose name has a word starting with each word typed, ignoring case and accents | | "Search results"; no category shows chosen |
-| A filter pill | Toggles it. Veg, Non-Veg and Vegan add up; Gluten Free narrows what they leave | | Below `xl` the pills are under **Diet**, which stays open while they are tapped and says what is on |
+| A filter pill | Toggles it. Veg, Non-veg and Vegan add up; Gluten free narrows what they leave | | Below `xl` the pills are under **Diet**, which stays open while they are tapped and says what is on |
 | **+** on a card | Adds one with its default choices | `order.opened` (first item), `line.added` | The line appears faint, then settles. If the defaults leave a required choice open, the modal opens instead |
 | Tap a card | With choices: opens the item modal, defaults chosen. Without: adds it | | |
 | Tap a choice | One-of groups swap; an optional one-of clears on a second tap; a full group refuses another | | The button's price moves |
-| Add to Order | Adds the line with its choices, quantity and course, then its note | `line.added`, `note.added` | The modal closes |
+| Add to order | Adds the line with its choices, quantity and course, then its note | `line.added`, `note.added` | The modal closes |
 | Save changes | Sends what differs, in turn | `line.modified`, `line.qty_changed`, `note.added` | Closes. If only part was saved it closes and a toast says so |
 | Stepper on a line | Changes how many | `line.qty_changed` | |
 | Bin on a line | Before the kitchen has it, takes it off; after, opens Void | `line.voided` | Struck through, and off the total |
@@ -210,7 +210,7 @@ Side panels on a desktop, bottom sheets on touch; one at a time.
 | Pick a table | Opens Tables | | Seating there puts the order in front |
 | Dine-in, Takeaway, Delivery | Before the order opens, starts it as that | | Once open, the other two are dimmed and "Set when the order started." is written under them; on a `short:` screen the row gives way to the lines |
 | The subtotal and "incl. GST" (`short:`) | Opens the tax rows under them, or folds them again | | |
-| Send to Kitchen (Send, in the button row, on a `short:` screen) | Sends what waits, each station its own items, and fires the first course while none has gone | `ticket.sent`, `course.fired` | The button goes until something else waits |
+| Send to kitchen (Send, in the button row, on a `short:` screen) | Sends what waits, each station its own items, and fires the first course while none has gone | `ticket.sent`, `course.fired` | The button goes until something else waits |
 | Fire course N | Fires the next course held back | `course.fired` | |
 | Save (Save Order from `2xl`) | Parks the order | `order.held` | A new order takes its place; this one is under Orders |
 | Resume | | `order.resumed` | The banner goes |
@@ -218,7 +218,7 @@ Side panels on a desktop, bottom sheets on touch; one at a time.
 | Pay | Opens `/pay/:id` on this order | | `terminal-tender.md` |
 
 **Taps to add a common dish: one**, the "+" on its card. A dish whose choices
-must be made takes three: the card, the choice, Add to Order.
+must be made takes three: the card, the choice, Add to order.
 
 ## States
 
@@ -290,7 +290,7 @@ Changed: the design's "Bestseller" pill reads **Popular**, the word the menu
 uses, and a card's crown sits beside its price, not on the photo, so it
 stays when a short screen drops the card's top block. "Add Note" at the
 rail's head is the row under the lines only.
-**Send to Kitchen** on this screen is ours: the design draws it on Tables,
+**Send to kitchen** on this screen is ours: the design draws it on Tables,
 and a counter order has no other way to reach the kitchen (ADR-151).
 
 Kept, though not drawn (rule 4): Orders, Order history, Discount the order,

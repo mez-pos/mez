@@ -242,14 +242,14 @@ PIN is in memory until the wizard is left.
 - While mez starts again the page asks how it went and takes no answer,
   and "nothing to tell" for the first twenty seconds, as the start. When
   the venue is back it pairs this browser and shows the last card.
-- **Sign in** goes to `/`, which shows Staff Login: the owner's PIN is
+- **Sign in** goes to `/`, which shows Staff login: the owner's PIN is
   the one the venue had.
 
 ## States
 
 - **Checking:** the splash, until `GET /api/v1/setup` answers.
 - **Not needed** (a venue exists): the wizard is not shown. `/setup` goes to
-  `/`, and the guard sends that on to Pair or Staff Login.
+  `/`, and the guard sends that on to Pair or Staff login.
 - **Needed and here, without the setup token** (the desktop shortcut, or
   `localhost` typed into a browser, before the venue exists): no
   questions. "Open mez from the installer to set up", and how: run the

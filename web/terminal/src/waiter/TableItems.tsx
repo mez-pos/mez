@@ -57,7 +57,7 @@ export function TableItems({ order, courseName, canFire, onFire, addDisabled, on
   return (
     <section aria-label="Items" className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-card border border-line bg-raised">
       <header className="flex items-center gap-2.5 border-b border-line px-4.5 py-4">
-        <h2 className="inline-flex min-h-11 items-center rounded-pill bg-accent px-5 text-base font-semibold text-accent-fg">All Items ({lines.length})</h2>
+        <h2 className="inline-flex min-h-11 items-center rounded-pill bg-accent px-5 text-base font-semibold text-accent-fg">All items ({lines.length})</h2>
         <button
           type="button"
           aria-pressed={byCourse}
@@ -67,7 +67,7 @@ export function TableItems({ order, courseName, canFire, onFire, addDisabled, on
             byCourse ? "border-accent bg-accent-tint text-accent-text" : "border-line-strong hover:bg-raised-high",
           )}
         >
-          Group by Course
+          Group by course
         </button>
       </header>
 
@@ -75,7 +75,7 @@ export function TableItems({ order, courseName, canFire, onFire, addDisabled, on
         {lines.length === 0 && (
           <div className="py-12 text-center">
             <p className="font-serif text-xl text-fg-muted">No items yet</p>
-            <p className="mt-1.5 text-sm text-fg-muted">Add Item to start the order</p>
+            <p className="mt-1.5 text-sm text-fg-muted">Add item to start the order</p>
           </div>
         )}
         {byCourse ? (
@@ -109,7 +109,7 @@ export function TableItems({ order, courseName, canFire, onFire, addDisabled, on
       <footer className="border-t border-line px-4.5 py-3.5">
         <Button className="w-full" disabled={addDisabled} onClick={onAddItem}>
           <PlusIcon aria-hidden="true" size={18} />
-          Add Item
+          Add item
         </Button>
       </footer>
     </section>

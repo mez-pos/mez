@@ -209,8 +209,8 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
   ring apart from focus; `Field` links its hint and error; the connection
   word alone is announced; `radioGroup` on fourteen groups and the grid
   pattern on the floor editor; the pairing sentences at 13px.
-- [ ] **Task 31 - Kit cleanup (TECH-21 to TECH-24, BO-12, BO-13, BO-16 to
-  BO-18).** Split on 2026-11-01: nine findings, two of them M, and one
+- [x] **Task 31 - Kit cleanup (TECH-21 to TECH-24, BO-12, BO-13, BO-16 to
+  BO-18).** Done 2026-11-01, as 31a to 31d (ADR-404 to ADR-407). Split on 2026-11-01: nine findings, two of them M, and one
   (TECH-24) overturns decided screen specs, so it needs its case first.
   - [x] **31a - The back office's rows, heads and drawer (BO-12, BO-13,
     BO-16, BO-17, BO-18).** Done 2026-11-01 (ADR-404). Staff rows read as a person and say a click
@@ -224,7 +224,7 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
   - [x] **31c - One keypad, one input, one switch, one pill (TECH-23).**
     Done 2026-11-01 (ADR-406).
     The copies outside `shared/ui` use the kit's.
-  - [ ] **31d - One casing (TECH-24).** Its case in DECISIONS.md first, as
+  - [x] **31d - One casing (TECH-24).** Done 2026-11-01 (ADR-407). Its case in DECISIONS.md first, as
     it overturns screen specs (ui-audit "Decided items"); then the words.
 - [ ] **Task 32 - Split the terminal bundle (TECH-25).**
 - [ ] **Task 33 - The audit again**, same walk and sizes; the scores go in

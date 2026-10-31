@@ -23,7 +23,7 @@ waiter's **Orders** tile (one name for one place, TILL-9, ADR-393).
 - **The list, the rest of the width:**
   - **Today's orders** in the serif, and under it "86 orders today · ₹24,580.00
     collected". At the right, **Print queue**, in danger with "(2 not
-    printed)" while anything has failed, and **New Order** (terracotta).
+    printed)" while anything has failed, and **New order** (terracotta).
   - **The tabs**, as pills with their counts: **All**, **To collect**,
     **Open**, **Paid**, **Refunded**, **Voided**. At the right, the search,
     "Search order #, table or pickup code". A counter sale is closed by the
@@ -166,7 +166,7 @@ A modal, "Refund INV/26-27/000042?", in two steps like every approval.
 | Type a pickup code, whole | Finds that order, out or handed over | | |
 | Handed over | Closes the order's ticket | `order.closed` | A toast, "B7K handed over."; the row leaves To collect and reads Paid |
 | Tap a row | Opens it in the panel | | The path is `/orders/:id`; picking another replaces it, so Back leaves the screen |
-| New Order | Opens the order screen | | |
+| New order | Opens the order screen | | |
 | Open order | Brings it to the order screen, off hold if it was saved | `order.resumed` if saved | |
 | Pay | Opens payment on it | | Not drawn for a saved order or one that owes nothing |
 | Refund, a choice, a stepper or the pad | Asks for a preview | | The figures redraw |
@@ -222,7 +222,7 @@ A modal, "Refund INV/26-27/000042?", in two steps like every approval.
 `mez Desktop POS.dc.html`, D09 Orders Refund (line 790). Left out, and why:
 
 - **Filters and Export:** the tabs are the filters there are, and the
-  terminal exports nothing (the back office does). Print queue and New Order
+  terminal exports nothing (the back office does). Print queue and New order
   stand in their places.
 - **Cashier and Waiter** in the panel: an order names people by an id this
   screen cannot read. **"₹1,200 tendered"** on the Payment line: the row is

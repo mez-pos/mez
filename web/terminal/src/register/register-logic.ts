@@ -113,7 +113,7 @@ export function dietFilterActive(f: DietFilter): boolean {
 }
 
 /** Each filter's word, in the order the pills stand. */
-export const dietLabels: Readonly<Record<keyof DietFilter, string>> = { veg: "Veg", nonVeg: "Non-Veg", vegan: "Vegan", glutenFree: "Gluten Free" };
+export const dietLabels: Readonly<Record<keyof DietFilter, string>> = { veg: "Veg", nonVeg: "Non-veg", vegan: "Vegan", glutenFree: "Gluten free" };
 
 /**
  * What the one Diet button says below xl, where the four pills wait behind it:
@@ -179,7 +179,7 @@ export interface SidebarEntry {
 export function sidebarEntries(categories: readonly CategoryResponse[], items: readonly MenuItemResponse[]): SidebarEntry[] {
   const popular = popularItems(items).length;
   return [
-    { view: "all", label: "All Items", icon: "utensils", count: items.length },
+    { view: "all", label: "All items", icon: "utensils", count: items.length },
     ...(popular > 0 ? [{ view: "popular" as const, label: "Popular", icon: "star" as const, count: popular }] : []),
     ...categories.map((c) => ({
       view: c.id,

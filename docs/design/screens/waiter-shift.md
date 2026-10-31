@@ -46,7 +46,7 @@ stay; the middle scrolls.
 
 | Action | Does | Then |
 |---|---|---|
-| End shift | Signs the person out | Staff Login. The shift itself stays open |
+| End shift | Signs the person out | Staff login. The shift itself stays open |
 
 ## States
 

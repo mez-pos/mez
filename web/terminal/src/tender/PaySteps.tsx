@@ -20,7 +20,7 @@ interface PayStepsProps {
 
 const steps: readonly { id: PayStep; label: string }[] = [
   { id: "payment", label: "Payment" },
-  { id: "split", label: "Split Bill" },
+  { id: "split", label: "Split bill" },
   { id: "complete", label: "Complete" },
 ];
 

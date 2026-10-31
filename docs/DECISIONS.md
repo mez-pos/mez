@@ -15618,3 +15618,39 @@ caller should not have to do).
 Because: a copy drifts. The focus, the floor sizes and the dark surface each had to be mended
 in every copy; now each is mended once.
 Cost: the waiter's chrome-bar buttons take the secondary Button's raised fill, which they lacked.
+
+## ADR-407 - One casing: sentence case for every label and heading
+2026-11 · Status: accepted. Phase 17 Task 31d (TECH-24). Overturns the screen specs' Title
+Case labels, as the UI audit's "Decided items" said it would, and its case is this.
+Context: the screens took their words from the reference designs (D01 to D24), and those mixed
+two casings on one screen: the till's rail said "Send to Kitchen" over "Add a note to this
+order", the pay screen "Split Bill" and "Back to Order" beside "Complete payment" and "Print
+receipt", the floor "Floor Plan", "Table List" and "All Areas" beside "Today's orders" and
+"Seat and order", the sign-in screen "Staff Login" over "Select your profile and enter your
+PIN". The specs wrote the designs' casing down, so each label was decided, one by one, and
+the whole was not. About 35 labels were in Title Case; everything else was in sentence case.
+The case:
+  - Sentence case is what the rest of mez already says, in every sentence, every hint, every
+    toast and most buttons; Title Case was the minority, there because a design drew it.
+  - A label in sentence case reads as words at a glance, which a cashier in a queue needs;
+    Title Case reads as a name, and a button is not a name.
+  - Two casings on one screen make the Title Case words look like a different kind of thing,
+    and they are not: "Send to Kitchen" and "Add a note" are both actions.
+Decision:
+  - **Every label and heading is in sentence case**: "Send to kitchen", "Split bill", "Back to
+    order", "Add discount", "Floor plan", "Table list", "All areas", "All items", "Add new
+    item", "Staff login", "Order status", "New order", "More actions", "Settle bill", "Sales
+    reports", "Gluten free", "Non-veg" and the rest. Names keep their capitals: mez, mez
+    Cloud, GSTIN, UPI, a table's or an area's or a person's name.
+  - **The brand's lines are display art and keep the designs' words**: "Good Food, Brighter
+    Days", "Same Tables. New Stories.", "Good Teams, Great Service" and the like, set in the
+    script face beside the figures. They are named in the test that holds the rule.
+  - **The specs say what mez shows**: 106 mentions are in sentence case; a line that quotes a
+    reference design (it names a D number or a design file) keeps the design's words.
+  - A test reads the text every component draws and fails on a label in Title Case.
+Rejected: Title Case everywhere (it would make every hint and toast a headline, or leave the
+mix); leaving each to its spec (that is how the mix came about).
+Because: one rule for words is easier to keep than thirty-five decisions, and it is the rule
+mez was already mostly keeping.
+Cost: the reference designs and the screens now differ in casing on those labels; a reader
+comparing them should expect it.

@@ -101,7 +101,7 @@ export function OrdersScreen({ selectedId, names, initialTab = "all", onSelect, 
             </Button>
             <Button variant="attention" onClick={onNewOrder}>
               <PlusIcon aria-hidden="true" size={18} />
-              New Order
+              New order
             </Button>
           </div>
         </div>

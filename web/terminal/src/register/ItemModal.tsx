@@ -175,7 +175,7 @@ export function ItemModal({ item, groups, courses, line, error, blocked, busy = 
                 onClick={() => onConfirm({ modifiers: chosen, qty, course, note: note.trim() })}
               >
                 {!editing && <PlusIcon aria-hidden="true" size={19} strokeWidth={stroke.bold} />}
-                <span>{editing ? "Save changes" : "Add to Order"}</span>
+                <span>{editing ? "Save changes" : "Add to order"}</span>
                 <span aria-hidden="true">·</span>
                 <Money amount={lineTotal(item.price, chosen, qty)} />
               </Button>

@@ -44,7 +44,7 @@ export function SalesScreen() {
 
   return (
     <div className="flex flex-col gap-4">
-      <ReportHead tab="sales" title="Sales Reports" cut>
+      <ReportHead tab="sales" title="Sales reports" cut>
         <ExportMenu file={file} files={sheets.map((s) => ({ label: s.label, path: csvPath(range, every, s.id) }))} disabled={!shown || stale} />
       </ReportHead>
 

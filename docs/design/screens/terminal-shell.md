@@ -80,7 +80,7 @@ someone with `shift.manage` while a shift is open; **Print queue**.
 
 | Path | Screen |
 |---|---|
-| `/pair`, `/lock` | Pairing and Staff Login (`terminal-lock.md`) |
+| `/pair`, `/lock` | Pairing and Staff login (`terminal-lock.md`) |
 | `/pos` | The order screen. Not `/order`: the server gives that to the guest app |
 | `/tables` | Tables; `?table=N` with one picked |
 | `/orders`, `/orders/:id` | The day's orders, and one picked |
@@ -117,7 +117,7 @@ Anywhere else is landed again by role.
 | Tables | Opens `/tables` | Pressed there |
 | Menu, Reports | Leave for `/backoffice/menu`, `/backoffice/sales` | The back office is another app: it has its own pairing and sign-in |
 | The profile | Opens its menu | Focus moves to the first choice; Escape, a tap elsewhere or Tab leaving closes it |
-| Lock | Ends the session, locally even if the server cannot be told | Staff Login |
+| Lock | Ends the session, locally even if the server cannot be told | Staff login |
 | Close the day | Opens `/shift/close` | Close the day |
 | Print queue, Not printed | Opens the print queue sheet | `terminal-print-queue.md` |
 | Retry now | Tries the stream at once | The connection word follows |

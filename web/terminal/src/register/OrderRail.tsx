@@ -152,8 +152,8 @@ export function OrderRail(props: OrderRailProps) {
         <div role="tablist" aria-label="Order views" className="flex gap-6 border-b border-line px-5">
           {(
             [
-              ["order", `Current Order (${order?.lines.filter((l) => l.status !== "voided").length ?? 0})`],
-              ["courses", "Course View"],
+              ["order", `Current order (${order?.lines.filter((l) => l.status !== "voided").length ?? 0})`],
+              ["courses", "Course view"],
             ] as const
           ).map(([id, label]) => (
             <button
