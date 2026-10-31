@@ -152,6 +152,15 @@ func TestSetupOverHTTPMakesAVenueThatCanSell(t *testing.T) {
 	if venue.PublicID != made.VenueID || venue.Name != "Filter Coffee House" || venue.TaxProfile != "gst_in" {
 		t.Errorf("venue = %+v", venue)
 	}
+	// The wizard's venue starts with the station and course every item
+	// needs, as `mez setup`'s does (ADR-400).
+	m, err := d.Menu(context.Background(), venue.ID)
+	if err != nil {
+		t.Fatalf("Menu: %v", err)
+	}
+	if len(m.Stations) != 1 || m.Stations[0].Name != "Kitchen" || len(m.Courses) != 1 || m.Courses[0].Name != "Main" {
+		t.Errorf("a new venue's stations %+v and courses %+v, want a Kitchen and Main", m.Stations, m.Courses)
+	}
 
 	// From here on it is the API any till uses, from anywhere on the LAN.
 	paired := pairOK(t, h, made.PairingCode)

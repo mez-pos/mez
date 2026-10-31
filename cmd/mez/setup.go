@@ -212,9 +212,11 @@ func setUp(ctx context.Context, database *db.DB, devices *auth.Devices, o setupO
 		return setupResult{}, fmt.Errorf("setup: %w", err)
 	}
 
-	var extras []firstrun.Extra
+	// A venue starts with a station and a course, as the wizard's does; the
+	// demo cafe's menu brings its own (ADR-400).
+	var extra firstrun.Extra = firstrun.StarterMenu
 	if o.DemoMenu {
-		extras = append(extras, func(ctx context.Context, q *gen.Queries, venueID int64, roles map[string]int64, now time.Time) error {
+		extra = func(ctx context.Context, q *gen.Queries, venueID int64, roles map[string]int64, now time.Time) error {
 			spec := demoMenu()
 			if _, err := db.WriteMenu(ctx, q, venueID, spec, now); err != nil {
 				return fmt.Errorf("setup: the demo menu: %w", err)
@@ -226,14 +228,14 @@ func setUp(ctx context.Context, database *db.DB, devices *auth.Devices, o setupO
 			}
 			res.Tables = countTables(demoFloor)
 			return nil
-		})
+		}
 	}
 
 	first, err := firstrun.New(database, devices, fixedClock(now))
 	if err != nil {
 		return setupResult{}, err
 	}
-	made, err := first.Run(ctx, answers, extras...)
+	made, err := first.Run(ctx, answers, extra)
 	if err != nil {
 		return setupResult{}, setupError(err)
 	}

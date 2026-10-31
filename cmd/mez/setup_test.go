@@ -246,7 +246,8 @@ func TestSetupDefaults(t *testing.T) {
 }
 
 // TestSetupDemoMenu: the flag leaves a menu the till can ring up from, and
-// without it the venue starts with none.
+// without it the venue starts with no items: only the station and course
+// every item needs, a Kitchen and Main (ADR-400).
 func TestSetupDemoMenu(t *testing.T) {
 	dir, args := setupArgs(t, "-demo-menu")
 	out := runSetupIn(t, args)
@@ -291,7 +292,11 @@ func TestSetupDemoMenu(t *testing.T) {
 	if out := runSetupIn(t, plainArgs); strings.Contains(out, "Demo menu") {
 		t.Errorf("a plain setup mentions a demo menu: %q", out)
 	}
-	if m, err := opened(t, plainDir).Menu(context.Background(), 1); err != nil || len(m.Items) != 0 {
-		t.Errorf("a plain setup has a menu: %d items, %v", len(m.Items), err)
+	plain, err := opened(t, plainDir).Menu(context.Background(), 1)
+	if err != nil || len(plain.Items) != 0 {
+		t.Errorf("a plain setup has a menu: %d items, %v", len(plain.Items), err)
+	}
+	if len(plain.Stations) != 1 || plain.Stations[0].Code != "kitchen" || len(plain.Courses) != 1 || plain.Courses[0].Number != 1 {
+		t.Errorf("a plain setup's stations %+v and courses %+v, want a Kitchen and course 1", plain.Stations, plain.Courses)
 	}
 }

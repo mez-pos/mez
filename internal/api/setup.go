@@ -182,7 +182,7 @@ func (s *Server) runSetup(w http.ResponseWriter, r *http.Request) {
 		FYStartMonth: req.FYStartMonth, TaxProfile: req.TaxProfile, TaxRegistration: req.TaxRegistration,
 		TaxPricing: req.TaxPricing, OwnerName: req.OwnerName, OwnerPIN: req.OwnerPIN,
 		DeviceName: req.DeviceName, DeviceKind: req.DeviceKind,
-	})
+	}, firstrun.StarterMenu)
 	var invalid *firstrun.Invalid
 	switch {
 	case errors.As(err, &invalid):

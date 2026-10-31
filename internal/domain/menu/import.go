@@ -114,7 +114,7 @@ type ImportSkip struct {
 }
 
 // ImportProblem is why a row cannot be added. Row 0 is a problem with the
-// file as a whole, and has no column.
+// file as a whole: it has no column, unless every row needs that one.
 type ImportProblem = sheet.Problem
 
 // ImportPlan is what importing a file would do.
@@ -153,7 +153,42 @@ func ReadImport(data []byte, v ImportVenue) ImportPlan {
 	if problem := sheet.CountProblem(seen, "Import"); problem != "" {
 		return fileProblem(problem)
 	}
+	r.plan.Problems = append(missingChoices(v), r.plan.Problems...)
 	return r.plan
+}
+
+// missingChoices is what the venue lacks that every item needs: a tax
+// class, a station, a course. Each is said once, for the whole file, with
+// where to add it (ADR-400), not once on every row it would hold back.
+func missingChoices(v ImportVenue) []ImportProblem {
+	needs := []struct {
+		column, what, where string
+		choices             []ImportChoice
+	}{
+		{ColTaxClass, "tax class", "Settings, Tax and numbering", v.TaxClasses},
+		{ColStation, "station", "Menu, Stations and courses", v.Stations},
+		{ColCourse, "course", "Menu, Stations and courses", v.Courses},
+	}
+	var problems []ImportProblem
+	for _, n := range needs {
+		if anyActive(n.choices) {
+			continue
+		}
+		problems = append(problems, ImportProblem{
+			Column:  n.column,
+			Message: fmt.Sprintf("This venue has no %s yet, and every item needs one. Add one under %s, then choose the file again.", n.what, n.where),
+		})
+	}
+	return problems
+}
+
+func anyActive(choices []ImportChoice) bool {
+	for _, c := range choices {
+		if c.Active {
+			return true
+		}
+	}
+	return false
 }
 
 // importHeadings is what an import's first row may hold. Status is the
@@ -324,7 +359,8 @@ func importPrice(cell, currency string, problem reporter) int64 {
 // importChoice is the id of the tax class, station or course a cell names,
 // by its name or what it also answers to. An empty cell is the only active
 // one there is, and a problem when there is a choice to make: a tax rate is
-// not something to guess for a whole menu.
+// not something to guess for a whole menu. With none at all, the row says
+// nothing: missingChoices tells the file once.
 func importChoice(column, what, cell string, choices []ImportChoice, problem reporter) int64 {
 	var active []ImportChoice
 	for _, c := range choices {
@@ -339,7 +375,6 @@ func importChoice(column, what, cell string, choices []ImportChoice, problem rep
 	use := "Use " + strings.Join(names, ", ") + "."
 
 	if len(active) == 0 {
-		problem(column, fmt.Sprintf("This venue has no %s to use. Add one in the back office first.", what))
 		return 0
 	}
 	if cell == "" {

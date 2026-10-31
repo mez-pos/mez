@@ -240,12 +240,57 @@ func TestReadImportOneChoiceNeedsNoCell(t *testing.T) {
 	}
 }
 
+// TestReadImportNothingToChooseFrom: what the venue lacks is said once, for
+// the file, with where to add it; never once on each row (ADR-400). The
+// rows' own problems are still found in the same pass.
 func TestReadImportNothingToChooseFrom(t *testing.T) {
-	v := importVenue()
-	v.Stations = nil
-	plan := ReadImport([]byte(importHeader+"Coffee,Latte,180,GST 5%,2106,,Drinks,,,,\n"), v)
-	if len(plan.Problems) != 1 || plan.Problems[0].Column != "Station" || !strings.Contains(plan.Problems[0].Message, "Add one") {
-		t.Errorf("problems: %+v", plan.Problems)
+	retired := importVenue()
+	retired.Courses = []ImportChoice{{ID: 30, Name: "First", Also: "1"}}
+
+	tests := []struct {
+		name  string
+		venue func(ImportVenue) ImportVenue
+		// The columns the file is told it lacks, in order.
+		columns []string
+		where   string
+	}{
+		{"no station", func(v ImportVenue) ImportVenue { v.Stations = nil; return v }, []string{"Station"}, "Menu, Stations and courses"},
+		{"no course in service", func(ImportVenue) ImportVenue { return retired }, []string{"Course"}, "Menu, Stations and courses"},
+		{"no tax class", func(v ImportVenue) ImportVenue { v.TaxClasses = nil; return v }, []string{"Tax class"}, "Settings, Tax and numbering"},
+		{"none of the three", func(v ImportVenue) ImportVenue {
+			v.TaxClasses, v.Stations, v.Courses = nil, nil, nil
+			return v
+		}, []string{"Tax class", "Station", "Course"}, ""},
+	}
+	file := importHeader +
+		"Coffee,Latte,180,GST 5%,2106,Kitchen,1,,,,\n" +
+		"Coffee,Mocha,190,GST 5%,2106,Kitchen,1,,,,\n" +
+		"Coffee,Flat white,,GST 5%,2106,Kitchen,1,,,,\n"
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			plan := ReadImport([]byte(file), tt.venue(importVenue()))
+			if plan.OK() {
+				t.Fatal("the plan can be carried out")
+			}
+			var got []string
+			for _, p := range plan.Problems[:len(tt.columns)] {
+				if p.Row != 0 {
+					t.Errorf("problem on row %d, want the file's: %+v", p.Row, p)
+				}
+				if !strings.Contains(p.Message, tt.where) {
+					t.Errorf("message %q does not say %q", p.Message, tt.where)
+				}
+				got = append(got, p.Column)
+			}
+			if strings.Join(got, ",") != strings.Join(tt.columns, ",") {
+				t.Errorf("the file lacks %v, want %v", got, tt.columns)
+			}
+			// Only Flat white's own price is wrong with the rows.
+			rest := plan.Problems[len(tt.columns):]
+			if len(rest) != 1 || rest[0].Row != 4 || rest[0].Column != "Price" {
+				t.Errorf("the rows' problems: %+v", rest)
+			}
+		})
 	}
 }
 
@@ -440,8 +485,9 @@ func TestImportTemplateImportsAsItComes(t *testing.T) {
 		{"a currency with three", dinar, 1, 10, 20, 30, 0},
 		{"names with commas and quotes in them", awkward, 1, 10, 20, 30, 0},
 		{"the first station retired", retiredFirst, 1, 10, 21, 30, 0},
-		// Nothing to name: a tax class, a station and a course each, on each row.
-		{"a venue with nothing set up", empty, 0, 0, 0, 0, 6},
+		// Nothing to name: a tax class, a station and a course, each said
+		// once for the file (ADR-400).
+		{"a venue with nothing set up", empty, 0, 0, 0, 0, 3},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

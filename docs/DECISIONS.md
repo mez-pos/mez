@@ -15358,3 +15358,33 @@ empty screen is where they decide what to do next. Each should say what is missi
 words and hand them the way to it.
 Cost: the dashboard reads the backup every minute for those who may change it. The words a
 self-hoster used to find on screen (`public_url`, `relay_key`) are in `docs/running.md` only.
+
+## ADR-400 - A new venue starts with a station and a course; what the import lacks is said once
+2026-10 · Status: accepted. Out of phase, from the owner's first spreadsheet import (2026-10-31).
+Context: every item needs a station and a course (`items.station_id` and `course_id` are NOT
+NULL), and a new venue had neither: setup made the venue, its roles, owner and settings, and
+the wizard ends on "Add your menu" (ADR-398). The owner's first import, with Station and Course
+left blank as a one-counter cafe would, was refused with 122 problems, a station and a course
+on every row, each "This venue has no station to use. Add one in the back office first.", said
+to someone already in the back office.
+Decision:
+  - **A new venue starts with a Kitchen and course 1, Main.** `firstrun.StarterMenu`, passed by
+    the wizard's POST /api/v1/setup and by `mez setup`, writes them in first run's transaction
+    through `db.WriteMenu`, as the demo menu is written (it bumps the menu version once). With
+    exactly one of each, an item added by hand, or a blank cell in a file, goes to them, as
+    before. The demo cafe does not take it: its menu brings its own stations and courses.
+  - **No tax class is made.** A rate depends on how and where the venue trades, and a guessed
+    one would print on its invoices. The import still refuses without one, and says where.
+  - **What every item needs and the venue lacks is said once, for the file:** row 0 ("The
+    file") in the column it is about, "This venue has no station yet, and every item needs
+    one. Add one under Menu, Stations and courses, then choose the file again." (a tax class:
+    Settings, Tax and numbering). The rows are still read, so their own problems come in the
+    same pass. `sheet.Problem` allows a column on row 0 for it.
+Rejected: a tax class at setup (above); the station and course inside `Run` for every caller
+(the demo menu's own Kitchen would collide with it on `stations_venue_code`); a migration giving
+existing venues a Kitchen (a venue may have none on purpose, and the import now says where to
+add one).
+Because: a cafe that serves everything from one counter should not have to learn what a station
+or a course is before it can put its menu in.
+Cost: a venue with no kitchen starts with a station called Kitchen; renaming it is one click,
+though its code, `kitchen`, stays. A venue set up before this has none until its owner adds them.

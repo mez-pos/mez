@@ -114,6 +114,9 @@ below.
   ... It cannot be changed later.").
 - **Courses**, the same: "When an item is fired: course 1 first, then the
   table asks for the next." A course's number follows its place.
+- **A new venue starts with one of each** (ADR-400): a Kitchen (code
+  `kitchen`) and course 1, Main, made at setup, so its first items, by hand
+  or by a file, need neither chosen.
 - **Retire** (a modal): says what it does, and for a row with items asks
   where they go ("Move its 10 items to"). The only row in service cannot be
   retired: "Add another before retiring it." A toast says what moved: "Bar
@@ -166,7 +169,12 @@ down somewhere. It adds items; it never changes or removes one.
 - **Something is wrong** with it: "3 problems in banana.csv. Nothing has
   been added." and a table of **Where** ("Row 5", or "The file"),
   **Column** and **What is wrong**, in the server's words, scrolling
-  inside itself. Then "Fix them in the file and choose it again." and
+  inside itself. What every item needs and the venue lacks, a tax class, a
+  station or a course, is one row of "The file", in its column, with where
+  to add it: "This venue has no station yet, and every item needs one. Add
+  one under Menu, Stations and courses, then choose the file again." (a tax
+  class: Settings, Tax and numbering), never one on every row (ADR-400).
+  Then "Fix them in the file and choose it again." and
   **Choose the file again**. There is no way to add the rows that are
   right: a menu half of what its owner wrote is worse than none.
 - **Ready:** "42 items to add." Then, each only when it applies: "3 new

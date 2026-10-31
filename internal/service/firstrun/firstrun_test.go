@@ -372,6 +372,39 @@ func TestRunExtras(t *testing.T) {
 	})
 }
 
+// TestStarterMenu: a venue starts with the one station and one course every
+// item needs, and no tax class, since a rate is not guessed (ADR-400).
+func TestStarterMenu(t *testing.T) {
+	d := emptyDB(t)
+	s, _ := service(t, d)
+	ctx := context.Background()
+	res, err := s.Run(ctx, answers(), StarterMenu)
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	m, err := d.Menu(ctx, res.VenueID)
+	if err != nil {
+		t.Fatalf("Menu: %v", err)
+	}
+	if len(m.Stations) != 1 || m.Stations[0].Code != "kitchen" || m.Stations[0].Name != "Kitchen" {
+		t.Errorf("stations = %+v, want a Kitchen", m.Stations)
+	}
+	if len(m.Courses) != 1 || m.Courses[0].Number != 1 || m.Courses[0].Name != "Main" {
+		t.Errorf("courses = %+v, want course 1, Main", m.Courses)
+	}
+	// Written as the demo menu is, so the version is bumped once, as its is.
+	if len(m.Items) != 0 || len(m.Categories) != 0 || m.Version != 2 {
+		t.Errorf("menu has %d items, %d categories, version %d; want none and version 2", len(m.Items), len(m.Categories), m.Version)
+	}
+	classes, err := d.Queries().TaxClassesForVenue(ctx, res.VenueID)
+	if err != nil {
+		t.Fatalf("TaxClassesForVenue: %v", err)
+	}
+	if len(classes) != 0 {
+		t.Errorf("a new venue has %d tax classes, want none", len(classes))
+	}
+}
+
 // noCodes is device pairing that is broken.
 type noCodes struct{}
 

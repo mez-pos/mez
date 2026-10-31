@@ -224,7 +224,9 @@ PIN is in memory until the wizard is left.
   for. No code is made until asked for, because it lasts ten minutes.
 - **Add your menu** goes to the back office's Menu (`/backoffice/menu`)
   in the same tab, where the owner is still signed in: a new venue has no
-  menu, and a till with none sells nothing (SET-6). **Go to the till** goes
+  items, and a till with none sells nothing (SET-6). It has the station and
+  course every item needs, a Kitchen and course 1, Main (ADR-400), so its
+  first items ask for neither. **Go to the till** goes
   to `/`, where the owner lands as an owner does.
 - **Send the code** and **Continue** (I had mez before) check what was
   typed first: a number needs its plus and country code, a code its six
@@ -333,6 +335,10 @@ PIN is in memory until the wizard is left.
 - **It ends on the menu** (SET-6, ADR-398): "Start selling", on a till
   with nothing to sell, is "Add your menu", with "Go to the till" beside
   it.
+- **A new venue starts with a Kitchen and course 1, Main** (ADR-400):
+  every item needs a station and a course, and with exactly one of each
+  nothing asks which. `mez setup` makes the same; the demo cafe brings its
+  own. No tax class is made: a rate is the owner's to set.
 - **The mez Cloud step says guests can order from their phones**, as it
   did: a table's code prints only with the public address mez Cloud gives
   (ADR-320). SET-8's "Cloud claim guests do not need" was a false reading;

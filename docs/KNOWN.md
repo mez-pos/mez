@@ -10,6 +10,18 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **A new venue's station and course, and the import's word for their lack**
+  (ADR-400; 2026-10-31, out of phase). Tested in Go: first run, the wizard's
+  POST /api/v1/setup and `mez setup` each make a Kitchen and course 1, Main;
+  the demo does not; the import says a missing tax class, station or course
+  once, as "The file". Seen in a scripted Chromium at 1366x768 on a venue
+  from `mez setup`: Stations and courses lists Kitchen and Main, and a file
+  with Station and Course blank is told only "The file | Tax class | This
+  venue has no tax class yet..." beside its one row's own price. **Not
+  seen:** the wizard's venue by eye (tested over HTTP). Venues set up before
+  it are not given one: their owner adds them under Menu, Stations and
+  courses.
+
 - **The back office for a venue with nothing in it yet** (ADR-399, Phase 17
   Task 27; 2026-10-31). Seen in a scripted Chromium at 1366x768 on the
   empty venue from Task 26's walk, paired as a till: the dashboard's backup

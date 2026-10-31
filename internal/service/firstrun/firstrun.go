@@ -124,6 +124,31 @@ type Result struct {
 // roles' IDs by name. The demo cafe is one.
 type Extra func(ctx context.Context, q *gen.Queries, venueID int64, roles map[string]int64, now time.Time) error
 
+// The station and course a new venue starts with (ADR-400).
+const (
+	StarterStationCode = "kitchen"
+	StarterStationName = "Kitchen"
+	StarterCourseName  = "Main"
+)
+
+// StarterMenu gives a new venue the one station and one course every item
+// needs (ADR-400): a Kitchen, and course 1, Main. With exactly one of each,
+// an item added by hand or by a spreadsheet goes to them without being
+// asked. Tax classes are left to the owner: a rate is not guessed.
+//
+// The wizard and `mez setup` both pass it, so their venues do not differ.
+// The demo cafe does not: its menu brings its own stations and courses.
+func StarterMenu(ctx context.Context, q *gen.Queries, venueID int64, _ map[string]int64, now time.Time) error {
+	spec := db.MenuSpec{
+		Stations: []db.StationSpec{{Code: StarterStationCode, Name: StarterStationName}},
+		Courses:  []db.CourseSpec{{Number: 1, Name: StarterCourseName}},
+	}
+	if _, err := db.WriteMenu(ctx, q, venueID, spec, now); err != nil {
+		return fmt.Errorf("firstrun: the starter station and course: %w", err)
+	}
+	return nil
+}
+
 // Codes is what first run needs of device pairing. *auth.Devices is it.
 type Codes interface {
 	CreatePairingCode(ctx context.Context, n auth.NewCode) (auth.PairingCode, error)

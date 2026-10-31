@@ -23,8 +23,8 @@ import (
 const MaxRows = 1000
 
 // Problem is why a row cannot be used. Row is its row in the spreadsheet,
-// the header being row 1; row 0 is a problem with the file as a whole, and
-// has no column.
+// the header being row 1; row 0 is a problem with the file as a whole. It
+// has no column, unless it is about one that every row needs.
 type Problem struct {
 	Row     int
 	Column  string
