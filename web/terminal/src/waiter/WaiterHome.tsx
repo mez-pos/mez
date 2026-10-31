@@ -29,6 +29,8 @@ import { TableCard } from "./TableCard";
 import { cardOpens } from "./table-logic";
 import { filterCounts, firstName, greeting, groupOrder, hourIn, tableGroups, tablesShown, type TableFilter } from "./waiter-logic";
 import { stroke } from "../../../shared/ui/stroke";
+import { pillClass } from "../../../shared/ui/pill";
+import { buttonClass } from "../../../shared/ui/Button";
 
 export function WaiterHome() {
   const auth = useAuth();
@@ -180,10 +182,7 @@ export function WaiterHome() {
 
       {/* A working screen at 768 tall: the bar is cut to its buttons and loses its script line (tokens.md). */}
       <footer className="flex h-24 shrink-0 items-center gap-3.5 border-t border-line bg-chrome px-7 short:h-18">
-        <Link
-          href={route.orders}
-          className="inline-flex min-h-charge items-center gap-2.5 rounded-pill border border-line-strong px-5 text-base font-semibold outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
-        >
+        <Link href={route.orders} className={cx(buttonClass("secondary", null), "min-h-charge gap-2.5 px-5 text-base")}>
           <TimerIcon aria-hidden="true" size={20} />
           Active Orders
           <span className="flex h-6.5 min-w-6.5 items-center justify-center rounded-pill bg-accent px-2 font-mono text-sm tabular-nums text-accent-fg">
@@ -222,15 +221,7 @@ interface FilterPillProps {
 
 function FilterPill({ pressed, count, badge, onPick, children }: FilterPillProps) {
   return (
-    <button
-      type="button"
-      aria-pressed={pressed}
-      onClick={onPick}
-      className={cx(
-        "inline-flex h-13 items-center gap-2.5 rounded-pill border px-5 text-base outline-offset-2 outline-focus focus-visible:outline-3 short:h-tap",
-        pressed ? "border-accent bg-accent font-semibold text-accent-fg" : "border-line-strong bg-raised font-medium text-fg hover:bg-raised-high",
-      )}
-    >
+    <button type="button" aria-pressed={pressed} onClick={onPick} className={cx(pillClass(pressed, { size: "tap" }), "h-13 gap-2.5 short:h-tap")}>
       {children}
       <span
         className={cx(

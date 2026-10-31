@@ -19,8 +19,17 @@ export interface NumPadProps {
   onKey: (key: NumKey) => void;
   /** Names the pad for screen readers: "PIN", "Cash tendered". */
   label: string;
-  /** `lg` is 64px keys, for a pad that is the whole point of its screen. */
-  size?: "md" | "lg";
+  /**
+   * `lg` is 64px keys, for a pad that is the whole point of its screen.
+   * `signin` is the sign-in screen's (D01): keys that follow the screen's
+   * height from 48px to 76px, the digits in the total's size.
+   */
+  size?: "md" | "lg" | "signin";
+  /**
+   * The twelfth key, where a pad with none has delete: the sign-in screen's
+   * Login. With it the bottom row is delete, 0, and this.
+   */
+  action?: ReactNode;
   disabled?: boolean;
   className?: string;
 }
@@ -31,10 +40,12 @@ const rows: NumKey[][] = [
   ["7", "8", "9"],
 ];
 
-function face(key: NumKey): { content: ReactNode; name: string } {
+function face(key: NumKey, size: NonNullable<NumPadProps["size"]>): { content: ReactNode; name: string } {
   switch (key) {
-    case "back":
-      return { content: <BackspaceIcon width="24" height="24" />, name: "Delete last digit" };
+    case "back": {
+      const side = size === "signin" ? "26" : "24";
+      return { content: <BackspaceIcon width={side} height={side} />, name: "Delete last digit" };
+    }
     case "clear":
       return { content: "Clear", name: "Clear" };
     default:
@@ -42,8 +53,16 @@ function face(key: NumKey): { content: ReactNode; name: string } {
   }
 }
 
-export function NumPad({ layout, onKey, label, size = "md", disabled = false, className }: NumPadProps) {
-  const bottom: NumKey[] = layout === "amount" ? ["00", "0", "back"] : ["clear", "0", "back"];
+/** A key's height and shape at each size. */
+const keySize = {
+  md: "h-14 rounded",
+  lg: "h-16 rounded",
+  // Taller on a tall screen, never under the 48px a thumb needs (ADR-014).
+  signin: "h-[clamp(3rem,7vh,4.75rem)] rounded-card hover:bg-raised-high disabled:hover:bg-sunken",
+} as const;
+
+export function NumPad({ layout, onKey, label, size = "md", action, disabled = false, className }: NumPadProps) {
+  const bottom: NumKey[] = action ? ["back", "0"] : layout === "amount" ? ["00", "0", "back"] : ["clear", "0", "back"];
 
   // A keyboard works too: the back office has one, and so do most tills.
   const keyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -54,9 +73,16 @@ export function NumPad({ layout, onKey, label, size = "md", disabled = false, cl
   };
 
   return (
-    <div role="group" aria-label={label} tabIndex={-1} onKeyDown={keyDown} className={cx("grid grid-cols-3 gap-tap-gap", className)}>
+    <div
+      role="group"
+      aria-label={label}
+      tabIndex={-1}
+      onKeyDown={keyDown}
+      // The sign-in pad's gaps close to the 8px two targets need on a short screen, and no further.
+      className={cx("grid grid-cols-3", size === "signin" ? "gap-3.5 short:gap-2" : "gap-tap-gap", className)}
+    >
       {[...rows, bottom].flat().map((key) => {
-        const { content, name } = face(key);
+        const { content, name } = face(key, size);
         return (
           <button
             key={key}
@@ -66,17 +92,22 @@ export function NumPad({ layout, onKey, label, size = "md", disabled = false, cl
             onClick={() => onKey(key)}
             className={cx(
               // A well-coloured key with no border; pressed, it darkens one step.
-              "flex min-w-tap select-none items-center justify-center rounded bg-sunken text-fg",
+              "flex min-w-tap select-none items-center justify-center bg-sunken text-fg",
               focusButton,
               "active:bg-line-strong disabled:opacity-40",
-              size === "lg" ? "h-16" : "h-14",
-              key === "clear" ? "text-base font-semibold" : "font-mono text-xl font-semibold tabular-nums",
+              keySize[size],
+              key === "clear"
+                ? "text-base font-semibold"
+                : key === "back"
+                  ? "text-fg-muted"
+                  : cx("font-mono font-semibold tabular-nums", size === "signin" ? "text-total" : "text-xl"),
             )}
           >
             {content}
           </button>
         );
       })}
+      {action}
     </div>
   );
 }

@@ -13,7 +13,6 @@ import type { Permission, Person, Role, RoleInput } from "../../../shared/api-ty
 import { roleText } from "../../../shared/auth/format";
 import { OnAMirror } from "../../../shared/shell/OnAMirror";
 import { Button, Card } from "../../../shared/ui";
-import { cx } from "../../../shared/ui/cx";
 import { pillClass } from "../../../shared/ui/pill";
 import { Field, inputClass } from "../FormFields";
 import {
@@ -29,6 +28,7 @@ import {
   type Problem,
   type RoleForm,
 } from "./people-logic";
+import { Switch } from "../../../shared/ui/Switch";
 
 interface RolePanelProps {
   roles: readonly Role[];
@@ -129,6 +129,7 @@ export function RolePanel({ roles, role, staff, held, readOnly = false, onRole, 
             {g.permissions.map((p) => (
               <Switch
                 key={p}
+                layout="row"
                 label={permissionWords[p]}
                 on={form.permissions.includes(p)}
                 disabled={!mine || !held.includes(p)}
@@ -168,41 +169,5 @@ export function RolePanel({ roles, role, staff, held, readOnly = false, onRole, 
         )}
       </form>
     </Card>
-  );
-}
-
-interface SwitchProps {
-  label: string;
-  on: boolean;
-  disabled: boolean;
-  onChange: (on: boolean) => void;
-}
-
-/** A switch, as the design draws a permission: the whole row is the target, 48px tall, and it says On or Off as well as showing it. */
-function Switch({ label, on, disabled, onChange }: SwitchProps) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      disabled={disabled}
-      onClick={() => onChange(!on)}
-      className={cx(
-        "flex min-h-tap w-full items-center gap-3 rounded text-left text-base outline-offset-2 outline-focus focus-visible:outline-3",
-        disabled && "text-fg-muted",
-      )}
-    >
-      <span className="min-w-0 flex-1">{label}</span>
-      {/* The word is for the eye; aria-checked says it to a screen reader. */}
-      <span aria-hidden="true" className="w-7 text-right text-sm text-fg-muted">
-        {on ? "On" : "Off"}
-      </span>
-      <span
-        aria-hidden="true"
-        className={cx("flex h-7.5 w-13 shrink-0 items-center rounded-pill p-0.5", on ? "justify-end bg-accent" : "bg-line-strong", disabled && "opacity-50")}
-      >
-        <span className="size-6 rounded-round bg-raised" />
-      </span>
-    </button>
   );
 }

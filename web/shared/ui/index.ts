@@ -4,7 +4,10 @@
 //
 // DataTable is back office only and is imported from "ui/DataTable", not
 // from here, so nothing guest loads can pull it in.
-export { Button, type ButtonProps, type ButtonSize, type ButtonVariant } from "./Button";
+export { Button, buttonClass, type ButtonProps, type ButtonSize, type ButtonVariant } from "./Button";
+export { fieldClass, inputClass } from "./field";
+export { pillClass, type PillOptions } from "./pill";
+export { Switch, type SwitchProps } from "./Switch";
 export { Card, type CardProps } from "./Card";
 export { EmptyState, type EmptyStateProps } from "./EmptyState";
 export { ErrorBoundary } from "./ErrorBoundary";

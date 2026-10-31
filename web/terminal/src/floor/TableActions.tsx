@@ -7,6 +7,7 @@ import { ArrowRightLeftIcon, ChevronDownIcon, ClockIcon, FlameIcon, LinkIcon, Lo
 import { cx } from "../../../shared/ui/cx";
 import { ActionItem } from "../register/MoreActions";
 import { useDisclosure } from "../../../shared/shell/use-disclosure";
+import { buttonClass } from "../../../shared/ui/Button";
 
 interface TableActionsProps {
   /** The party is over more than one table. */
@@ -36,11 +37,7 @@ export function TableActions({ joined, nextCourse, canRelease, disabled, onMove,
         aria-controls={panelId}
         aria-label="More actions"
         onClick={toggle}
-        className={cx(
-          "inline-flex min-h-charge items-center justify-center gap-2 whitespace-nowrap rounded-pill border border-line-strong bg-raised px-4 text-base font-semibold",
-          "outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3 disabled:pointer-events-none disabled:opacity-40",
-          open && "bg-raised-high",
-        )}
+        className={cx(buttonClass("secondary", null), "min-h-charge px-4 text-base", open && "bg-raised-high")}
       >
         {/* "More" where the rail is narrow: the chevron says the rest. */}
         <span className="hidden 2xl:inline">More Actions</span>

@@ -30,6 +30,7 @@ import { OpenOrdersNote } from "./OpenOrdersNote";
 import { useClosingStock } from "./use-closing-stock";
 import { countRequest, maxReason, reasonOwed, toleranceText, varianceWords } from "./shift-logic";
 import type { ShiftCommands } from "./use-shift";
+import { fieldClass } from "../../../shared/ui/field";
 
 interface CloseDayScreenProps {
   shift: ShiftResponse;
@@ -253,7 +254,7 @@ function Reconciliation({ shift, busy, onExplain }: ReconciliationProps) {
               maxLength={maxReason}
               rows={3}
               onChange={(e) => setReason(e.target.value)}
-              className="rounded border border-line-strong bg-raised px-4 py-3 text-base font-normal text-fg outline-accent-tint focus-visible:border-accent focus-visible:outline-3"
+              className={cx(fieldClass, "px-4 py-3 text-base font-normal")}
             />
           </label>
           <Button type="submit" disabled={busy || reason.trim() === ""} className="self-start">

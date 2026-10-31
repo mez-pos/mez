@@ -115,7 +115,7 @@ export function OrdersScreen({ selectedId, names, initialTab = "all", onSelect, 
                 role="tab"
                 aria-selected={tab === t.id}
                 onClick={() => setTab(t.id)}
-                className={cx(pillClass(tab === t.id), "min-h-tap")}
+                className={pillClass(tab === t.id, { size: "tap" })}
               >
                 {t.label} <span className="font-mono">({counts[t.id]})</span>
               </button>

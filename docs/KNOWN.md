@@ -10,6 +10,19 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **One keypad, one input, one switch, one pill** (ADR-406, Phase 17 Task
+  31c; 2026-11-01). Seen in a scripted Chromium on a demo venue at 1366 and
+  1024: the sign-in keypad on the kit's NumPad, keys 54px at 768 tall with
+  32px digits, a tap and a typed key counting two digits not three, delete,
+  six digits and Login signing in; the till's areas at 48px, the chosen one
+  terracotta; a role's 22 permission switches as rows. **Not seen:** the
+  kitchen board's switches; the till's fields (a line's note, the day's
+  close, closing stock, a payment's reference, the float count, a waiter's
+  collect) in their kit look; the action pills now Buttons (the kitchen's
+  Back and Lock, Retry now, Pick a table, the waiter's Back and Active
+  Orders, More). **Left as is:** a role's name field shows the name as
+  stored, "cashier", while everywhere else reads "Cashier".
+
 - **No class that renders nothing, and the kit's strokes** (ADR-405, Phase 17
   Task 31b; 2026-11-01). Seen in a scripted Chromium on a demo venue: the
   lock screen's tagline at 11px, 700, `.16em`; the till drawing only 1.75

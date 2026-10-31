@@ -7,6 +7,7 @@ import { BanIcon, ChevronDownIcon, FileTextIcon, HistoryIcon } from "lucide-reac
 import { useDisclosure } from "../../../shared/shell/use-disclosure";
 import { cx } from "../../../shared/ui/cx";
 import { ActionItem } from "../register/MoreActions";
+import { buttonClass } from "../../../shared/ui/Button";
 
 interface BillMoreProps {
   /** Shown only once the bill has an invoice. */
@@ -26,11 +27,7 @@ export function BillMore({ onInvoice, onHistory, onVoid }: BillMoreProps) {
         aria-expanded={open}
         aria-controls={panelId}
         onClick={toggle}
-        className={cx(
-          "inline-flex min-h-tap flex-auto items-center justify-center gap-2 whitespace-nowrap rounded-pill border border-line-strong bg-raised px-4 text-base font-semibold",
-          "outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3",
-          open && "bg-raised-high",
-        )}
+        className={cx(buttonClass("secondary", null), "min-h-tap flex-auto px-4 text-base", open && "bg-raised-high")}
       >
         More
         <ChevronDownIcon aria-hidden="true" size={16} className={cx(open && "rotate-180")} />

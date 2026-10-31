@@ -16,6 +16,7 @@ import { useMenu } from "../../../shared/use-menu";
 import { readPrefs, surfaceOf } from "./board-prefs";
 import type { SignedIn } from "./BoardFoot";
 import { KitchenBoard } from "./KitchenBoard";
+import { Button } from "../../../shared/ui/Button";
 
 interface KitchenAppProps {
   /** The station this device shows, or null until one is chosen. */
@@ -73,14 +74,10 @@ export function StationBoard({ station, onStation, signedIn }: StationBoardProps
     <main className="flex min-h-screen flex-col gap-8 bg-canvas px-8 py-10 text-fg">
       <h1 className="font-serif text-display">Which station is this?</h1>
       {previous && (
-        <button
-          type="button"
-          onClick={() => onStation(previous.code)}
-          className="inline-flex min-h-tap w-fit items-center gap-2 rounded-pill border border-line-strong bg-raised px-5 text-base font-semibold outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
-        >
+        <Button className="w-fit" onClick={() => onStation(previous.code)}>
           <ArrowLeftIcon aria-hidden="true" size={18} />
           Back to {previous.name}
-        </button>
+        </Button>
       )}
       {menu.isPending && <p className="text-kitchen text-fg-muted">Loading the stations</p>}
       {menu.isError && !menu.data && (
@@ -105,14 +102,10 @@ export function StationBoard({ station, onStation, signedIn }: StationBoardProps
         // A cook who is signed in and cannot choose (no stations, the server
         // not reached) must still be able to lock the screen.
         <div className="mt-auto flex justify-end">
-          <button
-            type="button"
-            onClick={signedIn.onLock}
-            className="inline-flex min-h-tap items-center gap-2 rounded-pill border border-line-strong bg-raised px-5 text-base font-semibold outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
-          >
+          <Button onClick={signedIn.onLock}>
             <LockIcon aria-hidden="true" size={18} />
             Lock
-          </button>
+          </Button>
         </div>
       )}
     </main>

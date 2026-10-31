@@ -4,13 +4,11 @@
 import { ArrowLeftIcon } from "lucide-react";
 import { Link } from "wouter";
 import { route } from "./routes";
+import { buttonClass } from "../../../shared/ui/Button";
 
 export function WaiterBack() {
   return (
-    <Link
-      href={route.waiter}
-      className="inline-flex min-h-tap items-center gap-2 rounded-pill border border-line-strong px-5 text-base font-semibold outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
-    >
+    <Link href={route.waiter} className={buttonClass()}>
       <ArrowLeftIcon aria-hidden="true" size={19} />
       Back
     </Link>

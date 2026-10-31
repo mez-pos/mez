@@ -19,6 +19,7 @@ import { useCharge, type ChargeApi } from "./use-charge";
 import { keepBill, keptBill } from "./use-receipt";
 import { needsSession } from "./session-logic";
 import { billKey, phoneName, readUpiQr, tellPaid, useBill } from "./use-guest";
+import { fieldClass } from "../../shared/ui/field";
 
 interface BillProps {
   code: string;
@@ -422,7 +423,7 @@ function SplitChooser({ bill, choice, onChoose, gap }: SplitChooserProps) {
             autoComplete="off"
             value={choice.typed}
             onChange={(e) => onChoose({ ...choice, typed: e.target.value })}
-            className="mt-1 block min-h-tap w-full rounded border border-line-strong bg-raised px-3 text-right font-mono text-lg tabular-nums outline-accent-tint focus-visible:border-accent focus-visible:outline-3"
+            className={cx(fieldClass, "mt-1 block min-h-tap w-full px-3 text-right font-mono text-lg tabular-nums")}
           />
         </label>
       )}

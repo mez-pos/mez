@@ -1,7 +1,6 @@
 // Where receipts and each station's tickets print: a printer picked for
 // each, saved as it is picked.
 
-import { focusField } from "../../../shared/ui/focus";
 import { useState } from "react";
 import { useAway } from "../../../shared/use-realtime";
 import { Link } from "wouter";
@@ -10,6 +9,7 @@ import { Panel } from "../dashboard/Panel";
 import { usePermissions } from "../shell/BackOfficeShell";
 import { problemOf } from "./printers-logic";
 import type { PrinterSettingsApi } from "./use-printers";
+import { inputClass } from "../../../shared/ui/field";
 
 export function PrinterRouting({ data, api }: { data: PrintersResponse; api: PrinterSettingsApi }) {
   const mayEditMenu = usePermissions().includes("menu.edit");
@@ -53,7 +53,7 @@ function Assign({ label, value, printers, onChange }: AssignProps) {
     <label className="flex flex-col gap-1.5">
       <span className="text-base font-semibold">{label}</span>
       <select
-        className={`min-h-tap w-full rounded border border-line-strong bg-raised px-3 text-fg ${focusField}`}
+        className={inputClass}
         value={value ?? ""}
         disabled={away}
         onChange={(e) => {

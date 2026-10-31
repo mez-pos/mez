@@ -12,6 +12,7 @@ import { Money } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { faceText, setFaceCount, typedFloat, type FloatCounted } from "./open-shift-logic";
 import { facesFor } from "./shift-logic";
+import { fieldClass } from "../../../shared/ui/field";
 
 interface FloatCountProps {
   currency: string;
@@ -20,9 +21,8 @@ interface FloatCountProps {
   disabled?: boolean;
 }
 
-const boxClass =
-  "h-tap min-w-0 flex-1 rounded border border-line-strong bg-raised px-3 text-right font-mono text-lg font-semibold tabular-nums " +
-  "text-fg outline-offset-2 placeholder:text-fg-faint focus:border-accent focus:outline-3 focus:outline-accent-tint disabled:opacity-40";
+// The kit's field (TECH-23, ADR-406), sized for a count.
+const boxClass = `${fieldClass} h-tap min-w-0 flex-1 px-3 text-right font-mono text-lg font-semibold tabular-nums`;
 
 export function FloatCount({ currency, value, onChange, disabled = false }: FloatCountProps) {
   const faces = facesFor(currency);

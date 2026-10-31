@@ -3,6 +3,8 @@
 
 import { useState } from "react";
 import { Button, Sheet } from "../../../shared/ui";
+import { fieldClass } from "../../../shared/ui/field";
+import { cx } from "../../../shared/ui/cx";
 
 interface NoteSheetProps {
   onSave: (text: string) => Promise<void>;
@@ -42,13 +44,7 @@ export function NoteSheet({ onSave, onClose }: NoteSheetProps) {
     <Sheet open onClose={onClose} title="Note on the order" footer={footer} holdsForm={text !== ""}>
       <label className="flex flex-col gap-2">
         <span className="text-sm text-fg-muted">Everyone working this order sees it</span>
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          maxLength={200}
-          rows={3}
-          className="rounded border border-line-strong bg-raised px-4 py-3 text-fg outline-accent-tint focus-visible:border-accent focus-visible:outline-3"
-        />
+        <textarea value={text} onChange={(e) => setText(e.target.value)} maxLength={200} rows={3} className={cx(fieldClass, "px-4 py-3")} />
       </label>
     </Sheet>
   );

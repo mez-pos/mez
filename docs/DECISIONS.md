@@ -15581,3 +15581,40 @@ word (prose and SVG paths would fail the build).
 Because: a class that renders nothing is a design decision that silently did not happen, and
 eleven strokes for one line make every screen a little different from the next.
 Cost: the check reads the built CSS, so it runs in `make build-web`, not `make check`.
+
+## ADR-406 - One keypad, one input, one switch, one pill
+2026-11 · Status: accepted. Phase 17 Task 31c (TECH-23).
+Context: the kit had a keypad, a field look, a pill and a button, and the apps had copies of
+each beside it. The sign-in screen drew its own keypad. The field's look (a strong hairline on
+the raised ground and the field's focus) was written out in a dozen places across the till,
+setup and the back office, one of them focusing on `focus:` instead of `focus-visible:`. Two
+switches, the kitchen board's and a role's permissions, were each their own component. The
+till's area tabs and a waiter's table pills restated `pillClass`, and eight of its action
+pills restated the secondary Button.
+Decision:
+  - **One keypad**: `NumPad` takes a `signin` size (keys that follow the screen's height from
+    48px to 76px, digits in the total's size, rounded as cards) and an `action`, the twelfth
+    key, so its bottom row is delete, 0, Login. The sign-in screen is the kit's keypad with
+    its own dots above it. A key the pad has handled is not handled again by the lock screen's
+    own keys: it skips what is already done.
+  - **One input**: `fieldClass` (the look, with the danger border when refused and a muted
+    placeholder) and `inputClass` (a one-line field filling its row, 48px) in
+    `web/shared/ui/field.ts`; the back office's `inputClass` is the kit's, the setup's is the
+    kit's at 16px, and the till's and the guest's fields are `cx(fieldClass, their size)`.
+  - **One switch**: `Switch` in the kit, `inline` for the kitchen's board and `row` for a
+    role's permissions. Its On or Off is 15px, and its knob is the on-fill colour, light on
+    paper and at night.
+  - **One pill**: `pillClass(on, { size, chosen })`, 40px or the till's 48px, green or
+    terracotta when chosen (the till's areas are terracotta, terminal-floor.md), its padding
+    by its size. A link or a button holding a ref that must look like a Button wears
+    `buttonClass(variant, size)`, the size left to the caller where theirs is not one of the
+    kit's.
+  - A test fails on the field's look, a `role="switch"` or a keypad's rows written outside
+    the kit's file for it.
+Rejected: one pill colour for the till and the back office (terracotta for the till's areas is
+decided in terminal-floor.md); folding the diet filters into `pillClass` (each takes its diet's
+chip colours); tailwind-merge to let a caller override a size (a dependency to undo what the
+caller should not have to do).
+Because: a copy drifts. The focus, the floor sizes and the dark surface each had to be mended
+in every copy; now each is mended once.
+Cost: the waiter's chrome-bar buttons take the secondary Button's raised fill, which they lacked.

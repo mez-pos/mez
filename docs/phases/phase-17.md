@@ -221,7 +221,8 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
   - [x] **31b - Dead classes, a check for them, and one stroke (TECH-21,
     TECH-22).** Done 2026-11-01 (ADR-405). Classes that render nothing are gone and a test fails on
     one; icon strokes come to the kit's few; the tagline has one tracking.
-  - [ ] **31c - One keypad, one input, one switch, one pill (TECH-23).**
+  - [x] **31c - One keypad, one input, one switch, one pill (TECH-23).**
+    Done 2026-11-01 (ADR-406).
     The copies outside `shared/ui` use the kit's.
   - [ ] **31d - One casing (TECH-24).** Its case in DECISIONS.md first, as
     it overturns screen specs (ui-audit "Decided items"); then the words.

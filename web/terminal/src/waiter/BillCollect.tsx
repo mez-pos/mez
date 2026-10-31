@@ -19,6 +19,7 @@ import { methodNames, quickShown, tipFor, tipPercents, type TenderPlan } from ".
 import { billMethods } from "./bill-logic";
 import { radioGroup } from "../../../shared/ui/radio-group";
 import { stroke } from "../../../shared/ui/stroke";
+import { fieldClass } from "../../../shared/ui/field";
 
 const icons: Readonly<Record<PaymentMethod, LucideIcon>> = { upi: QrCodeIcon, card: CreditCardIcon, cash: BanknoteIcon, other: BanknoteIcon };
 
@@ -241,7 +242,7 @@ export function BillCollect(props: BillCollectProps) {
               spellCheck={false}
               aria-label={method === "upi" ? "UPI transaction ID, optional" : "Slip reference, optional"}
               placeholder={method === "upi" ? "UPI transaction ID (optional)" : "Slip reference (optional)"}
-              className="min-h-charge min-w-0 flex-1 rounded border border-line-strong bg-raised px-4 text-base text-fg outline-accent-tint placeholder:text-fg-muted focus-visible:border-accent focus-visible:outline-3"
+              className={cx(fieldClass, "min-h-charge min-w-0 flex-1 px-4 text-base")}
             />
           )}
           {uncertain ? (

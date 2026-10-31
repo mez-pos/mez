@@ -11,7 +11,6 @@ import type { LiveTableResponse } from "../../../shared/api-types";
 import { useAuth } from "../../../shared/auth/use-auth";
 import { Button, EmptyState, InboxIcon } from "../../../shared/ui";
 import { backOffice } from "../shell/nav-logic";
-import { cx } from "../../../shared/ui/cx";
 import { useClock } from "../../../shared/use-clock";
 import { failureOf, wordsOf } from "../register/order-messages";
 import { route } from "../shell/routes";
@@ -36,6 +35,7 @@ import { TableList } from "./TableList";
 import type { PartyMode } from "./TableOrderView";
 import { TablePanel } from "./TablePanel";
 import { TablesSidebar, type TablesView } from "./TablesSidebar";
+import { pillClass } from "../../../shared/ui/pill";
 
 export function TablesScreen() {
   const auth = useAuth();
@@ -216,12 +216,7 @@ function AreaPills({ areas, chosen, onChoose }: AreaPillsProps) {
           type="button"
           aria-pressed={a.id === chosen}
           onClick={() => onChoose(a.id)}
-          className={cx(
-            "min-h-tap rounded-pill border px-5 text-base outline-offset-2 outline-focus focus-visible:outline-3",
-            a.id === chosen
-              ? "border-attention bg-attention font-semibold text-attention-fg"
-              : "border-line-strong bg-raised font-medium text-fg hover:bg-raised-high",
-          )}
+          className={pillClass(a.id === chosen, { size: "tap", chosen: "attention" })}
         >
           {a.name}
         </button>

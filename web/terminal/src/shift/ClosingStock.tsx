@@ -9,6 +9,7 @@ import { formatDelta, formatQty } from "../../../shared/stock-qty";
 import { Button } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { toCounts } from "./closing-stock-logic";
+import { fieldClass } from "../../../shared/ui/field";
 
 interface ClosingStockProps {
   sheet: ClosingStockSheet;
@@ -78,7 +79,7 @@ export function ClosingStock({ sheet, onRecord }: ClosingStockProps) {
               <span className="flex items-center gap-2">
                 <input
                   aria-label={`${it.name}, in ${it.unit}`}
-                  className="min-h-tap w-36 rounded border border-line-strong bg-raised px-4 text-right font-mono text-base tabular-nums text-fg outline-accent-tint focus-visible:border-accent focus-visible:outline-3"
+                  className={cx(fieldClass, "min-h-tap w-36 px-4 text-right font-mono text-base tabular-nums")}
                   inputMode="decimal"
                   autoComplete="off"
                   value={typed[it.id] ?? ""}

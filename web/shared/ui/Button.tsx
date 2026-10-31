@@ -39,20 +39,28 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: ButtonSize;
 }
 
+/**
+ * The classes a Button wears, for what must look like one and cannot be one:
+ * a link, or a button that holds a ref (TECH-23, ADR-406: one pill button).
+ * With no size, the caller gives the height and padding.
+ */
+export function buttonClass(variant: ButtonVariant = "secondary", size: ButtonSize | null = "tap"): string {
+  return cx(
+    "inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-pill font-semibold",
+    focusButton,
+    "disabled:pointer-events-none disabled:opacity-40",
+    variants[variant],
+    size && sizes[size],
+  );
+}
+
 export function Button({ variant = "secondary", size = "tap", type = "button", className, ...rest }: ButtonProps) {
   return (
     <button
       // "button", not the HTML default "submit": a stray Enter in a form must
       // never charge a card.
       type={type}
-      className={cx(
-        "inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-pill font-semibold",
-        focusButton,
-        "disabled:pointer-events-none disabled:opacity-40",
-        variants[variant],
-        sizes[size],
-        className,
-      )}
+      className={cx(buttonClass(variant, size), className)}
       {...rest}
     />
   );

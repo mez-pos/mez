@@ -7,6 +7,8 @@ import { useState } from "react";
 import type { LineResponse, NoteResponse } from "../../../shared/api-types";
 import { Button, Money, Qty, Sheet } from "../../../shared/ui";
 import { lineActions } from "./cart-logic";
+import { fieldClass } from "../../../shared/ui/field";
+import { cx } from "../../../shared/ui/cx";
 
 export type LineAction = "modify" | "discount" | "comp" | "void";
 
@@ -88,7 +90,7 @@ export function LineSheet({ line, notes, hasChoices, paid, onSave, onRemove, onA
             maxLength={200}
             rows={2}
             // Controls are 16px on every surface (tokens.css), so no size here.
-            className="rounded border border-line-strong bg-raised px-4 py-3 text-fg outline-accent-tint focus-visible:border-accent focus-visible:outline-3"
+            className={cx(fieldClass, "px-4 py-3")}
           />
         </label>
 

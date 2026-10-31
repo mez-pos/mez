@@ -6,10 +6,11 @@
 import { useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from "react";
 import { cx } from "../../ui/cx";
 import { radioGroup } from "../../ui/radio-group";
+import { inputClass } from "../../ui/field";
 
 // 16px text: a smaller field makes a phone's browser zoom in (tokens.md).
-const control =
-  "min-h-tap w-full rounded border border-line-strong bg-raised px-4 text-[1rem] text-fg placeholder:text-fg-faint outline-accent-tint focus-visible:border-accent focus-visible:outline-3 aria-invalid:border-danger";
+// The kit's field, at 16px so a phone does not zoom into it (tokens.md).
+const control = `${inputClass} text-[1rem]`;
 
 interface FrameProps {
   label: string;

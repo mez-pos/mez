@@ -15,6 +15,7 @@ import { LockIcon, Settings2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cx } from "../../../shared/ui/cx";
 import type { BoardPrefs } from "./board-prefs";
+import { Switch } from "../../../shared/ui/Switch";
 
 /** Who is at the board, on a terminal they signed in on (ADR-179). */
 export interface SignedIn {
@@ -60,10 +61,20 @@ export function BoardFoot({ prefs, onPrefs, onChangeStation, signedIn }: BoardFo
         {armed ? "Tap again to change station" : "Change station"}
       </button>
       {/* A switch like its neighbours: "Sound off" on a button read as a command (KDS-16). */}
-      <Switch label="Sound" on={prefs.sound} onChange={(sound) => onPrefs({ ...prefs, sound })} />
-      <Switch label="Group by table" on={prefs.groupByTable} onChange={(groupByTable) => onPrefs({ ...prefs, groupByTable })} />
-      <Switch label="Skip preparing" on={prefs.skipPreparing} onChange={(skipPreparing) => onPrefs({ ...prefs, skipPreparing })} />
-      <Switch label="Night mode" on={prefs.night} onChange={(night) => onPrefs({ ...prefs, night })} />
+      <Switch className="px-4 hover:bg-raised-high" label="Sound" on={prefs.sound} onChange={(sound) => onPrefs({ ...prefs, sound })} />
+      <Switch
+        className="px-4 hover:bg-raised-high"
+        label="Group by table"
+        on={prefs.groupByTable}
+        onChange={(groupByTable) => onPrefs({ ...prefs, groupByTable })}
+      />
+      <Switch
+        className="px-4 hover:bg-raised-high"
+        label="Skip preparing"
+        on={prefs.skipPreparing}
+        onChange={(skipPreparing) => onPrefs({ ...prefs, skipPreparing })}
+      />
+      <Switch className="px-4 hover:bg-raised-high" label="Night mode" on={prefs.night} onChange={(night) => onPrefs({ ...prefs, night })} />
       {signedIn && (
         <button type="button" onClick={signedIn.onLock} className={cx(plain, "ml-auto border border-line-strong")}>
           <LockIcon aria-hidden="true" size={19} />
@@ -71,27 +82,5 @@ export function BoardFoot({ prefs, onPrefs, onChangeStation, signedIn }: BoardFo
         </button>
       )}
     </footer>
-  );
-}
-
-interface SwitchProps {
-  label: string;
-  on: boolean;
-  onChange: (on: boolean) => void;
-}
-
-/** A switch as the design draws it: the word, then a pill whose knob slides. On or off is said, not only shown. */
-function Switch({ label, on, onChange }: SwitchProps) {
-  return (
-    <button type="button" role="switch" aria-checked={on} onClick={() => onChange(!on)} className={cx(plain, "font-normal")}>
-      {label}
-      <span
-        aria-hidden="true"
-        className={cx("flex h-7.5 w-13 items-center rounded-pill p-0.75", on ? "justify-end bg-accent" : "justify-start bg-line-strong")}
-      >
-        <span className="size-6 rounded-round bg-accent-fg" />
-      </span>
-      <span className="w-8 text-left text-base font-semibold text-fg-muted">{on ? "On" : "Off"}</span>
-    </button>
   );
 }

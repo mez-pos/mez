@@ -19,6 +19,7 @@ import { useDialog } from "../../../shared/ui/use-dialog";
 import { DietMark } from "../../../shared/ui/DietMark";
 import { firstUnmet, groupHint, groupState, initialSelection, lineTotal, toggle, toModifiers, type GroupState } from "../../../shared/modifier-selection";
 import { stroke } from "../../../shared/ui/stroke";
+import { fieldClass } from "../../../shared/ui/field";
 
 /** What the modal hands back: the line as the person wants it. */
 export interface ItemChoice {
@@ -49,7 +50,8 @@ interface ItemModalProps {
 const qtyBounds = { min: 1, max: 99 } as const;
 const noteLength = 200;
 
-const field = "rounded border border-line-strong bg-raised text-fg outline-accent-tint focus-visible:border-accent focus-visible:outline-3";
+// The kit's field look (TECH-23, ADR-406).
+const field = fieldClass;
 
 export function ItemModal({ item, groups, courses, line, error, blocked, busy = false, onConfirm, onClose }: ItemModalProps) {
   const ref = useDialog(true, onClose);

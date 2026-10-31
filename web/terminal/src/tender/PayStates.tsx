@@ -16,6 +16,7 @@ import { cx } from "../../../shared/ui/cx";
 import { useClock } from "../../../shared/use-clock";
 import { elapsedClock, methodNames } from "./tender-logic";
 import { stroke } from "../../../shared/ui/stroke";
+import { fieldClass } from "../../../shared/ui/field";
 
 const card = "mx-auto w-full max-w-120 rounded-card border p-6 short:p-5";
 const eyebrow = "text-meta font-bold uppercase";
@@ -78,7 +79,7 @@ export function WaitingCard({ method, charge, tip, reference, since, busy, onRef
           maxLength={40}
           autoComplete="off"
           spellCheck={false}
-          className="min-h-tap rounded border border-line-strong bg-raised px-4 font-mono text-lg text-fg outline-accent-tint focus-visible:border-accent focus-visible:outline-3"
+          className={cx(fieldClass, "min-h-tap px-4 font-mono text-lg")}
         />
         <span className="text-sm text-fg-muted">Optional. Kept with the payment for reconciling.</span>
       </label>

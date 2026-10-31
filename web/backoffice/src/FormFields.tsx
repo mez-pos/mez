@@ -4,10 +4,11 @@
 
 import { useId, type ReactNode } from "react";
 import { cx } from "../../shared/ui/cx";
-import { focusButton, focusField } from "../../shared/ui/focus";
+import { focusButton } from "../../shared/ui/focus";
 import { radioGroup } from "../../shared/ui/radio-group";
 
-export const inputClass = `min-h-tap w-full rounded border border-line-strong bg-raised px-4 text-fg ${focusField}`;
+/** The kit's one-line field (TECH-23, ADR-406). */
+export { inputClass } from "../../shared/ui/field";
 
 /**
  * What a field's control takes beside its id (TECH-10, ADR-403): the hint and

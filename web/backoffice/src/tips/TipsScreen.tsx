@@ -2,7 +2,6 @@
 // their hours when the rule needs them, each share as the server works it
 // out, and pooling once. Every share on screen is the server's.
 
-import { focusField } from "../../../shared/ui/focus";
 import { useState } from "react";
 import type { TipPoolResponse } from "../../../shared/api-types";
 import { Button, Confirm, EmptyState, InboxIcon, Meta, Money, useToast } from "../../../shared/ui";
@@ -14,6 +13,7 @@ import { formatMoney } from "../../../shared/money";
 import { clockText } from "../../../shared/zreport/zreport-logic";
 import { membersOf, ruleWords, startingRows, tipProblem, type Row } from "./tips-logic";
 import { useTipPreview, useTips } from "./use-tips";
+import { fieldClass } from "../../../shared/ui/field";
 
 interface TipsScreenProps {
   shiftId: number;
@@ -196,7 +196,7 @@ function TimeField({ label, value, onChange }: { label: string; value: string; o
       value={value}
       maxLength={2}
       onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
-      className={`min-h-tap w-14 rounded border border-line-strong bg-raised px-2 text-right font-mono text-base ${focusField}`}
+      className={cx(fieldClass, "min-h-tap w-14 px-2 text-right font-mono text-base")}
     />
   );
 }

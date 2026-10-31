@@ -17,6 +17,8 @@ import { Button, Logo, Meta } from "../ui";
 import { setupPath } from "./setup/setup-path";
 import { useSetupStatus } from "./setup/use-setup-status";
 import { Splash } from "./Splash";
+import { fieldClass } from "../ui/field";
+import { cx } from "../ui/cx";
 
 const appNames: Record<AppKind, string> = { terminal: "terminal", backoffice: "back office", kitchen: "kitchen display" };
 
@@ -160,7 +162,7 @@ function PairForm({ app }: { app: AppKind }) {
             enterKeyHint="go"
             aria-invalid={error !== null}
             aria-describedby={error ? "pair-error" : undefined}
-            className="h-14 rounded border border-line-strong bg-raised px-4 text-center font-mono text-xl tracking-widest text-fg uppercase placeholder:text-fg-faint outline-accent-tint focus-visible:border-accent focus-visible:outline-3"
+            className={cx(fieldClass, "h-14 px-4 text-center font-mono text-xl tracking-widest uppercase")}
             autoFocus
           />
         </label>

@@ -8,6 +8,15 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 31b: dead classes, a check for them, and one stroke**
+(TECH-21, TECH-22, ADR-405), 2026-11-01. `make build-web` now fails on a
+class that renders nothing (`web/scripts/check-classes.mjs`, which reads
+the built CSS); the seven there were are gone (`bg-white` behind QR codes,
+`text-heading`). Icon strokes are the kit's four (`web/shared/ui/stroke.ts`:
+1.75 by default, 1, 1.5, 2.25), never a number, which a test holds; the
+tagline and the meta labels take `text-meta`'s own tracking. Seen on the
+lock screen and the till at 1024 and 1366.
+
 **Phase 17, Task 31a: the back office's rows, heads and drawer** (BO-12,
 BO-13, BO-16, BO-17, BO-18, ADR-404), 2026-11-01. Task 31 is split in four
 (31a to 31d) in the phase file. A staff row is named as the person, a line

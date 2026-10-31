@@ -100,15 +100,11 @@ export function OrderRail(props: OrderRailProps) {
       <header className="flex items-center gap-3 border-b border-line px-4 py-3 short:py-2 2xl:px-5 2xl:py-4">
         <div className="min-w-0 flex-1">
           {pickTable ? (
-            <button
-              type="button"
-              onClick={onTables}
-              className="inline-flex min-h-tap items-center gap-2 rounded-pill border border-line-strong px-4 text-base font-semibold outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
-            >
+            <Button onClick={onTables}>
               <ArmchairIcon aria-hidden="true" size={18} />
               Pick a table
               <ChevronDownIcon aria-hidden="true" size={16} />
-            </button>
+            </Button>
           ) : (
             <h2 className="truncate font-serif text-xl">{title}</h2>
           )}
