@@ -10,6 +10,21 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **No silent loss of work** (ADR-387, Phase 17 Task 16; 2026-10-31). Seen
+  in a scripted Chromium at 1366: an item's unsaved name asked about on
+  another item (Keep editing kept it), on the sidebar (Escape stayed) and on
+  `g d` (Leave went to the dashboard); a group's Retire asked "3 items stop
+  offering it"; an item retired from its editor and brought back by the
+  toast's Undo; Settings' "Save venue details" and "Save phone payments",
+  and the sidebar asking on a venue draft; an area with tables in service
+  told so, with Close; a table's Retire asked with its QR code. At 1024 on
+  the till, a typed order note kept after a tap on the scrim, and closed by
+  Escape. **Not seen:** Sign out asking; the approval and line sheets (the
+  same prop); the drawer under 768px; the browser's prompt on closing the
+  tab, now the shell's. Left: forms outside Settings and the item editor (a
+  stock count, a recipe, a role's permissions) do not hold drafts with the
+  guard yet; the Undo toast covers the foot of the screen for 8 seconds.
+
 - **Tax words that match the venue** (ADR-386, Phase 17 Task 15;
   2026-10-31). Seen in a scripted Chromium on the demo venue (GST): with
   prices that hold the tax, the cart and the order placed at 390 say

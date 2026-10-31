@@ -51,17 +51,21 @@ below.
   end. The list's last row is **+ Add a category** in terracotta: at the
   sidebar's 184px the design's round **+** beside the title does not fit.
   Under the list, for the category chosen: **Rename**, **Move up**, **Move
-  down**, and **Retire** or **Bring back**. The card's padding is 12px under
+  down**, and **Retire** (danger, asked first with its count of items) or
+  **Bring back**. The card's padding is 12px under
   1536px, 16px from there.
 - **Menu items (68):** the title with its count, and a select for the
   order: **Menu order**, **A–Z**, **Price**. Each row is one button: the
   photo or a plain tile, the name, the price and a chip (**Active**, **Sold
   out**, **Retired**). The open one has the green tint. Its **...** holds
   **Sold out today** or **Back on sale**, **Retire** or **Bring back**, and
-  **Move up**, **Move down**. The list scrolls inside itself.
+  **Move up**, **Move down**. The list scrolls inside itself. A retire is
+  said in a toast with **Undo**.
 - **The editor**, for the item open: "Edit menu item" or "Add menu item",
   its chip, and beside the title **Sold out today** (or **Back on sale**)
-  and **Retire item** in danger (or **Bring back**).
+  and **Retire item** in danger (or **Bring back**). Retiring is not asked:
+  the toast says "Retired Filter coffee. It is off every order screen." with
+  **Undo** for 8 seconds (BO-6, ADR-387).
   - **Item name**; **Category**; **Price, INR** ("As the order screen
     charges it, like 180 or 180.50."); **Tax class** ("Food, 5%"); **HSN or
     SAC code** ("4, 6 or 8 digits. Every GST invoice line shows it." on a
@@ -91,8 +95,9 @@ below.
 
 - A table of groups: Group, what it asks ("Pick 1", "Optional, up to 2",
   "Pick 1 to 3"), its choices (each name, its price change, "(to start)" on
-  a default), how many items offer it, and **Edit**, **Retire** or **Bring
-  back**. **Add a group of choices** is in the head.
+  a default), how many items offer it, and **Edit**, **Retire** (danger,
+  asked first: "Retire Milk?", "12 items stop offering it. Orders already
+  open keep their choices.") or **Bring back**. **Add a group of choices** is in the head.
 - **The group form** (a modal): Name; **Fewest to pick** (0 makes it
   optional) and **Most to pick**; one row per choice: name, price change,
   **Picked to start**, arrows, **Remove**; **Add a choice**. On an edit, a
@@ -322,9 +327,11 @@ the tax settings link items still without an HSN code this way.
   in one click.
 - Every number tabular and right-aligned: prices, counts, HSN.
 - No drag: the arrows are the way to reorder.
-- Opening another item or leaving the screen still drops an unsaved edit
-  without asking (ADR-381 reverses this; Phase 17, Task 16), though the save
-  bar now says "Unsaved changes" while there is one. An item changed on
+- With an unsaved edit, opening another item, adding one, another view, the
+  sidebar, a `g` chord or Sign out asks "Leave without saving?", "Your
+  changes to Filter coffee are not saved.", **Keep editing** and **Leave**
+  (BO-2, ADR-387); the save bar says "Unsaved changes" while there is one.
+  Cancel drops the edit: it is the way to. An item changed on
   another screen while it is open is saved over.
 - The list no longer shows an item's tax class, station, course or HSN:
   they are in the editor.

@@ -33,6 +33,8 @@ import type { PhotoChange } from "./ItemPhotoField";
 import { itemFormFrom, itemFromSearch, newItemForm, problemOf, viewFromSearch, viewWords, type MenuView } from "./menu-logic";
 import { SetupView } from "./SetupView";
 import { useMenuEditor, type MenuEditorApi } from "./use-menu-editor";
+import { useRetireItem } from "./use-retire-item";
+import { useLeave } from "../shell/leave-guard";
 
 type Editing =
   { kind: "add-category" } | { kind: "rename-category"; id: number; name: string } | { kind: "add-group" } | { kind: "edit-group"; group: EditorGroup };
@@ -68,6 +70,8 @@ export function MenuScreen() {
   const [busy, setBusy] = useState(false);
   const made = useRef(0);
   const menu = api.data;
+  // Whatever replaces the open editor asks first while it holds a draft (BO-2).
+  const leave = useLeave();
 
   // A link that names an item (`/menu?item=12`, from the tax settings) opens
   // it once, as soon as the menu is read.
@@ -97,6 +101,7 @@ export function MenuScreen() {
     setProblem(message);
     toast(message, { tone: "warning" });
   };
+  const retire = useRetireItem(api, refused);
   const act = (fn: () => Promise<void>) => {
     setBusy(true);
     setProblem(null);
@@ -163,7 +168,7 @@ export function MenuScreen() {
               onPrices={() => setFiling("prices")}
             />
             {!mirror && (
-              <Button variant="attention" disabled={!menu} onClick={() => menu && addItem(menu)}>
+              <Button variant="attention" disabled={!menu} onClick={() => menu && leave(() => addItem(menu))}>
                 <PlusIcon aria-hidden="true" size={18} />
                 Add New Item
               </Button>
@@ -186,8 +191,11 @@ export function MenuScreen() {
             aria-pressed={view === v}
             className={pillClass(view === v)}
             onClick={() => {
-              setView(v);
-              setProblem(null);
+              if (v === view) return;
+              leave(() => {
+                setView(v);
+                setProblem(null);
+              });
             }}
           >
             {viewWords[v]}
@@ -233,8 +241,11 @@ export function MenuScreen() {
             onOrder={(order) => pick({ order })}
             openId={item?.id ?? null}
             onOpen={(i) => {
-              setOpen({ kind: "item", id: i.id });
-              setProblem(null);
+              if (open?.kind === "item" && open.id === i.id) return;
+              leave(() => {
+                setOpen({ kind: "item", id: i.id });
+                setProblem(null);
+              });
             }}
             api={api}
             onProblem={refused}
@@ -252,7 +263,7 @@ export function MenuScreen() {
                 busy={busy}
                 onCancel={() => setOpen(null)}
                 onSoldOut={(soldOut) => act(() => api.setItemSoldOut(item.id, soldOut))}
-                onActive={(active) => act(() => api.setItemActive(item.id, active))}
+                onActive={(active) => act(() => (active ? api.setItemActive(item.id, true) : retire(item)))}
                 onSave={async (input, groups, photo) => {
                   await api.updateItem(item.id, input);
                   if (groupsChanged(item, groups)) await api.setItemGroups(item.id, groups);

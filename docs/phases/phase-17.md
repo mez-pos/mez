@@ -110,7 +110,10 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
   the guest table response; "before tax" only when prices exclude it. Done
   2026-10-31 (ADR-386): the field is `tax_added`, on the guest's venue and
   the till's list of requests; the guest's receipt says "GSTIN".
-- [ ] **Task 16 - No silent loss of work (BO-2, BO-5, TECH-9, BO-6).**
+- [x] **Task 16 - No silent loss of work (BO-2, BO-5, TECH-9, BO-6).** Done
+  2026-10-31 (ADR-387): one leave guard in the back office's shell; Save
+  names what it saves; a Sheet holding a form ignores its scrim; Retire is
+  asked with a count, an item's is undone.
 
 ### Readable for everyone
 

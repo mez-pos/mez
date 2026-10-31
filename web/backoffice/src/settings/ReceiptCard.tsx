@@ -54,6 +54,7 @@ export function ReceiptCard({ receipt, api, onDirty }: ReceiptCardProps) {
   return (
     <SectionCard
       title="Receipt"
+      saves="receipt"
       description="What the receipt and the credit note say beyond what your tax profile requires. That always prints: the name, registration, number, date, tax and total."
       dirty={d.dirty}
       busy={busy}

@@ -7,11 +7,18 @@
 
 export type ToastTone = "neutral" | "success" | "warning";
 
+/** The one thing a toast may offer to do: take back what it reports ("Undo"). */
+export interface ToastButton {
+  readonly label: string;
+  readonly run: () => void;
+}
+
 export interface Toast {
   readonly id: number;
   readonly tone: ToastTone;
   readonly message: string;
   readonly durationMs: number;
+  readonly button?: ToastButton;
 }
 
 export interface ToastState {
@@ -20,7 +27,7 @@ export interface ToastState {
 }
 
 export type ToastAction =
-  | { readonly type: "show"; readonly tone: ToastTone; readonly message: string; readonly durationMs: number }
+  | { readonly type: "show"; readonly tone: ToastTone; readonly message: string; readonly durationMs: number; readonly button?: ToastButton }
   | { readonly type: "dismiss"; readonly id: number };
 
 /** More than this at once is noise; the oldest goes first. */
@@ -31,7 +38,13 @@ export const emptyToasts: ToastState = { toasts: [], nextId: 1 };
 export function toastReducer(state: ToastState, action: ToastAction): ToastState {
   switch (action.type) {
     case "show": {
-      const toast: Toast = { id: state.nextId, tone: action.tone, message: action.message, durationMs: action.durationMs };
+      const toast: Toast = {
+        id: state.nextId,
+        tone: action.tone,
+        message: action.message,
+        durationMs: action.durationMs,
+        ...(action.button ? { button: action.button } : {}),
+      };
       return { toasts: [...state.toasts, toast].slice(-maxVisibleToasts), nextId: state.nextId + 1 };
     }
     case "dismiss":

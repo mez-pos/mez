@@ -204,7 +204,10 @@ Every card with a foot behaves the same.
   has.
 - **Unsaved changes** shows at the left of the foot, in words, as soon as
   the draft differs.
-- **Save** sends the whole card. The button reads "Saving". On success the
+- **Save** sends the whole card, and says what it saves (BO-5): **Save
+  venue details**, **Save phone payments**, **Save tax profile**, **Save
+  numbering**, **Save receipt**, **Save shift rules**, **Save backup**. The
+  button reads "Saving". On success the
   form shows what the server answered and the foot says **Saved**, in green,
   until the next edit. On refusal the draft is kept and the server's words
   appear under the field they are about; a refusal about no field appears in
@@ -213,7 +216,8 @@ Every card with a foot behaves the same.
 - **Leaving with unsaved changes**, by another section or a link out: "Leave
   without saving?", "Your changes to Venue are not saved.", **Keep editing**
   and **Leave**. Closing or reloading the tab asks through the browser's own
-  prompt. Leaving by the sidebar does not ask, and loses the draft.
+  prompt. The sidebar, a `g` chord and Sign out ask the same: it is the
+  shell's leave guard (ADR-387).
 - Enter in a field saves: a card is a form.
 
 ## Data

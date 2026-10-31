@@ -25,14 +25,19 @@ Inside the frame (`backoffice-shell.md`).
   table** (the primary) at the right. With no area yet, only Add an area.
 - **Areas**, a row of 48px tabs, in the order added. A retired area's tab is
   struck. Under the tabs, the chosen area's **Rename** and **Retire** (or
-  **Bring back**).
+  **Bring back**). Retire is asked first ("Retire Terrace?"); while the area
+  has tables in service it says so instead, "Inside has 8 tables in
+  service", "Retire them, or move them to another area, before you retire the
+  area.", with Close (BO-6, ADR-387).
 - **The grid:** the chosen area as 12 columns by 8 rows, every cell at least
   48px (the touch floor), the whole grid scrolling sideways on a narrow
   screen rather than shrinking under that. A free cell is a dashed outline;
   a table fills its cell with its name and its seats ("4 seats"), drawn as
   its shape: square, round or long.
 - **The chosen table**, a card: "Table T4", its seats, shape, and where
-  ("Inside, column 3, row 2"). **Edit**, **Move**, **Retire**. From 1280px
+  ("Inside, column 3, row 2"). **Edit**, **Move**, **Retire** (asked first:
+  "Retire T2?", "It leaves the floor plan and the till, and its QR code
+  leads nowhere until you bring it back."). From 1280px
   it is a column beside the grid at the back office's side width
   (`w-aside`), and stays in sight as the page scrolls; with no table picked
   that column says "Pick a table to edit, move or retire it." (BO-7). The

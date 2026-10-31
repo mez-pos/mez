@@ -15,6 +15,7 @@ import { RowMenu } from "../RowMenu";
 import { canReorder, emptyLine, itemState, listItems, listTitle, orderOptions, type ListFilter, type Order } from "./browse-logic";
 import { itemsOf, moved, problemOf } from "./menu-logic";
 import type { MenuEditorApi } from "./use-menu-editor";
+import { useRetireItem } from "./use-retire-item";
 
 interface ItemListProps {
   menu: MenuEditor;
@@ -33,6 +34,7 @@ export function ItemList({ menu, filter, onOrder, openId, onOpen, api, onProblem
   const mirror = useOnMirror();
   const now = new Date(useClock(60_000));
   const items = listItems(menu, filter, now);
+  const retire = useRetireItem(api, onProblem);
   const run = (fn: () => Promise<void>) => {
     setBusy(true);
     fn()
@@ -120,7 +122,10 @@ export function ItemList({ menu, filter, onOrder, openId, onOpen, api, onProblem
                           },
                         ]
                       : []),
-                    { label: state === "retired" ? "Bring back" : "Retire", run: () => run(() => api.setItemActive(item.id, state === "retired")) },
+                    {
+                      label: state === "retired" ? "Bring back" : "Retire",
+                      run: () => run(() => (state === "retired" ? api.setItemActive(item.id, true) : retire(item))),
+                    },
                     ...(order && at > 0 ? [{ label: "Move up", run: () => move(item, -1) }] : []),
                     ...(order && at >= 0 && at < order.length - 1 ? [{ label: "Move down", run: () => move(item, 1) }] : []),
                   ]}

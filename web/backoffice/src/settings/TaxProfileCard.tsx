@@ -47,6 +47,7 @@ export function TaxProfileCard({ tax, onSave, onDirty }: TaxProfileCardProps) {
   return (
     <SectionCard
       title="Tax profile"
+      saves="tax profile"
       description="Which tax the venue charges, and what its invoices must show."
       dirty={d.dirty}
       busy={busy}

@@ -26,6 +26,7 @@ import { useMirror } from "../../../shared/use-mirror";
 import { useAway, useRealtimeNotices } from "../../../shared/use-realtime";
 import { useVenue, useVenueClock } from "../../../shared/use-venue";
 import { barClock } from "../../../shared/venue-text";
+import { LeaveGuardProvider, useLeave } from "./leave-guard";
 import { chord, sectionForPath, tillPath, type ChordState } from "./nav-logic";
 import { SectionNav, sectionNavId } from "./SectionNav";
 
@@ -36,11 +37,21 @@ export function usePermissions(): readonly Permission[] {
 }
 
 export function BackOfficeShell({ children }: { children: ReactNode }) {
+  // Every way out of a screen the frame offers asks first when a form holds a draft.
+  return (
+    <LeaveGuardProvider>
+      <Frame>{children}</Frame>
+    </LeaveGuardProvider>
+  );
+}
+
+function Frame({ children }: { children: ReactNode }) {
   const auth = useAuth();
   const store = useAuthStore();
   const [path] = useLocation();
   // Under 768px the sections are a drawer, and this is whether it is open.
   const [navOpen, setNavOpen] = useState(false);
+  const leave = useLeave();
   useChords();
   useFreshWhenAway();
   useMirrorKeptUp();
@@ -88,7 +99,7 @@ export function BackOfficeShell({ children }: { children: ReactNode }) {
             role={auth.staff.role}
             actions={[
               ...(till ? [{ icon: MonitorIcon, label: "Back to the till", onClick: () => window.location.assign(till) }] : []),
-              { icon: LogOutIcon, label: "Sign out", onClick: () => void store.signOut() },
+              { icon: LogOutIcon, label: "Sign out", onClick: () => leave(() => void store.signOut()) },
             ]}
           />
         </div>
@@ -215,14 +226,15 @@ function VenueClock() {
 
 /** Listens for `g` chords on the whole page while the shell is mounted. */
 function useChords() {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const held = usePermissions();
+  const leave = useLeave();
   const state = useRef<ChordState>(null);
   // Kept in a ref so the listener is added once, not on every sign-in change.
-  const latest = useRef({ held, navigate });
+  const latest = useRef({ held, navigate, leave, location });
   useEffect(() => {
-    latest.current = { held, navigate };
-  }, [held, navigate]);
+    latest.current = { held, navigate, leave, location };
+  }, [held, navigate, leave, location]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -232,9 +244,12 @@ function useChords() {
         latest.current.held,
       );
       state.current = r.state;
-      if (r.go) {
+      const to = r.go;
+      if (to) {
         e.preventDefault();
-        latest.current.navigate(r.go);
+        // A chord to the screen already open leaves nothing, and asks nothing.
+        const { leave, navigate, location } = latest.current;
+        if (to !== location) leave(() => navigate(to));
       }
     };
     window.addEventListener("keydown", onKey);

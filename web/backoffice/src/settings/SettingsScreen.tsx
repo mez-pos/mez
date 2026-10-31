@@ -1,7 +1,7 @@
 // The settings frame (D22): a rail of sections with an icon each, beside the
 // one section open. Each section keeps its own draft and saves on its own; the
-// frame only knows whether the open one has unsaved changes, so it can ask
-// before leaving it.
+// frame only knows whether the open one has unsaved changes, and tells the
+// shell's leave guard, which asks before any way out of it (ADR-387).
 //
 // The design draws every section on one screen with one Save. Here a section
 // is a page and saves itself (ADR-129): a refusal is about the form in front
@@ -11,13 +11,14 @@
 // own switch.
 
 import { ArmchairIcon, DatabaseIcon, MonitorSmartphoneIcon, PercentIcon, PrinterIcon, ReceiptTextIcon, StoreIcon, type LucideIcon } from "lucide-react";
-import { useCallback, useEffect, useState, type MouseEvent } from "react";
-import { Link, Redirect, useLocation } from "wouter";
-import { Button, Card, EmptyState, InboxIcon, Modal } from "../../../shared/ui";
+import { useCallback, useState, type MouseEvent } from "react";
+import { Link, Redirect } from "wouter";
+import { Card, EmptyState, InboxIcon } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { useServerVersion } from "../../../shared/use-venue";
 import { versionText } from "../../../shared/venue-text";
 import { usePermissions } from "../shell/BackOfficeShell";
+import { useDraftHeld, useGuardedLink } from "../shell/leave-guard";
 import {
   DEFAULT_SECTION,
   SETTINGS_SECTIONS,
@@ -44,12 +45,11 @@ export function SettingsScreen({ path }: { path: string }) {
 
 function Frame({ section }: { section: SettingsSection }) {
   const api = useSettings();
-  const [, navigate] = useLocation();
   // Which forms of the open section differ from what is saved: a section may
-  // have several, each saving on its own.
+  // have several, each saving on its own. A form that unmounts says it is clean.
   const [dirtyForms, setDirtyForms] = useState<ReadonlySet<string>>(new Set());
-  const [leaving, setLeaving] = useState<string | null>(null);
-  const dirty = dirtyForms.size > 0;
+  useDraftHeld(dirtyForms.size > 0, section.label);
+  const goTo = useGuardedLink();
   const reportDirty = useCallback((form: string, d: boolean) => {
     setDirtyForms((prev) => {
       if (prev.has(form) === d) return prev;
@@ -61,24 +61,6 @@ function Frame({ section }: { section: SettingsSection }) {
   }, []);
   const venueDirty = useCallback((d: boolean) => reportDirty("venue", d), [reportDirty]);
   const paymentsDirty = useCallback((d: boolean) => reportDirty("payments", d), [reportDirty]);
-
-  // The browser's own prompt when the tab is closed or reloaded on a draft.
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
-
-  // Any way out of the open section from the rail asks first when it has a draft.
-  const goTo = (e: MouseEvent, path: string) => {
-    // A click that opens another tab leaves this one, and its draft, where it is.
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-    if (dirty && path !== section.path) {
-      e.preventDefault();
-      setLeaving(path);
-    }
-  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -101,31 +83,6 @@ function Frame({ section }: { section: SettingsSection }) {
           {section.id === "backup" && <BackupSection onDirty={reportDirty} />}
         </div>
       </div>
-
-      <Modal
-        open={leaving !== null}
-        onClose={() => setLeaving(null)}
-        title="Leave without saving?"
-        footer={
-          <>
-            <Button onClick={() => setLeaving(null)}>Keep editing</Button>
-            <Button
-              variant="primary"
-              onClick={() => {
-                const to = leaving;
-                setLeaving(null);
-                // The draft is given up: nothing is dirty where we are going.
-                setDirtyForms(new Set());
-                if (to) navigate(to);
-              }}
-            >
-              Leave
-            </Button>
-          </>
-        }
-      >
-        Your changes to {section.label} are not saved.
-      </Modal>
     </div>
   );
 }

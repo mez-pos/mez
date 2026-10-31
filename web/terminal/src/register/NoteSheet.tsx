@@ -39,7 +39,7 @@ export function NoteSheet({ onSave, onClose }: NoteSheetProps) {
   );
 
   return (
-    <Sheet open onClose={onClose} title="Note on the order" footer={footer}>
+    <Sheet open onClose={onClose} title="Note on the order" footer={footer} holdsForm={text !== ""}>
       <label className="flex flex-col gap-2">
         <span className="text-sm text-fg-muted">Everyone working this order sees it</span>
         <textarea

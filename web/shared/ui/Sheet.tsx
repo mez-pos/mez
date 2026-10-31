@@ -3,8 +3,11 @@
 // "touch" is decided by the pointer, not by width: a wide screen with a
 // finger on it still gets a bottom sheet, within thumb reach.
 //
-// Escape, the close control and a tap on the scrim all close it. There is no
-// drag to dismiss: a drag must never be the only path to an action (tokens.md).
+// Escape, the close control and a tap on the scrim all close it, except that a
+// sheet holding something typed or chosen (holdsForm) is not closed by the
+// scrim, as a Modal never is: a stray tap does not throw away a half-typed
+// note or approval (TECH-9, ADR-387). There is no drag to dismiss: a drag must
+// never be the only path to an action (tokens.md).
 
 import { useId, type MouseEvent, type ReactNode } from "react";
 import { Button } from "./Button";
@@ -19,16 +22,18 @@ export interface SheetProps {
   children: ReactNode;
   /** Stays in view under a scrolling body: the charge button, a save. */
   footer?: ReactNode;
+  /** It holds something typed or chosen: a tap on the scrim leaves it open. Escape and Close still close it. */
+  holdsForm?: boolean;
 }
 
-export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
+export function Sheet({ open, onClose, title, children, footer, holdsForm = false }: SheetProps) {
   const ref = useDialog(open, onClose);
   const titleId = useId();
 
   // The panel fills the dialog, so a click whose target is the dialog itself
   // landed on the scrim around it.
   const scrimClick = (event: MouseEvent<HTMLDialogElement>) => {
-    if (event.target === event.currentTarget) onClose();
+    if (event.target === event.currentTarget && !holdsForm) onClose();
   };
 
   return (

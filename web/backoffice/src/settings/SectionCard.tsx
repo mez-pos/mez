@@ -10,6 +10,8 @@ import { Button, Card } from "../../../shared/ui";
 
 export interface SectionCardProps {
   title: string;
+  /** What Save saves, for its words: "receipt" is "Save receipt" (BO-5). A section has several cards. */
+  saves: string;
   description: string;
   /** The draft differs from what the server holds. */
   dirty: boolean;
@@ -35,6 +37,7 @@ export interface SectionCardProps {
 
 export function SectionCard({
   title,
+  saves,
   description,
   dirty,
   busy,
@@ -86,7 +89,7 @@ export function SectionCard({
               Discard
             </Button>
             <Button type="submit" variant="primary" disabled={!dirty || busy}>
-              {busy ? "Saving" : "Save"}
+              {busy ? "Saving" : `Save ${saves}`}
             </Button>
           </div>
         </div>

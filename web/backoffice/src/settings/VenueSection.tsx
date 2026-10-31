@@ -33,6 +33,7 @@ export function VenueSection({ venue, onSave, onDirty }: VenueSectionProps) {
   return (
     <SectionCard
       title="Venue"
+      saves="venue details"
       description="Who the venue is, as it appears on the lock screen and on invoices."
       dirty={d.dirty}
       busy={busy}

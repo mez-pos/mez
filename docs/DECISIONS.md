@@ -14840,3 +14840,51 @@ the venue's own tax settings know.
 Cost: two indexed reads more on each landing and each read of the till's list. A request
 waiting while the owner changes the venue's pricing reads under the new pricing, which is the
 one its bill will be made under.
+
+## ADR-387 - No silent loss of work: one leave guard, sheets that keep a form, and Retire asked or undone
+2026-10 · Status: accepted. Phase 17 Task 16 (BO-2, BO-5, TECH-9, BO-6); carries out ADR-381's
+items 5 and 6.
+Context: the menu's item editor dropped an unsaved edit when another item, a new item or
+another view replaced it, and every screen dropped one when the sidebar or a `g` chord left
+it; Settings asked only from its own rail. Each settings card's button said "Save" alone,
+on a page with several cards. A Sheet closed on a tap on its scrim, so a half-typed order
+note, a line being changed or a manager's approval went with a stray tap; a Modal never
+did. Retire was instant on areas, tables and groups of choices, a neutral button on one
+screen and the danger one on the next, while a category asked first.
+Decision:
+  - **One leave guard in the back office's shell** (`shell/leave-guard.tsx`). A form says it
+    holds a draft with `useDraftHeld(dirty, what)`; every way out asks "Leave without
+    saving?", "Your changes to Filter coffee are not saved.", **Keep editing** and **Leave**:
+    the sidebar, a `g` chord and Sign out (the shell's), and a screen's own through
+    `useLeave()`: another settings section, and on the menu another item, a new item or
+    another view. A link or chord to the screen already open, and a click that opens another
+    tab, ask nothing. Closing or reloading the tab gets the browser's own prompt. Leaving
+    runs the move; the forms left unmount and let their drafts go. Settings' own question
+    and prompt are this one now. The item editor's Cancel still drops its edit: it is the
+    way to.
+  - **Save names what it saves** in Settings: **Save venue details**, **Save phone
+    payments**, **Save tax profile**, **Save numbering**, **Save receipt**, **Save shift
+    rules**, **Save backup** (`SectionCard`'s `saves`, required, so a new card names its own).
+  - **A Sheet that holds a form is not closed by its scrim** (`holdsForm`): the approval
+    always, the order note once it has text, a line once its count or note changed. Escape
+    and Close still close it. A sheet that only shows something (requests, the print queue,
+    the guest's dish) still closes on a tap outside, as a phone's does.
+  - **Retire is asked, with what it takes**, and its button is the danger one on every screen
+    (`retire-logic.ts`, `RetireConfirm`): an area ("Retire Terrace?"; with tables in service
+    it says so, "Inside has 8 tables in service", and offers only Close, since the server
+    refuses it), a table (its QR code leads nowhere until it is back), a group of choices ("12
+    items stop offering it") and a category ("Its 3 items come off every order screen"). **An
+    item is not asked**: it is retired in one click from the editor or its row's menu, and
+    the toast that says so ("Retired Filter coffee. It is off every order screen.") has
+    **Undo**. `Toast` takes one such button, and then stays 8 seconds.
+Rejected: a guard per screen (Settings had one; the sidebar and the chords are the shell's,
+and a second screen with a form would have grown a third copy); asking before Cancel (it is
+the discard); a Sheet that never closes on its scrim (a list or a dish's card is dismissed
+by a tap outside on every phone); asking before an item is retired (an item is retired by
+the day's menu, often, and brought back as easily: Undo costs a tap only when it was a
+mistake); words for Save derived from the card's title ("Save Where the backup goes").
+Because: losing typed work is the failure a person remembers, and the shell is the one place
+every way out passes through; danger looks the same wherever it is, and is asked or undone.
+Cost: a back office form outside Settings and the item editor (a stock count, a recipe, a
+role's permissions) holds no draft with the guard yet: each joins with one `useDraftHeld`
+line. The Undo toast sits over the foot of the screen for 8 seconds.

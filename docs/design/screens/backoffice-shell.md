@@ -140,8 +140,12 @@ device paired as a back office.
 - **Permissions changed mid-session** (a role edited on Staff): the frame
   learns at the next sign-in or reload, and until then the server refuses as
   usual.
-- **A draft left by a sidebar link:** Settings asks first ("Leave without
-  saving?"); the other screens drop it without asking.
+- **A draft left by a sidebar link, a `g` chord or Sign out:** a screen whose
+  form holds a draft (Settings, the menu's item editor) is asked about first:
+  "Leave without saving?", "Your changes to Filter coffee are not saved.",
+  **Keep editing** and **Leave** (ADR-387). A link or chord to the screen
+  already open asks nothing. Closing or reloading the tab gets the browser's
+  own prompt.
 
 ## Reference
 

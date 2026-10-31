@@ -43,6 +43,7 @@ export function RulesCard({ rules, onSave, onDirty }: RulesCardProps) {
   return (
     <SectionCard
       title="Shifts, tips and orders"
+      saves="shift rules"
       description="When a day starts, what a short drawer needs, how tips are shared, which tips need a manager and when an order runs late."
       dirty={d.dirty}
       busy={busy}

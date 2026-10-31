@@ -10,6 +10,8 @@ import { Button, Card, EmptyState, InboxIcon } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { pillClass } from "../../../shared/ui/pill";
 import { useOnMirror } from "../../../shared/use-mirror";
+import { retireAreaWords, retireTableWords, type RetireWords } from "../retire-logic";
+import { RetireConfirm } from "../RetireConfirm";
 import {
   areaToShow,
   cellsOf,
@@ -128,6 +130,8 @@ function AreaView({ data, areaId, api, readOnly, onChooseArea, onEdit }: AreaVie
   const [moving, setMoving] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<Message | null>(null);
+  // What a Retire is asking about, and what it does once agreed (BO-6).
+  const [retiring, setRetiring] = useState<{ words: RetireWords; retire: () => void } | null>(null);
   const area = data.areas.find((a) => a.id === areaId)!;
   const cells = cellsOf(data, areaId);
   const chosen = data.tables.find((t) => t.id === chosenId && t.active && t.area_id === areaId) ?? null;
@@ -185,7 +189,16 @@ function AreaView({ data, areaId, api, readOnly, onChooseArea, onEdit }: AreaVie
           Rename {area.name}
         </Button>
         {area.active ? (
-          <Button variant="danger" disabled={busy} onClick={() => run(() => api.retireArea(area.id), `Retired ${area.name}.`)}>
+          <Button
+            variant="danger"
+            disabled={busy}
+            onClick={() =>
+              setRetiring({
+                words: retireAreaWords(area.name, data.tables.filter((t) => t.active && t.area_id === area.id).length),
+                retire: () => run(() => api.retireArea(area.id), `Retired ${area.name}.`),
+              })
+            }
+          >
             Retire {area.name}
           </Button>
         ) : (
@@ -247,7 +260,13 @@ function AreaView({ data, areaId, api, readOnly, onChooseArea, onEdit }: AreaVie
                   <Button disabled={busy} onClick={() => setMoving(true)}>
                     Move
                   </Button>
-                  <Button variant="danger" disabled={busy} onClick={() => run(() => api.retireTable(chosen.id), `Retired ${chosen.name}.`)}>
+                  <Button
+                    variant="danger"
+                    disabled={busy}
+                    onClick={() =>
+                      setRetiring({ words: retireTableWords(chosen.name), retire: () => run(() => api.retireTable(chosen.id), `Retired ${chosen.name}.`) })
+                    }
+                  >
                     Retire
                   </Button>
                 </div>
@@ -287,6 +306,8 @@ function AreaView({ data, areaId, api, readOnly, onChooseArea, onEdit }: AreaVie
           </ul>
         </section>
       )}
+
+      <RetireConfirm words={retiring?.words ?? null} onClose={() => setRetiring(null)} onRetire={() => retiring?.retire()} />
     </>
   );
 }

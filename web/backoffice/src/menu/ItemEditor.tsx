@@ -20,6 +20,7 @@ import { useOnMirror } from "../../../shared/use-mirror";
 import { useVenueClock } from "../../../shared/use-venue";
 import { venueDateTime } from "../../../shared/venue-clock";
 import { CheckField, Choice, Field, inputClass } from "../FormFields";
+import { useDraftHeld } from "../shell/leave-guard";
 import { groupsChanged } from "./group-logic";
 import { ItemGroupsField } from "./ItemGroupsField";
 import { ItemPhotoField, type PhotoChange } from "./ItemPhotoField";
@@ -97,6 +98,8 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
   const change = priceChange(item, form.price);
   const waiting = busy || saving;
   const unsaved = formChanged(initial, form, menu.currency) || groupsChanged(item, groups) || photo.kind !== "keep";
+  // Another item, a new one, another view or another screen asks before this is lost (BO-2, ADR-387).
+  useDraftHeld(unsaved && !readOnly, item ? item.name : "the new item");
   // One live region whose words change, as a settings section's: a screen reader hears each in turn.
   const saveWords = saving ? "Saving" : unsaved ? "Unsaved changes" : "";
 

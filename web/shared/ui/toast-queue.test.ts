@@ -22,6 +22,13 @@ describe("toastReducer", () => {
     expect(state.nextId).toBe(maxVisibleToasts + 3);
   });
 
+  it("keeps a toast's button, and gives none to a toast without one", () => {
+    const run = () => undefined;
+    const state = toastReducer(toastReducer(emptyToasts, { ...show("Retired Latte."), button: { label: "Undo", run } }), show("Saved."));
+    expect(state.toasts[0]?.button).toEqual({ label: "Undo", run });
+    expect(state.toasts[1]).not.toHaveProperty("button");
+  });
+
   it("dismisses by id, and ignores an id already gone", () => {
     const state = toastReducer(toastReducer(emptyToasts, show("a")), show("b"));
     const after = toastReducer(state, { type: "dismiss", id: 1 });

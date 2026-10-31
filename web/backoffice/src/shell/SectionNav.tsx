@@ -30,6 +30,7 @@ import {
 import { Link } from "wouter";
 import type { Permission } from "../../../shared/api-types";
 import { cx } from "../../../shared/ui/cx";
+import { useGuardedLink } from "./leave-guard";
 import { visibleNav, type Section, type SectionId } from "./nav-logic";
 
 // A Record over the ids, so a section added to NAV fails the build until it has an icon.
@@ -97,6 +98,8 @@ const entry = "flex min-h-tap items-center gap-3 whitespace-nowrap rounded px-4 
 
 function NavEntry({ section: s, active, onPick }: { section: Section; active: boolean; onPick: () => void }) {
   const Icon = icons[s.id];
+  // Asks first when the screen open holds a draft (ADR-387).
+  const guarded = useGuardedLink();
   if (!s.built) {
     return (
       <span className={cx(entry, "text-fg-muted")}>
@@ -109,7 +112,10 @@ function NavEntry({ section: s, active, onPick }: { section: Section; active: bo
   return (
     <Link
       href={s.path}
-      onClick={onPick}
+      onClick={(e) => {
+        onPick();
+        guarded(e, s.path);
+      }}
       aria-current={active ? "page" : undefined}
       className={cx(entry, active ? "bg-attention font-semibold text-attention-fg" : "text-fg hover:bg-raised-high")}
     >

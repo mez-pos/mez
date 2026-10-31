@@ -56,6 +56,7 @@ export function NumberingCard({ numbering: n, api, onDirty }: NumberingCardProps
     <SectionCard
       readOnly={away}
       title="Invoice numbering"
+      saves="numbering"
       description="How invoices and credit notes are numbered, and when the numbers start again."
       dirty={d.dirty}
       busy={busy}

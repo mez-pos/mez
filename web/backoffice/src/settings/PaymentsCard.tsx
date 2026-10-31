@@ -51,6 +51,7 @@ export function PaymentsCard({ payments, onSave, onDirty }: PaymentsCardProps) {
     <SectionCard
       readOnly={away}
       title="Paid from a phone"
+      saves="phone payments"
       description="A guest reading their bill on their phone can pay it by UPI, straight to your account. They show you the payment, and you record it on the terminal as you would one made at the counter."
       dirty={d.dirty}
       busy={busy}

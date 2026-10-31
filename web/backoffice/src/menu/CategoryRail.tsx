@@ -11,9 +11,11 @@
 import { LayoutGridIcon, PlusIcon, StarIcon, UtensilsIcon, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import type { MenuEditor } from "../../../shared/api-types";
-import { Button, Card, Confirm } from "../../../shared/ui";
+import { Button, Card } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { useOnMirror } from "../../../shared/use-mirror";
+import { retireCategoryWords } from "../retire-logic";
+import { RetireConfirm } from "../RetireConfirm";
 import { scopeRows, type Scope } from "./browse-logic";
 import { moved, problemOf } from "./menu-logic";
 import type { MenuEditorApi } from "./use-menu-editor";
@@ -99,7 +101,7 @@ export function CategoryRail({ menu, scope, onScope, api, onAdd, onRename, onPro
             <span aria-hidden="true">↓</span>
           </Button>
           {chosen.active ? (
-            <Button size="md" disabled={busy} onClick={() => setConfirmRetire(true)}>
+            <Button size="md" variant="danger" disabled={busy} onClick={() => setConfirmRetire(true)}>
               Retire
             </Button>
           ) : (
@@ -117,18 +119,11 @@ export function CategoryRail({ menu, scope, onScope, api, onAdd, onRename, onPro
       </p>
 
       {chosen && (
-        <Confirm
-          open={confirmRetire}
+        <RetireConfirm
+          words={confirmRetire ? retireCategoryWords(chosen.name, count) : null}
           onClose={() => setConfirmRetire(false)}
-          onConfirm={() => {
-            setConfirmRetire(false);
-            run(() => api.setCategoryActive(chosen.id, false));
-          }}
-          title={`Retire ${chosen.name}?`}
-          confirmLabel="Retire"
-        >
-          <p className="text-base">{count === 1 ? "Its one item comes" : `Its ${count} items come`} off every order screen. You can bring it back.</p>
-        </Confirm>
+          onRetire={() => run(() => api.setCategoryActive(chosen.id, false))}
+        />
       )}
     </Card>
   );

@@ -144,7 +144,8 @@ export function ApprovalSheet({ title, action, children, ready, problem, onSubmi
     );
   }
   return (
-    <Sheet open onClose={onClose} title={title} footer={footer}>
+    // A reason, then who approves and their PIN: never lost to a stray tap (TECH-9).
+    <Sheet open onClose={onClose} title={title} footer={footer} holdsForm>
       {body}
     </Sheet>
   );

@@ -7,6 +7,8 @@ import { Button, EmptyState, InboxIcon, Money } from "../../../shared/ui";
 import { DataTable, type Column } from "../../../shared/ui/DataTable";
 import { cx } from "../../../shared/ui/cx";
 import { useOnMirror } from "../../../shared/use-mirror";
+import { retireGroupWords } from "../retire-logic";
+import { RetireConfirm } from "../RetireConfirm";
 import { groupProblemOf, ruleText, usedBy } from "./group-logic";
 import type { MenuEditorApi } from "./use-menu-editor";
 
@@ -19,6 +21,8 @@ interface GroupsViewProps {
 
 export function GroupsView({ menu, api, onEdit, onProblem }: GroupsViewProps) {
   const [busy, setBusy] = useState(false);
+  // The group a Retire is asking about (BO-6).
+  const [retiring, setRetiring] = useState<EditorGroup | null>(null);
   // A mirror lists the groups, which says all there is of each, and changes none (ADR-330).
   const mirror = useOnMirror();
   const activate = (g: EditorGroup) => {
@@ -71,9 +75,15 @@ export function GroupsView({ menu, api, onEdit, onProblem }: GroupsViewProps) {
           <Button disabled={busy} onClick={() => onEdit(g)}>
             Edit
           </Button>
-          <Button disabled={busy} onClick={() => activate(g)}>
-            {g.active ? "Retire" : "Bring back"}
-          </Button>
+          {g.active ? (
+            <Button variant="danger" disabled={busy} onClick={() => setRetiring(g)}>
+              Retire
+            </Button>
+          ) : (
+            <Button disabled={busy} onClick={() => activate(g)}>
+              Bring back
+            </Button>
+          )}
         </span>
       ),
     },
@@ -81,17 +91,24 @@ export function GroupsView({ menu, api, onEdit, onProblem }: GroupsViewProps) {
   const columns = mirror ? every.filter((c) => c.id !== "actions") : every;
 
   return (
-    <DataTable
-      label="Groups of choices"
-      columns={columns}
-      rows={menu.modifier_groups}
-      rowKey={(g) => String(g.id)}
-      empty={
-        <EmptyState
-          icon={<InboxIcon />}
-          line={mirror ? "No choices yet." : "No choices yet. Add a group, like Milk with Dairy and Oat, then offer it on items."}
-        />
-      }
-    />
+    <>
+      <DataTable
+        label="Groups of choices"
+        columns={columns}
+        rows={menu.modifier_groups}
+        rowKey={(g) => String(g.id)}
+        empty={
+          <EmptyState
+            icon={<InboxIcon />}
+            line={mirror ? "No choices yet." : "No choices yet. Add a group, like Milk with Dairy and Oat, then offer it on items."}
+          />
+        }
+      />
+      <RetireConfirm
+        words={retiring ? retireGroupWords(retiring.name, usedBy(menu, retiring.id)) : null}
+        onClose={() => setRetiring(null)}
+        onRetire={() => retiring && activate(retiring)}
+      />
+    </>
   );
 }

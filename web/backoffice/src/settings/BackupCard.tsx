@@ -40,6 +40,7 @@ export function BackupCard({ backup, onSave, onDirty }: BackupCardProps) {
     <SectionCard
       readOnly={away}
       title="Where the backup goes"
+      saves="backup"
       description="Saving tries the place first: mez writes a small note there, and keeps the setting only if it could."
       dirty={d.dirty}
       busy={busy}

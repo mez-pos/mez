@@ -8,6 +8,18 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 15: tax words** (GST-2, TILL-18, GST-15, ADR-386),
+2026-10-31. The guest's venue (the table code's landing and the pickup
+code's) and the till's list of requests carry `tax_added`, from
+`order.Taxes.AddedOnTop()`: only a taxed venue pricing exclusive adds tax.
+The guest's cart and order say "Before tax, which is added on the bill."
+only there, and "Prices include any taxes." elsewhere; the till's request
+says "3 dishes, before tax" or "3 dishes". The guest's receipt says
+"GSTIN" (or "VAT number"), from the invoice's `tax_profile` and
+`registrationLabel`, now in `web/shared/tax-words.ts`. Seen in a browser:
+the cart and order at 390 and the requests at 1024 and 1366, inclusive and
+exclusive, and a paid table's receipt.
+
 **Phase 17, Task 14: one venue clock** (BO-1, BO-3, BO-4, TBS-17,
 ADR-385), 2026-10-31. `GET /api/v1/venue` carries `day_start`, and
 `web/shared/venue-clock.ts` is the one clock: the trading day from the

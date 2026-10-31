@@ -60,7 +60,7 @@ export function LineSheet({ line, notes, hasChoices, paid, onSave, onRemove, onA
   );
 
   return (
-    <Sheet open onClose={onClose} title={line.name} footer={footer}>
+    <Sheet open onClose={onClose} title={line.name} footer={footer} holdsForm={qty !== line.qty || note !== ""}>
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between gap-4">
           {can.change ? (

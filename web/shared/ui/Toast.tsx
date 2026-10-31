@@ -9,10 +9,11 @@
 import { createContext, useCallback, useContext, useEffect, useReducer, type ReactNode } from "react";
 import { cx } from "./cx";
 import { CloseIcon } from "./icons";
-import { emptyToasts, toastReducer, type Toast, type ToastTone } from "./toast-queue";
+import { emptyToasts, toastReducer, type Toast, type ToastButton, type ToastTone } from "./toast-queue";
 
 export interface ShowToast {
-  (message: string, options?: { tone?: ToastTone; durationMs?: number }): void;
+  /** A button takes back what the toast reports ("Undo"); the toast then stays longer, to be reached. */
+  (message: string, options?: { tone?: ToastTone; durationMs?: number; button?: ToastButton }): void;
 }
 
 const ToastContext = createContext<ShowToast | null>(null);
@@ -20,6 +21,8 @@ const ToastContext = createContext<ShowToast | null>(null);
 // Long enough to read two lines at arm's length, short enough not to cover
 // the cart for a whole transaction.
 const defaultDurationMs = 4000;
+// Long enough to read it, find the button and reach it with a mouse.
+const buttonDurationMs = 8000;
 
 export interface ToastProviderProps {
   children: ReactNode;
@@ -41,7 +44,13 @@ export function ToastProvider({ children, placement = "bottom" }: ToastProviderP
   const [state, dispatch] = useReducer(toastReducer, emptyToasts);
 
   const show = useCallback<ShowToast>((message, options = {}) => {
-    dispatch({ type: "show", message, tone: options.tone ?? "neutral", durationMs: options.durationMs ?? defaultDurationMs });
+    dispatch({
+      type: "show",
+      message,
+      tone: options.tone ?? "neutral",
+      durationMs: options.durationMs ?? (options.button ? buttonDurationMs : defaultDurationMs),
+      ...(options.button ? { button: options.button } : {}),
+    });
   }, []);
   const dismiss = useCallback((id: number) => dispatch({ type: "dismiss", id }), []);
 
@@ -88,6 +97,19 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number)
     <div className={cx("flex w-full max-w-md items-center gap-3 rounded border py-1 pl-4 pr-1", shells[toast.tone])}>
       <span aria-hidden="true" className={cx("size-2 shrink-0 rounded-round bg-current", dots[toast.tone])} />
       <p className="flex-1 text-base font-medium">{toast.message}</p>
+      {toast.button && (
+        // Not a Button either, for the same reason as Dismiss: it sits on any tone's fill.
+        <button
+          type="button"
+          onClick={() => {
+            onDismiss(toast.id);
+            toast.button?.run();
+          }}
+          className="pointer-events-auto inline-flex min-h-tap shrink-0 items-center rounded-pill px-3 text-base font-bold underline underline-offset-4 outline-current focus-visible:outline-2"
+        >
+          {toast.button.label}
+        </button>
+      )}
       {/* Not a Button: its ghost is terracotta, and this sits on any tone's fill. */}
       <button
         type="button"

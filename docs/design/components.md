@@ -13,12 +13,12 @@ the same task, don't invent a one-off.
 | `Qty` | tabular, in one pill, with +/− tap targets. Reports the next value; holds none |
 | `StatusChip` | colour **and** word. Takes `{ kind, status }` from `web/shared/ui/status.ts`: kitchen, order, payment or line. Never free text |
 | `Card` | an ivory card on a hairline and a warm shadow; the ticket surface on espresso night |
-| `Sheet` | bottom sheet on touch, side panel on desktop. Decided by `pointer`, not width. Escape, close control or scrim closes it |
+| `Sheet` | bottom sheet on touch, side panel on desktop. Decided by `pointer`, not width. Escape, close control or scrim closes it; one that holds something typed or chosen (`holdsForm`: an approval, a note, a line being changed) is not closed by the scrim (TECH-9, ADR-387) |
 | `Modal` | confirm, form. Escape and a visible close, always. The scrim does not close it. `Confirm` is the yes/no form |
 | `NumPad` | for amounts and PINs. Keys are 56px. Amounts shift in from the right as minor units; `numpad-keys.ts` does the arithmetic |
 | `SearchField` | debounced, clearable, keyboard-dismissible. Escape clears, Enter reports and blurs |
 | `DataTable` | back office only, imported from `ui/DataTable`, never the index. Sortable, cursor-paginated; the owner fetches |
-| `Toast` | transient. Never for errors that need a decision: it has no danger tone |
+| `Toast` | transient. Never for errors that need a decision: it has no danger tone. It may carry one button that takes back what it says (**Undo**), and then stays 8 seconds (ADR-387) |
 | `EmptyState` | icon, one line, one action |
 | `Timeline` | renders an order's event stream. Every event type has words, or the build fails |
 | `Logo` | the table mark and wordmark, inline, in the surface's colours. `variant="mark"` is the table alone |
