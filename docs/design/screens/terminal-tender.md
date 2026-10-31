@@ -129,9 +129,12 @@ cards are under them, one across at 1024 and two at 1366.
   shape of the 80mm receipt: the seller and registration, "Tax invoice" and
   its number, when and where; each line with its choices and HSN; the taxable
   value, each tax, the total; the payments and tips; how many times it has
-  been reprinted. Under it: "The receipt went to the print queue with the
-  payment. Print receipt prints a copy marked DUPLICATE and keeps the
-  number."
+  been reprinted. Under it, what became of the receipt, from the print
+  queue: "The receipt printed on Counter.", "...is printing on Counter.",
+  "...has not printed yet: Counter did not answer. It tries again by
+  itself.", or, in danger, "No receipt printed: this venue has no receipt
+  printer. A manager adds one in the back office." (TILL-19, ADR-394); then
+  "Print receipt prints a copy marked DUPLICATE and keeps the number."
 - **Right, `w-rail`, on the sunken ground:** **Payment successful** in the
   serif's heading ink (ADR-381: terracotta asks for attention a paid bill
   does not need), the amount paid large, "Paid for INV/26-27/000041" (the

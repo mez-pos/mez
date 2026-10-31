@@ -151,7 +151,7 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
     the menu that opens it (TBS-18); "1 choice" (TILL-20); a dish card
     announced name first (TILL-14); "Tap your name first." (TILL-22); the UPI
     wait not drawn as a code (TILL-23).
-  - [ ] **Task 22b - Tables and follow-ups.** The same table words on the
+  - [x] **Task 22b - Tables and follow-ups.** Done 2026-10-31 (ADR-394). The same table words on the
     till and the waiter's tablet, "Seated" never beside "Ordered", "Seat and
     order" the primary on both (TBS-9, TBS-11, TBS-19, ADR-381 item 9); one
     free count (TBS-14); the requests sheet closes with a toast (TILL-17);

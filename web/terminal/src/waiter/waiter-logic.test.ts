@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LiveFloorResponse, LiveTableResponse } from "../../../shared/api-types";
-import { cardMeta, cardWords, filterCounts, firstName, greeting, groupOf, hourIn, tableGroupOf, tablesShown } from "./waiter-logic";
+import { cardMeta, cardWords, filterCounts, firstName, greeting, groupOf, groupOrder, hourIn, tableGroupOf, tableGroups, tablesShown } from "./waiter-logic";
 
 const table = (extra: Partial<LiveTableResponse> = {}): LiveTableResponse => ({
   id: 1,
@@ -34,41 +34,44 @@ const evening = [
 ];
 
 describe("groupOf", () => {
-  it("reads a table seated and a table with an order both as occupied", () => {
-    expect(groupOf("seated")).toBe("occupied");
-    expect(groupOf("ordered")).toBe("occupied");
+  it("keeps a table seated apart from one that has ordered: Occupied hid which had not (TBS-11)", () => {
+    expect(groupOf("seated")).toBe("seated");
+    expect(groupOf("ordered")).toBe("ordered");
   });
   it("gives the other three states a group each", () => {
-    expect([groupOf("free"), groupOf("settling"), groupOf("dirty")]).toEqual(["available", "bill", "clear"]);
+    expect([groupOf("free"), groupOf("settling"), groupOf("dirty")]).toEqual(["free", "paying", "clear"]);
+  });
+  it("says each in the till's words", () => {
+    expect(groupOrder.map((g) => tableGroups[g].label)).toEqual(["Seated", "Ordered", "Paying", "To clear", "Free"]);
   });
 });
 
 describe("a table paid in full (ADR-383)", () => {
   const none = { minor: 0, currency: "INR" };
   const owed = { minor: 33000, currency: "INR" };
-  it("is occupied, never Needs Bill, and says Paid", () => {
+  it("is with the tables that ordered, never Paying, and says Paid", () => {
     const paid = table({ status: "settling", balance: none });
-    expect(tableGroupOf(paid)).toBe("occupied");
+    expect(tableGroupOf(paid)).toBe("ordered");
     expect(cardWords(paid)).toEqual({ label: "Paid", tone: "success" });
   });
-  it("leaves a table still owing under Needs Bill", () => {
+  it("leaves a table still owing under Paying, the till's word", () => {
     const paying = table({ status: "settling", balance: owed });
-    expect(tableGroupOf(paying)).toBe("bill");
-    expect(cardWords(paying).label).toBe("Needs Bill");
+    expect(tableGroupOf(paying)).toBe("paying");
+    expect(cardWords(paying).label).toBe("Paying");
   });
-  it("is not counted as needing its bill", () => {
+  it("is not counted as paying", () => {
     const counts = filterCounts([table({ status: "settling", balance: none }), table({ id: 2, status: "settling", balance: owed })]);
-    expect(counts.bill).toBe(1);
-    expect(counts.occupied).toBe(1);
+    expect(counts.paying).toBe(1);
+    expect(counts.ordered).toBe(1);
   });
 });
 
 describe("filterCounts", () => {
   it("counts every table under All, and each under its group", () => {
-    expect(filterCounts(evening)).toEqual({ all: 5, occupied: 2, available: 1, bill: 1, clear: 1 });
+    expect(filterCounts(evening)).toEqual({ all: 5, seated: 1, ordered: 1, paying: 1, clear: 1, free: 1 });
   });
   it("counts nothing on an empty floor", () => {
-    expect(filterCounts([])).toEqual({ all: 0, occupied: 0, available: 0, bill: 0, clear: 0 });
+    expect(filterCounts([])).toEqual({ all: 0, seated: 0, ordered: 0, paying: 0, clear: 0, free: 0 });
   });
 });
 
@@ -79,8 +82,9 @@ describe("tablesShown", () => {
     expect(names("all")).toEqual(["T1", "T2", "T3", "T10", "P1"]);
   });
   it("keeps one group", () => {
-    expect(names("occupied")).toEqual(["T1", "T3"]);
-    expect(names("bill")).toEqual(["T10"]);
+    expect(names("ordered")).toEqual(["T1"]);
+    expect(names("seated")).toEqual(["T3"]);
+    expect(names("paying")).toEqual(["T10"]);
   });
   it("finds a table by its number or its name, whatever the case or the spaces", () => {
     expect(names("all", "1")).toEqual(["T1", "T10", "P1"]);
@@ -88,8 +92,8 @@ describe("tablesShown", () => {
     expect(names("all", "p")).toEqual(["P1"]);
   });
   it("searches within the group picked", () => {
-    expect(names("occupied", "1")).toEqual(["T1"]);
-    expect(names("available", "9")).toEqual([]);
+    expect(names("ordered", "1")).toEqual(["T1"]);
+    expect(names("free", "9")).toEqual([]);
   });
 });
 
@@ -101,6 +105,9 @@ describe("cardMeta", () => {
   });
   it("says a seated table has not ordered", () => {
     expect(cardMeta(table({ status: "seated", covers: 2 }), names)).toBe("2 guests · No order yet");
+  });
+  it("says a party with no count has none, not Seated (TBS-9)", () => {
+    expect(cardMeta(table({ status: "ordered", covers: 0 }), names)).toBe("No guest count");
   });
   it("leaves the balance to be shown as money", () => {
     expect(cardMeta(table({ status: "ordered", covers: 1 }), names)).toBe("1 guest");

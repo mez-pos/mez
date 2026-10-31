@@ -35,11 +35,11 @@ const byName = (name: string) => tiles.find((t) => t.table.name === name)!;
 describe("moveTiles", () => {
   it("lists every other table the way people count, with what each is", () => {
     expect(tiles.map((t) => [t.table.name, t.state, t.word])).toEqual([
-      ["T2", "free", "Available · 4"],
-      ["T5", "free", "Available · 6"],
+      ["T2", "free", "Free · 4"],
+      ["T5", "free", "Free · 6"],
       ["T7", "joined", "Joined"],
-      ["T9", "taken", "Needs Bill"],
-      ["T11", "taken", "To Clear"],
+      ["T9", "taken", "Paying"],
+      ["T11", "taken", "To clear"],
     ]);
   });
 });

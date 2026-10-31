@@ -21,8 +21,9 @@ does not. A faint leaf sits behind.
   the right, a script line from 1280px and a green card ("Same Tables. New
   Stories.") from 1024px, on a screen taller than 820px.
 - **The pills**, 52px, each with its count: **All Tables**, then
-  **Occupied**, **Available**, **Needs Bill**, **To Clear**, each with a dot
-  in its tone. The pressed one is green. At the right, the search, "Search
+  **Seated**, **Ordered**, **Paying**, **To clear**, **Free**: the till's own
+  words, so the tablet and the till name a table one way (TBS-11, ADR-381,
+  ADR-394), each with a dot in its tone. The pressed one is green. At the right, the search, "Search
   table number".
 - **The cards**, four across from 1280px, three from 1024px, two under it.
   Each is one button, 120px or taller, washed in its group's tone: a chair in
@@ -51,10 +52,11 @@ New Order 56px. The tables start under the pills at about y=235 instead of
 
 | Group | Table states | Tone | Word |
 |---|---|---|---|
-| occupied | seated, ordered; settling with nothing owed, whose card says **Paid** in the success tone (ADR-383) | danger (the occupied rose) | Occupied |
-| available | free | success | Available |
-| bill | settling, something owed | warning | Needs Bill |
-| clear | dirty | neutral | To Clear |
+| seated | seated | info | Seated |
+| ordered | ordered; settling with nothing owed, whose card says **Paid** in the success tone (ADR-383) | danger | Ordered |
+| paying | settling, something owed | warning | Paying |
+| clear | dirty | neutral | To clear |
+| free | free | success | Free |
 
 ## Data
 
@@ -73,7 +75,7 @@ New Order 56px. The tables start under the pills at about y=235 instead of
 | Search | Finds tables by name; "t 10" finds "T10" | | |
 | A card with one order | Opens the table's screen | | `waiter-table.md` |
 | A free table's card | Opens **Seat Table T4**: "This table is free. It seats 4.", Guests on a stepper, **Seat and order** (the primary) and **Seat 4 guests** | `order.opened` | Seat and order goes to the order screen; Seat stays here |
-| A card to clear | Asks "Clear Table T4?" | | Confirmed, the card turns Available |
+| A card to clear | Asks "Clear Table T4?" | | Confirmed, the card turns Free |
 | A joined table's card | Stands for the party's own table | | |
 | A table with several orders | Opens Tables with it picked | | Its panel asks which |
 | Active Orders | Opens the day's orders | | `terminal-past-bills.md` |

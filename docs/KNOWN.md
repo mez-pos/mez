@@ -10,6 +10,17 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **One set of table words; follow-ups that say what happened** (ADR-394,
+  Phase 17 Task 22b; 2026-10-31). Seen in a scripted Chromium at 1024x768:
+  the Tables screen's line and bars agreeing (8 tables, 5 free, 1 ordered,
+  1 paid, 1 to clear in Inside); Seat and order the free table's primary;
+  a guest's request accepted, the sheet closed and "Table T8: sent to the
+  kitchen."; the paid step's "No receipt printed: this venue has no
+  receipt printer..." on the demo venue; the waiter's home in the till's
+  words, T5 Paid, T8 "No guest count". **Not seen:** a receipt that printed
+  (the demo venue has no receipt printer; tested); a request declined in the
+  browser (tested by its words).
+
 - **The till's words** (ADR-393, Phase 17 Task 22a; 2026-10-31). Seen in a
   scripted Chromium at 1366x768: "Tap your name first." from a key before a
   name; the pill **Till**; a dish card's name read first; "More actions, 12

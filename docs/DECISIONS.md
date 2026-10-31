@@ -15104,3 +15104,45 @@ Because: staff name an order by what they can see, a table, a time, a dish, a re
 number, and a place by what it is for; one word for three places sends them to the wrong one.
 Cost: an order's name before payment changes once it is invoiced. Task 22b (the table
 words, one free count, the requests sheet, a receipt not printed) is next.
+
+## ADR-394 - One set of table words on the till and the tablet; follow-ups that say what happened
+2026-10 · Status: accepted. Phase 17 Task 22b (TBS-9, TBS-11, TBS-19, TBS-14, TILL-17, TILL-19);
+carries out ADR-381's item 9.
+Context: the till's tiles said "Seated" for a party with no guest count, beside an Ordered
+chip. The waiter's tablet sorted tables into Occupied, Available, Needs Bill and To Clear:
+Occupied hid a table that had sat down and not ordered, and the till and the tablet named the
+same table two ways. The till's free table offered Seat N guests as the primary, the tablet
+Seat and order. The Tables screen said "12 free" in its line and "Free 8" in its bars: the
+line counted every area, the bars the area shown, and the line counted a paid table apart
+where the bars called it Paying. After Accept and send the requests sheet stayed open, empty,
+over the till, with no word of what was done. The paid step said the receipt "went to the print
+queue" when it could not print, and the queue told a cashier "set one up and retry".
+Decision:
+  - **The till's words on both**: Free, Seated, Ordered, Paying, Paid, To clear. The tablet's
+    pills are Seated, Ordered, Paying, To clear and Free, each in the till's tone, and its
+    cards wear the till's chip. A table paid in full is with Ordered (its party may still be
+    at it; ADR-383) and its card says Paid. The move screen says "Free · 4".
+  - **"No guest count"** where a party has none, on the till's tiles and the tablet's cards,
+    never "Seated".
+  - **Seat and order is the primary** on the till's free table, as on the tablet; Seat 4
+    guests is the other.
+  - **One free count**: the line over the floor counts the tables shown, as the plan and the
+    bars do, and the bars count a table paid in full as Paid, apart from Paying, as the line
+    does.
+  - **The requests sheet closes** once its last request or notice is answered, and a toast
+    says what was done: "Table T8: sent to the kitchen.", "Table T8: declined." A sheet that
+    opened empty stays, to say so.
+  - **The paid step says what became of its receipt**, from the print queue: printed on its
+    printer, printing, not printed yet and trying again, or not printed and why ("No receipt
+    printed: this venue has no receipt printer. A manager adds one in the back office.", in
+    danger). The queue says a missing printer in a cashier's words: "There is no printer for
+    this. A manager adds one in the back office, under Printers; then Retry."
+Rejected: the tablet's four groups kept with Occupied split in two (two vocabularies for one
+table were the finding); a paid table under Paying (the bill would be asked for twice, as
+ADR-383 found); closing the requests sheet after every answer (a busy lunch answers three in
+a row); the receipt's state from the server on the payment's answer (the queue already holds
+it, and it changes after the answer: a printer may fail a minute on).
+Because: the same table must have the same name wherever a person looks at it, and an action
+that leaves the screen as it was, or says something untrue, is read as one that did nothing.
+Cost: the tablet's pills are five where they were four. The paid step's receipt line waits for
+the print queue's next read.

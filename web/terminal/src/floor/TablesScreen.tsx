@@ -23,6 +23,7 @@ import {
   beginMode,
   countsText,
   idle,
+  listRows,
   modeText,
   panelTitle,
   partyTable,
@@ -57,6 +58,7 @@ export function TablesScreen() {
   const data = floor.data;
   const tables = data?.tables ?? [];
   const areas = data ? areasShown(data, areaChoice) : [];
+  const shown = data ? listRows(data, areas) : [];
   const found = tables.find((t) => t.id === selectedId);
   // The party's own table, even if the one picked was joined to it since.
   const selected = found ? partyTable(found, tables) : null;
@@ -134,8 +136,9 @@ export function TablesScreen() {
             {data.areas.length > 1 && (
               <AreaPills areas={data.areas} chosen={areaChoice === "all" ? "all" : areaToShow(data, areaChoice)} onChoose={setAreaChoice} />
             )}
+            {/* The tables shown, as the plan and the list's bars count them: one free count (TBS-14). */}
             <p className="ml-auto text-sm text-fg-muted">
-              {tables.length} {tables.length === 1 ? "table" : "tables"} · {countsText(tables)}
+              {shown.length} {shown.length === 1 ? "table" : "tables"} · {countsText(shown)}
             </p>
           </div>
         )}

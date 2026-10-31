@@ -157,14 +157,15 @@ function Picked({
         <Body
           failure={failure}
           footer={
-            // A host seats and leaves the order for later; a waiter seats and takes it.
+            // Seat and order is the primary, as on the waiter's tablet; a host
+            // who seats and leaves the order for later has the other (TBS-19).
             <div className="flex flex-col gap-3">
-              <Button variant="primary" size="charge" className="w-full" disabled={busy} onClick={() => run(() => onSeat(t, covers, false))}>
-                {busy ? "Seating" : `Seat ${covers} ${covers === 1 ? "guest" : "guests"}`}
-              </Button>
-              <Button className="w-full" disabled={busy} onClick={() => run(() => onSeat(t, covers, true))}>
-                Seat and order
+              <Button variant="primary" size="charge" className="w-full" disabled={busy} onClick={() => run(() => onSeat(t, covers, true))}>
+                {busy ? "Seating" : "Seat and order"}
                 <ArrowRightIcon aria-hidden="true" size={17} />
+              </Button>
+              <Button className="w-full" disabled={busy} onClick={() => run(() => onSeat(t, covers, false))}>
+                {`Seat ${covers} ${covers === 1 ? "guest" : "guests"}`}
               </Button>
             </div>
           }

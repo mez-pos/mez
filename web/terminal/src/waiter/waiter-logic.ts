@@ -5,24 +5,24 @@
 
 import type { LiveFloorResponse, LiveTableResponse, TableStatus } from "../../../shared/api-types";
 import type { ChipTone } from "../../../shared/ui";
-import { paidTable, tablePaid } from "../../../shared/ui/status";
+import { tableChip, tablePaid, tableStatuses } from "../../../shared/ui/status";
 import { listRows, tileText } from "../floor/floor-logic";
 
 /**
- * A table as a waiter sorts it: by what it wants of them, not by where it is
- * in its turn. Seated and ordered are both "occupied"; the card's small print
- * tells them apart.
+ * A table as a waiter sorts it, in the till's own words, so the tablet and
+ * the till say the same of a table (TBS-11, ADR-381, ADR-394). Seated and
+ * Ordered are apart: "Occupied" hid a table that had not ordered.
  */
-export type TableGroup = "occupied" | "available" | "bill" | "clear";
+export type TableGroup = "seated" | "ordered" | "paying" | "clear" | "free";
 
 /** A pill of the home: every table, or one group. */
 export type TableFilter = "all" | TableGroup;
 
 const groupByStatus: Readonly<Record<TableStatus, TableGroup>> = {
-  free: "available",
-  seated: "occupied",
-  ordered: "occupied",
-  settling: "bill",
+  free: "free",
+  seated: "seated",
+  ordered: "ordered",
+  settling: "paying",
   dirty: "clear",
 };
 
@@ -30,34 +30,46 @@ export function groupOf(status: TableStatus): TableGroup {
   return groupByStatus[status];
 }
 
-/** A group's words and tone, as T01 draws them. Reserved is not a state here. */
+const words = (status: TableStatus) => ({ label: tableStatuses[status].word, tone: tableStatuses[status].tone });
+
+/** A group's words and tone: the till's for the same turn. Reserved is not a state here. */
 export const tableGroups: Readonly<Record<TableGroup, { readonly label: string; readonly tone: ChipTone }>> = {
-  occupied: { label: "Occupied", tone: "danger" },
-  available: { label: "Available", tone: "success" },
-  bill: { label: "Needs Bill", tone: "warning" },
-  clear: { label: "To Clear", tone: "neutral" },
+  seated: words("seated"),
+  ordered: words("ordered"),
+  paying: words("settling"),
+  clear: words("dirty"),
+  free: words("free"),
 };
 
 /**
  * A table's group, by its turn and what it owes: one settling with nothing
- * owed is paid, and the party may still be at it (ADR-372). It is occupied,
- * never Needs Bill, which would have the bill asked for twice (ADR-383).
+ * owed is paid, and the party may still be at it (ADR-372). It is with the
+ * tables that have ordered, never Paying, which would have the bill asked
+ * for twice (ADR-383); its card says Paid.
  */
 export function tableGroupOf(t: Pick<LiveTableResponse, "status" | "balance">): TableGroup {
-  return tablePaid(t) ? "occupied" : groupOf(t.status);
+  return tablePaid(t) ? "ordered" : groupOf(t.status);
 }
 
-/** A card's word and tone: Paid for a table paid in full, its group's otherwise. */
+/** A card's word and tone: the till's chip, Paid for a table paid in full. */
 export function cardWords(t: Pick<LiveTableResponse, "status" | "balance">): { readonly label: string; readonly tone: ChipTone } {
-  return tablePaid(t) ? { label: paidTable.word, tone: paidTable.tone } : tableGroups[groupOf(t.status)];
+  const chip = tableChip(t.status, tablePaid(t));
+  return { label: chip.word, tone: chip.tone };
 }
 
-/** The groups in the order of their pills. */
-export const groupOrder: readonly TableGroup[] = ["occupied", "available", "bill", "clear"];
+/** The groups in the order of their pills: what a waiter does next, then the free tables. */
+export const groupOrder: readonly TableGroup[] = ["seated", "ordered", "paying", "clear", "free"];
 
 export function filterCounts(tables: readonly LiveTableResponse[]): Record<TableFilter, number> {
   const count = (group: TableGroup) => tables.filter((t) => tableGroupOf(t) === group).length;
-  return { all: tables.length, occupied: count("occupied"), available: count("available"), bill: count("bill"), clear: count("clear") };
+  return {
+    all: tables.length,
+    seated: count("seated"),
+    ordered: count("ordered"),
+    paying: count("paying"),
+    clear: count("clear"),
+    free: count("free"),
+  };
 }
 
 /** "t 10" finds "T10": a table is asked for by its number, in a hurry. */

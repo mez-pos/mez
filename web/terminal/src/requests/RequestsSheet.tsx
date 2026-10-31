@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from "react";
 import type { ChargeResolution, GuestRequestResponse, PaidNoticeResponse, UnappliedChargeResponse } from "../../../shared/api-types";
-import { Button, EmptyState, InboxIcon, Money, Sheet } from "../../../shared/ui";
+import { Button, EmptyState, InboxIcon, Money, Sheet, useToast } from "../../../shared/ui";
 import { useClock } from "../../../shared/use-clock";
 import { choicesOf, dishCount, dishesText, gatewayName, methodWord, owesOtherwise, requestHeading, saidAgo, waited } from "./request-logic";
 import type { GuestRequests } from "./use-guest-requests";
@@ -20,6 +20,15 @@ interface RequestsSheetProps {
 export function RequestsSheet({ guests, onClose, onTakePayment }: RequestsSheetProps) {
   // "4 min" moves on while the sheet is open.
   const now = useClock(15_000);
+  // Once its last request or notice is answered the sheet closes, and a toast
+  // says what was done: an empty sheet left over the till said nothing
+  // (TILL-17, ADR-394). One that opened empty stays, to say so.
+  const waiting = guests.requests.length + guests.paid.length + guests.unapplied.length;
+  const [hadAny, setHadAny] = useState(waiting > 0);
+  if (waiting > 0 && !hadAny) setHadAny(true);
+  useEffect(() => {
+    if (guests.loaded && hadAny && waiting === 0) onClose();
+  }, [guests.loaded, hadAny, waiting, onClose]);
 
   return (
     <Sheet open onClose={onClose} title="From the tables">
@@ -71,6 +80,7 @@ export function RequestsSheet({ guests, onClose, onTakePayment }: RequestsSheetP
 }
 
 function RequestRow({ request, now, guests }: { request: GuestRequestResponse; now: number; guests: GuestRequests }) {
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Decline tells a guest no, so it is asked twice, on the button.
@@ -81,14 +91,15 @@ function RequestRow({ request, now, guests }: { request: GuestRequestResponse; n
     return () => clearTimeout(t);
   }, [armed]);
 
-  const act = (fn: (id: string) => Promise<unknown>) => {
+  const heading = requestHeading(request);
+  const act = (fn: (id: string) => Promise<unknown>, done: string) => {
     setBusy(true);
     setError(null);
     fn(request.id)
+      .then(() => toast(done, { tone: "success" }))
       .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)))
       .finally(() => setBusy(false));
   };
-  const heading = requestHeading(request);
 
   return (
     <li className="border-b border-line-soft py-4">
@@ -115,10 +126,10 @@ function RequestRow({ request, now, guests }: { request: GuestRequestResponse; n
         <Money amount={request.subtotal} />
       </div>
       <div className="mt-3 flex gap-tap-gap">
-        <Button variant="primary" disabled={busy} onClick={() => act(guests.accept)}>
+        <Button variant="primary" disabled={busy} onClick={() => act(guests.accept, `${heading.title}: sent to the kitchen.`)}>
           Accept and send
         </Button>
-        <Button variant="ghost" disabled={busy} onClick={() => (armed ? act(guests.decline) : setArmed(true))}>
+        <Button variant="ghost" disabled={busy} onClick={() => (armed ? act(guests.decline, `${heading.title}: declined.`) : setArmed(true))}>
           {armed ? "Tap again to decline" : "Decline"}
         </Button>
       </div>

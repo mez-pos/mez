@@ -6,7 +6,7 @@
 import type { AreaResponse, LiveFloorResponse, LiveTableResponse } from "../../../shared/api-types";
 import { Money, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
-import { tablePaid, tableStatuses } from "../../../shared/ui/status";
+import { tableChip, tablePaid } from "../../../shared/ui/status";
 import { availability, listRows, tileText } from "./floor-logic";
 import { WantsToOrder } from "./FloorPlan";
 import { tableTone } from "./tones";
@@ -86,15 +86,15 @@ function Availability({ tables }: { tables: readonly LiveTableResponse[] }) {
   return (
     <section aria-label="Table availability" className="rounded-card border border-line bg-raised px-5 py-4 short:py-3">
       <h2 className="font-serif text-xl">Table availability</h2>
-      <ul className="mt-3 grid grid-cols-5 gap-4 short:mt-2">
+      <ul className="mt-3 grid grid-cols-6 gap-4 short:mt-2">
         {availability(tables).map((a) => (
-          <li key={a.status} className="flex min-w-0 flex-col gap-2">
+          <li key={a.paid ? "paid" : a.status} className="flex min-w-0 flex-col gap-2">
             <span className="flex items-baseline justify-between gap-2 text-sm text-fg-2">
-              <span className="truncate">{tableStatuses[a.status].word}</span>
+              <span className="truncate">{tableChip(a.status, a.paid).word}</span>
               <strong className="font-mono text-base tabular-nums text-fg">{a.count}</strong>
             </span>
             <span aria-hidden="true" className="h-2.5 rounded-pill bg-sunken">
-              <span className={cx("block h-2.5 rounded-pill", tableTone(a.status).dot)} style={{ width: `${a.share}%` }} />
+              <span className={cx("block h-2.5 rounded-pill", tableTone(a.status, a.paid).dot)} style={{ width: `${a.share}%` }} />
             </span>
           </li>
         ))}

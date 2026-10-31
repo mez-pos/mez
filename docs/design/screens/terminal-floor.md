@@ -40,7 +40,8 @@ and only once a table is picked (ADR-381, TBS-4).
 - **The floor, the rest:**
   - **Areas** as 48px pills when the venue has more than one, the chosen one
     terracotta, with **All Areas** last. At the right, "9 tables · 3 free · 4
-    seated · 1 paying · 1 to clear".
+    seated · 1 paying · 1 to clear": the tables shown, counted as the bars
+    count them, a table paid in full as paid (TBS-14, ADR-394).
   - **The banner**, while moving or joining: what to tap next, and **Done**.
   - The error line.
   - **Floor Plan:** the area as the back office drew it, on the sunken ground
@@ -48,7 +49,8 @@ and only once a table is picked (ADR-381, TBS-4).
     room. A tile is at least 92px wide and as tall as its lines, and grows to
     fill; a floor too big for that scrolls. Each tile: the table's shape faint in its state's
     colour (round if it is round), its name in the serif, who is at it ("4
-    seats", "3 guests", "Seated", "With T4", "Needs clearing"), its state as
+    seats", "3 guests", "No guest count" (never "Seated" beside an Ordered
+    chip, TBS-9), "With T4", "Needs clearing"), its state as
     a chip (or, while a guest's phone has asked to order there, the
     terracotta "Request" mark of `terminal-requests.md`), how long ("42m"),
     and under it what is owed ("₹930.00"): side by side they ran past a
@@ -58,7 +60,8 @@ and only once a table is picked (ADR-381, TBS-4).
   - **The legend** under the plan: a dot and a word for each of the five
     states.
   - **Table List:** a card, **Table availability**, with a count and a bar
-    for each state; then a table of rows: Table, Area, Guests, Status, Time,
+    for each state and for Paid, apart from Paying, as the line over the
+    floor counts them; then a table of rows: Table, Area, Guests, Status, Time,
     Balance from 1280px wide. Below that (TBS-5): Table, Guests with the time
     under it ("Guests · Time"), Status, Balance; Area is left out, and
     Balance never leaves. Area by area, and within one by name the way people count ("T2"
@@ -69,8 +72,9 @@ and only once a table is picked (ADR-381, TBS-4).
     serif; the state chip; how long as a pill, terracotta once late; and the
     guests, or the seats of a table with nobody at it.
   - **A free table:** "This table is free.", **Guests** on a stepper (it
-    starts at the table's seats, 12 at most; 1 to 99), **Seat 4 guests** (the
-    primary, 56px) and **Seat and order**.
+    starts at the table's seats, 12 at most; 1 to 99), **Seat and order**
+    (the primary, 56px, as on the waiter's tablet, TBS-19) and **Seat 4
+    guests**.
   - **A table to clear:** "The guests have paid and gone. Clear it once it is
     laid again, and it is free." and **Clear table**.
   - **A table with one order:** two tabs, **Current Order** and **Notes**

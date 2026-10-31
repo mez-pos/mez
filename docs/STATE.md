@@ -13,7 +13,7 @@ the UI audit (`docs/design/ui-audit-2026-10-31.md`). Tasks 1 and 4 to
 12 are done: at the human's word the device-fit pass came first, built
 and seen at 1024x768, 1366x768 and 1920x1080 on 2026-10-31 (ADR-381,
 ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s,
-Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 21 and 22a (ADR-384 to ADR-393). It runs before Phase 16, which is mostly
+Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 22 (ADR-384 to ADR-394). It runs before Phase 16, which is mostly
 `mez-cloud`'s.
 
 Before it, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
@@ -28,21 +28,21 @@ list below.
 
 ## Last completed task
 
-**Phase 17, Task 22a: the till's words** (TILL-8, TBS-7, TILL-9, TBS-8,
-TBS-10, TBS-18, TILL-20, TILL-14, TILL-22, TILL-23, ADR-393), 2026-10-31.
-Task 22 was split in two. An order is called by its invoice number, or its
-time and first dish ("12:40 PM · Masala dosa", `orderName`, `ticketName`),
-never its `ord_` id. The register's pill is **Till**, the sheet **Open
-orders** (its count on the "..." button too), the day's list **Today's
-orders**. "Sent" only once something was; "Close the day" in the profile
-menu; "1 choice"; dish cards announced name first; the PIN pad says "Tap
-your name first."; the UPI wait says "Guest pays by UPI" over a phone. Seen
-in a browser at 1366.
+**Phase 17, Task 22b: tables and follow-ups** (TBS-9, TBS-11, TBS-19,
+TBS-14, TILL-17, TILL-19, ADR-394), 2026-10-31. The waiter's tablet speaks
+the till's table words (Seated, Ordered, Paying, To clear, Free; a paid
+table with Ordered, its card Paid); "No guest count" where there is none,
+never "Seated"; Seat and order is the primary on the till too. The Tables
+screen's line and bars count the same tables the same way, Paid apart. The
+requests sheet closes with a toast once its last item is answered. The paid
+step says what became of its receipt from the print queue, and the queue
+words a missing printer for a cashier. Task 22 is done. Seen in a browser at
+1024.
 
 ## Next task
 
-**Here: Phase 17 Task 22b, tables and follow-ups (TBS-9, TBS-11, TBS-19, TBS-14, TILL-17, TILL-19)**,
-then Task 23 onward; Tasks 1 to 21 and 22a are done. Each screen is checked by eye at
+**Here: Phase 17 Task 23, order status that tells the truth (GST-3, GST-4, GST-5)**,
+then Task 24 onward; Tasks 1 to 22 are done. Each screen is checked by eye at
 1024x768 and 1366x768 before it is ticked: the audit's walk (a demo venue
 from `mez setup -demo-menu` in a scratch data directory, a scripted
 Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel

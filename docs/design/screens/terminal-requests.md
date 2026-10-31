@@ -100,6 +100,11 @@ it.
 | The pill | Opens the sheet | |
 | Accept and send | Puts the lines on the table's ticket, opening one if it has none, and sends them to their stations | The request leaves the list; the table reads Ordered |
 | Decline | Arms: the button reads "Tap again to decline" for four seconds | A second tap declines; the request leaves the list |
+
+Each answer is said in a toast: "Table T8: sent to the kitchen.", "Table T8:
+declined." Once the last request or notice in the sheet is answered, the sheet
+closes: an empty sheet over the till said nothing of what was done (TILL-17,
+ADR-394). One opened with nothing in it stays, and says so.
 | Take payment | Closes the sheet and opens `/pay/{order}` | The table's payment screen, where the UPI payment is recorded as any other. Recording what settles the bill takes the notice off the list |
 | No payment found | Arms: "Tap again: no payment" for four seconds | A second tap puts the notice away. Nothing on the bill changes, and the guest may say so again |
 | I refunded it, I recorded it on a bill | Arms: "Tap again: refunded" for four seconds | A second tap says so, with who and when. It leaves every terminal. Nothing is refunded or recorded by the tap: that is done at the provider, or on a bill |

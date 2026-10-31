@@ -26,9 +26,10 @@ person at the terminal retry it or stop it.
   - its state as a chip
   - under the label, what is happening: "Waiting for Counter.", "Sending to
     Counter.", "Printed on Counter.", "Counter: connection refused. Try 3 of
-    10; next try in 8s." counting down, or why it was given up on ("No
-    printer is set up for this; set one up and retry.", "Cancelled by
-    Asha.")
+    10; next try in 8s." counting down, or why it was given up on ("There is
+    no printer for this. A manager adds one in the back office, under
+    Printers; then Retry.", in a cashier's words where the server's are for
+    its log, TILL-19; "Cancelled by Asha.")
   - **Retry**, for a job failing or given up on, and **Cancel**, for one
     still waiting or failing; 48px. A refusal shows under them in words.
 

@@ -120,16 +120,26 @@ export function panelFor(t: LiveTableResponse, picked: string | null = null): Pa
 /** How many tables are in a state, and the share of the floor that is, for a bar. */
 export interface Availability {
   readonly status: TableStatus;
+  /** Settling with nothing owed: Paid, a bar of its own, as the line above the bars counts it. */
+  readonly paid?: true;
   readonly count: number;
   /** 0 to 100. */
   readonly share: number;
 }
 
+/**
+ * The bars, in turn order, with Paid after Paying: counted the way the line
+ * over them is (countsText), so the screen has one free count (TBS-14,
+ * ADR-394). The tables are the ones shown, as the line's are.
+ */
 export function availability(tables: readonly LiveTableResponse[]): Availability[] {
-  return turnOrder.map((status) => {
-    const count = tables.filter((t) => t.status === status).length;
-    return { status, count, share: tables.length === 0 ? 0 : Math.round((count / tables.length) * 100) };
+  const share = (count: number) => (tables.length === 0 ? 0 : Math.round((count / tables.length) * 100));
+  const bars: Availability[] = turnOrder.map((status) => {
+    const count = tables.filter((t) => t.status === status && !tablePaid(t)).length;
+    return { status, count, share: share(count) };
   });
+  const paid = tables.filter((t) => tablePaid(t)).length;
+  return [...bars.slice(0, 4), { status: "settling", paid: true, count: paid, share: share(paid) }, ...bars.slice(4)];
 }
 
 /**
@@ -163,7 +173,8 @@ export function tileText(t: LiveTableResponse, now: number, names: ReadonlyMap<n
       return { people: "Needs clearing", time };
     default:
       if (t.joined_to) return { people: `With ${names.get(t.joined_to) ?? `table ${t.joined_to}`}`, time };
-      return { people: t.covers > 0 ? count(t.covers, "guest", "guests") : "Seated", time };
+      // Not "Seated", which beside an Ordered chip said two things (TBS-9).
+      return { people: t.covers > 0 ? count(t.covers, "guest", "guests") : "No guest count", time };
   }
 }
 

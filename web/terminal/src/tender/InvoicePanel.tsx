@@ -12,6 +12,8 @@ import { reprintReasons } from "../register/cart-logic";
 import { failureOf } from "../register/order-messages";
 import { ReasonPicker } from "../register/ReasonPicker";
 import { orderQueryKey, type Ticket } from "../register/use-ticket";
+import { receiptState } from "../print/print-queue";
+import { usePrintJobs } from "../print/use-print-jobs";
 import { InvoicePreview } from "./InvoicePreview";
 
 interface InvoicePanelProps {
@@ -25,6 +27,9 @@ export function InvoicePanel({ order, ticket, onError }: InvoicePanelProps) {
   const store = useAuthStore();
   const latest = order.invoices.at(-1);
   const [issuing, setIssuing] = useState(false);
+  // What became of the receipt the payment printed, from the queue (TILL-19).
+  const jobs = usePrintJobs();
+  const receipt = latest ? receiptState(jobs.jobs, latest.invoice_no) : null;
 
   // Keyed by the reprint count, so a reprint redraws "Reprinted 1 time".
   const invoice = useQuery({
@@ -66,9 +71,15 @@ export function InvoicePanel({ order, ticket, onError }: InvoicePanelProps) {
         </p>
       )}
       {invoice.data && <InvoicePreview invoice={invoice.data} />}
-      <p className="w-88 max-w-full text-sm text-fg-muted">
-        The receipt went to the print queue with the payment. Print receipt prints a copy marked DUPLICATE and keeps the number.
-      </p>
+      {receipt && (
+        <p
+          role={receipt.failed ? "alert" : "status"}
+          className={receipt.failed ? "w-88 max-w-full text-base text-danger" : "w-88 max-w-full text-sm text-fg-muted"}
+        >
+          {receipt.text}
+        </p>
+      )}
+      <p className="w-88 max-w-full text-sm text-fg-muted">Print receipt prints a copy marked DUPLICATE and keeps the number.</p>
     </div>
   );
 }

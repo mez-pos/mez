@@ -13,7 +13,7 @@ export type MoveMode = "transfer" | "merge";
 export interface MoveTile {
   readonly table: LiveTableResponse;
   readonly state: "free" | "joined" | "taken";
-  /** "Available · 4" (its seats), "Joined", or why it cannot be taken. */
+  /** "Free · 4" (its seats, the till's word), "Joined", or why it cannot be taken. */
   readonly word: string;
 }
 
@@ -23,7 +23,7 @@ export function moveTiles(floor: LiveFloorResponse, party: LiveTableResponse): M
     .filter((t) => t.id !== party.id)
     .map((t) => {
       if (t.joined_to === party.id) return { table: t, state: "joined", word: "Joined" };
-      if (t.status === "free") return { table: t, state: "free", word: `Available · ${t.seats}` };
+      if (t.status === "free") return { table: t, state: "free", word: `Free · ${t.seats}` };
       return { table: t, state: "taken", word: cardWords(t).label };
     });
 }

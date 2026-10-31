@@ -8,6 +8,17 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 22a: the till's words** (TILL-8, TBS-7, TILL-9, TBS-8,
+TBS-10, TBS-18, TILL-20, TILL-14, TILL-22, TILL-23, ADR-393), 2026-10-31.
+Task 22 was split in two. An order is called by its invoice number, or its
+time and first dish ("12:40 PM · Masala dosa", `orderName`, `ticketName`),
+never its `ord_` id. The register's pill is **Till**, the sheet **Open
+orders** (its count on the "..." button too), the day's list **Today's
+orders**. "Sent" only once something was; "Close the day" in the profile
+menu; "1 choice"; dish cards announced name first; the PIN pad says "Tap
+your name first."; the UPI wait says "Guest pays by UPI" over a phone. Seen
+in a browser at 1366.
+
 **Phase 17, Task 21: the kitchen display says what changed** (KDS-12,
 KDS-13, KDS-16, KDS-17, KDS-18, TECH-19, ADR-392), 2026-10-31. A ticket's
 `round` (`State.TicketRound`) gives its card a chip: the later course, or

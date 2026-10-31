@@ -141,8 +141,19 @@ describe("availability", () => {
       { status: "seated", count: 0, share: 0 },
       { status: "ordered", count: 1, share: 25 },
       { status: "settling", count: 0, share: 0 },
+      { status: "settling", paid: true, count: 0, share: 0 },
       { status: "dirty", count: 1, share: 25 },
     ]);
+  });
+  it("counts a table paid in full as Paid, apart from Paying, as the line over the bars does (TBS-14)", () => {
+    const tables = [
+      tile({ status: "settling", balance: { minor: 0, currency: "INR" } }),
+      tile({ status: "settling", balance: { minor: 500, currency: "INR" } }),
+    ];
+    const bars = availability(tables);
+    expect(bars.find((b) => b.status === "settling" && !b.paid)?.count).toBe(1);
+    expect(bars.find((b) => b.paid)?.count).toBe(1);
+    expect(countsText(tables)).toBe("1 paying · 1 paid");
   });
   it("is all zero for an empty floor", () => {
     expect(availability([]).every((a) => a.count === 0 && a.share === 0)).toBe(true);
@@ -165,7 +176,7 @@ describe("tileText", () => {
     expect(tileText(tile({ seats: 1 }), now)).toEqual({ people: "1 seat", time: null });
     expect(tileText(tile({ status: "ordered", covers: 3, since: "2026-09-27T12:00:00Z" }), now)).toEqual({ people: "3 guests", time: "42m" });
     expect(tileText(tile({ status: "seated", covers: 1, since: "2026-09-27T12:40:00Z" }), now)).toEqual({ people: "1 guest", time: "2m" });
-    expect(tileText(tile({ status: "seated", covers: 0, since: "2026-09-27T12:40:00Z" }), now).people).toBe("Seated");
+    expect(tileText(tile({ status: "seated", covers: 0, since: "2026-09-27T12:40:00Z" }), now).people).toBe("No guest count");
     expect(tileText(tile({ status: "dirty", since: "2026-09-27T12:36:00Z" }), now)).toEqual({ people: "Needs clearing", time: "6m" });
   });
 });

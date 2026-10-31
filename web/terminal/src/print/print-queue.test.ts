@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PrintJobResponse } from "../../../shared/api-types";
-import { actionsFor, detailOf, trouble } from "./print-queue";
+import { actionsFor, detailOf, receiptState, trouble } from "./print-queue";
 
 const job = (extra: Partial<PrintJobResponse>): PrintJobResponse => ({
   id: 1,
@@ -56,11 +56,42 @@ describe("detailOf", () => {
     [
       "no printer set up",
       { state: "dead", printer: "", last_error: "no printer is set up for this; set one up and retry" },
-      "No printer is set up for this; set one up and retry.",
+      // The server's words are for its log: a cashier is told who sets one up (TILL-19).
+      "There is no printer for this. A manager adds one in the back office, under Printers; then Retry.",
     ],
     ["cancelled", { state: "dead", last_error: "cancelled by Asha" }, "Cancelled by Asha."],
   ];
   it.each(cases)("%s", (_name, extra, want) => {
     expect(detailOf(job(extra), now)).toBe(want);
+  });
+});
+
+describe("receiptState (TILL-19)", () => {
+  const no = "INV/26-27/000001";
+  it("says nothing until the queue has the receipt", () => {
+    expect(receiptState([], no)).toBeNull();
+    expect(receiptState([job({ label: "Receipt INV/26-27/000009" })], no)).toBeNull();
+  });
+  it("says it printed, or is printing, on its printer", () => {
+    expect(receiptState([job({ state: "done" })], no)).toEqual({ text: "The receipt printed on Counter.", failed: false });
+    expect(receiptState([job({ state: "printing" })], no)?.text).toBe("The receipt is printing on Counter.");
+  });
+  it("says it is trying again while it fails, and that it did not print once it gives up", () => {
+    expect(receiptState([job({ state: "failed" })], no)?.failed).toBe(false);
+    expect(receiptState([job({ state: "dead", last_error: "paper out" })], no)).toEqual({
+      text: "The receipt did not print. Retry it from the print queue.",
+      failed: true,
+    });
+  });
+  it("says there is no receipt printer, and who adds one", () => {
+    const none = job({ state: "dead", printer: "", last_error: "no printer is set up for this; set one up and retry" });
+    expect(receiptState([none], no)).toEqual({
+      text: "No receipt printed: this venue has no receipt printer. A manager adds one in the back office.",
+      failed: true,
+    });
+  });
+  it("reads the newest job for the receipt, and not a duplicate's", () => {
+    const jobs = [job({ id: 1, state: "dead", last_error: "x" }), job({ id: 2, state: "done" }), job({ id: 3, label: `Duplicate ${no}`, state: "dead" })];
+    expect(receiptState(jobs, no)?.text).toBe("The receipt printed on Counter.");
   });
 });
