@@ -51,9 +51,9 @@ New Order 56px. The tables start under the pills at about y=235 instead of
 
 | Group | Table states | Tone | Word |
 |---|---|---|---|
-| occupied | seated, ordered | danger (the occupied rose) | Occupied |
+| occupied | seated, ordered; settling with nothing owed, whose card says **Paid** in the success tone (ADR-383) | danger (the occupied rose) | Occupied |
 | available | free | success | Available |
-| bill | settling | warning | Needs Bill |
+| bill | settling, something owed | warning | Needs Bill |
 | clear | dirty | neutral | To Clear |
 
 ## Data

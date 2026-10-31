@@ -5,6 +5,7 @@
 
 import type { LiveFloorResponse, LiveTableResponse, TableStatus } from "../../../shared/api-types";
 import type { ChipTone } from "../../../shared/ui";
+import { paidTable, tablePaid } from "../../../shared/ui/status";
 import { listRows, tileText } from "../floor/floor-logic";
 
 /**
@@ -37,11 +38,25 @@ export const tableGroups: Readonly<Record<TableGroup, { readonly label: string; 
   clear: { label: "To Clear", tone: "neutral" },
 };
 
+/**
+ * A table's group, by its turn and what it owes: one settling with nothing
+ * owed is paid, and the party may still be at it (ADR-372). It is occupied,
+ * never Needs Bill, which would have the bill asked for twice (ADR-383).
+ */
+export function tableGroupOf(t: Pick<LiveTableResponse, "status" | "balance">): TableGroup {
+  return tablePaid(t) ? "occupied" : groupOf(t.status);
+}
+
+/** A card's word and tone: Paid for a table paid in full, its group's otherwise. */
+export function cardWords(t: Pick<LiveTableResponse, "status" | "balance">): { readonly label: string; readonly tone: ChipTone } {
+  return tablePaid(t) ? { label: paidTable.word, tone: paidTable.tone } : tableGroups[groupOf(t.status)];
+}
+
 /** The groups in the order of their pills. */
 export const groupOrder: readonly TableGroup[] = ["occupied", "available", "bill", "clear"];
 
 export function filterCounts(tables: readonly LiveTableResponse[]): Record<TableFilter, number> {
-  const count = (group: TableGroup) => tables.filter((t) => groupOf(t.status) === group).length;
+  const count = (group: TableGroup) => tables.filter((t) => tableGroupOf(t) === group).length;
   return { all: tables.length, occupied: count("occupied"), available: count("available"), bill: count("bill"), clear: count("clear") };
 }
 
@@ -52,7 +67,7 @@ const squash = (text: string) => text.toLowerCase().replace(/\s+/g, "");
 export function tablesShown(floor: LiveFloorResponse, filter: TableFilter, query: string): LiveTableResponse[] {
   const wanted = squash(query);
   return listRows(floor, floor.areas)
-    .filter((t) => filter === "all" || groupOf(t.status) === filter)
+    .filter((t) => filter === "all" || tableGroupOf(t) === filter)
     .filter((t) => wanted === "" || squash(t.name).includes(wanted));
 }
 

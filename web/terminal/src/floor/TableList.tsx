@@ -6,7 +6,7 @@
 import type { AreaResponse, LiveFloorResponse, LiveTableResponse } from "../../../shared/api-types";
 import { Money, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
-import { tableStatuses } from "../../../shared/ui/status";
+import { tablePaid, tableStatuses } from "../../../shared/ui/status";
 import { availability, listRows, tileText } from "./floor-logic";
 import { WantsToOrder } from "./FloorPlan";
 import { tableTone } from "./tones";
@@ -68,7 +68,7 @@ export function TableList({ data, areas, now, names, picked, onTap, wanting }: T
                       <span className="truncate">{text.people}</span>
                       {text.time && <span className="font-mono text-sm tabular-nums text-fg-2 xl:hidden">{text.time}</span>}
                     </span>
-                    <span>{wanting?.has(t.id) ? <WantsToOrder /> : <StatusChip status={{ kind: "table", status: t.status }} />}</span>
+                    <span>{wanting?.has(t.id) ? <WantsToOrder /> : <StatusChip status={{ kind: "table", status: t.status, paid: tablePaid(t) }} />}</span>
                     <span className="font-mono tabular-nums text-fg-2 max-xl:hidden">{text.time ?? ""}</span>
                     <span className="text-right">{t.balance && t.balance.minor !== 0 && <Money amount={t.balance} />}</span>
                   </button>

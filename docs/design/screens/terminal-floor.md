@@ -100,9 +100,13 @@ ordered.
 | seated | info (blue) | Seated |
 | ordered | danger (the occupied rose, no alarm) | Ordered |
 | settling | warning (mustard) | Paying |
+| settling, nothing owed | success (green) | Paid |
 | dirty | neutral (the cleaning grey) | To clear |
 
-Five states, five tones (tokens.md), always the colour and the word.
+Five states, five tones (tokens.md), always the colour and the word. A
+settling table with nothing owed, paid in full and kept open for the
+party's next round (ADR-372), says **Paid**, not Paying: a word, not a
+sixth state of the turn (ADR-383). The legend and the counts line name it.
 Terracotta is for what is picked and what is late: a table's state is never
 terracotta.
 

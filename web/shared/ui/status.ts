@@ -73,6 +73,23 @@ export const tableStatuses: Readonly<Record<TableStatus, ChipSpec>> = {
   dirty: { tone: "neutral", word: "To clear" },
 };
 
+/**
+ * A table whose bill is paid in full while the party may still sit at it
+ * (ADR-372): settling in its turn, with nothing owed. "Paying" there told the
+ * floor money was still to come (ADR-383).
+ */
+export const paidTable: ChipSpec = { tone: "success", word: "Paid" };
+
+/** Whether a table in its turn is paid in full: settling, and nothing owed. */
+export function tablePaid(t: { readonly status: TableStatus; readonly balance?: { readonly minor: number } }): boolean {
+  return t.status === "settling" && t.balance !== undefined && t.balance.minor === 0;
+}
+
+/** A table's chip: Paid for one settling with nothing owed, its turn's word otherwise. */
+export function tableChip(status: TableStatus, paid = false): ChipSpec {
+  return paid && status === "settling" ? paidTable : tableStatuses[status];
+}
+
 // An order on the day's list (D09), in the list's four words. Open is the
 // pending mustard: it still wants its bill.
 export const dayStatuses: Readonly<Record<DayStatus, ChipSpec>> = {
@@ -178,7 +195,7 @@ export type ChipStatus =
   | { readonly kind: "payment"; readonly status: PaymentStatus }
   | { readonly kind: "line"; readonly status: LineStatus }
   | { readonly kind: "print"; readonly status: PrintJobState }
-  | { readonly kind: "table"; readonly status: TableStatus }
+  | { readonly kind: "table"; readonly status: TableStatus; readonly paid?: boolean }
   | { readonly kind: "day"; readonly status: DayStatus }
   | { readonly kind: "stock"; readonly status: StockLevel }
   | { readonly kind: "menu"; readonly status: MenuItemState }
@@ -201,7 +218,7 @@ export function chipSpec(chip: ChipStatus): ChipSpec {
     case "print":
       return printStatuses[chip.status];
     case "table":
-      return tableStatuses[chip.status];
+      return tableChip(chip.status, chip.paid);
     case "day":
       return dayStatuses[chip.status];
     case "stock":

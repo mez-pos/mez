@@ -80,6 +80,13 @@ describe("countsText", () => {
     expect(countsText(tables)).toBe("2 free · 1 seated · 1 paying · 1 to clear");
     expect(countsText([])).toBe("");
   });
+
+  it("calls a settling table with nothing owed paid, not paying (ADR-383)", () => {
+    const owed = { minor: 33000, currency: "INR" };
+    const none = { minor: 0, currency: "INR" };
+    const tables = [tile({ status: "settling", balance: none }), tile({ status: "settling", balance: owed }), tile({ status: "dirty" })];
+    expect(countsText(tables)).toBe("1 paying · 1 paid · 1 to clear");
+  });
 });
 
 describe("areasShown", () => {

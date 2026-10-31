@@ -245,6 +245,28 @@ export function chargeLabel(order: OrderResponse | undefined): string {
 }
 
 /**
+ * Whether the payment that settles an order also sends what is waiting and
+ * closes it: a sale rung up at the counter with no table (ADR-383). The
+ * server decides; the screen only says so, and must say what it does.
+ */
+export function closesWhenPaid(order: Pick<OrderResponse, "channel" | "table_id">): boolean {
+  return order.channel === "counter" && !order.table_id;
+}
+
+/**
+ * What the payment screen says of lines the kitchen has not seen (TILL-1):
+ * on a counter sale they go with the payment; on a table's ticket they have
+ * not gone, and Send now is beside the words.
+ */
+export function unsentWords(waiting: number, sentWithPayment: boolean): string | null {
+  if (waiting <= 0) return null;
+  const one = waiting === 1;
+  const items = one ? "1 item" : `${waiting} items`;
+  if (sentWithPayment) return `${items} ${one ? "goes" : "go"} to the kitchen with the payment.`;
+  return `${items} ${one ? "has" : "have"} not gone to the kitchen.`;
+}
+
+/**
  * What the guest hands over in all for this payment: the part of the bill it
  * settles and the tip. Before an amount is keyed it is the whole of what is
  * being paid, so the button names the sum to ask for.

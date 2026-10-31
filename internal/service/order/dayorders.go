@@ -28,7 +28,7 @@ type DayStatus string
 
 const (
 	DayOpen     DayStatus = "open"     // not closed: open, held, being paid, reopened
-	DayPaid     DayStatus = "paid"     // closed, and nothing given back
+	DayPaid     DayStatus = "paid"     // closed, and nothing given back; or settled and kept at its table
 	DayRefunded DayStatus = "refunded" // closed, with a credit note against it
 	DayVoided   DayStatus = "voided"   // closed with every line voided: nothing was sold
 )
@@ -39,8 +39,16 @@ func DayStatuses() []DayStatus {
 }
 
 // DayStatusOf reads an order's place on the list from its projection.
+//
+// A ticket paid in full and kept open at its table, for the party's next
+// round (ADR-372), is paid: "open" beside a settled bill told a cashier it
+// was owed (ADR-383). An order to collect stays open until it is handed
+// over (ADR-253), which is what puts it under To collect.
 func DayStatusOf(st order.State) DayStatus {
 	if st.Status != order.StatusClosed {
+		if paidInFull(st) && !toCollect(st) {
+			return DayPaid
+		}
 		return DayOpen
 	}
 	if st.Totals.Credited.Minor > 0 {
@@ -58,6 +66,18 @@ func DayStatusOf(st order.State) DayStatus {
 		return DayVoided
 	}
 	return DayPaid
+}
+
+// paidInFull reports whether an open order's bill is settled: invoiced, with
+// nothing owed.
+func paidInFull(st order.State) bool {
+	return st.Status == order.StatusSettling && st.Invoiced && st.Totals.BalanceDue.IsZero()
+}
+
+// toCollect reports whether an order is one to collect: no table, and not
+// rung up at the counter, whose sales close when paid (ADR-383).
+func toCollect(st order.State) bool {
+	return st.TableID == 0 && st.Channel != order.ChannelCounter
 }
 
 // Day is the orders of one trading day, newest first, and what they have

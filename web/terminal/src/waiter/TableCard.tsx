@@ -8,7 +8,7 @@ import { Money } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { WantsToOrder } from "../floor/FloorPlan";
 import { toneClasses } from "../floor/tones";
-import { cardMeta, groupOf, tableGroups } from "./waiter-logic";
+import { cardMeta, cardWords } from "./waiter-logic";
 
 interface TableCardProps {
   table: LiveTableResponse;
@@ -19,7 +19,7 @@ interface TableCardProps {
 }
 
 export function TableCard({ table, names, onOpen, wants = false }: TableCardProps) {
-  const group = tableGroups[groupOf(table.status)];
+  const group = cardWords(table);
   const tone = toneClasses(group.tone);
   const owes = table.balance && table.balance.minor !== 0 ? table.balance : null;
   return (

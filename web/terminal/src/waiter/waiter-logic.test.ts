@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LiveFloorResponse, LiveTableResponse } from "../../../shared/api-types";
-import { cardMeta, filterCounts, firstName, greeting, groupOf, hourIn, tablesShown } from "./waiter-logic";
+import { cardMeta, cardWords, filterCounts, firstName, greeting, groupOf, hourIn, tableGroupOf, tablesShown } from "./waiter-logic";
 
 const table = (extra: Partial<LiveTableResponse> = {}): LiveTableResponse => ({
   id: 1,
@@ -40,6 +40,26 @@ describe("groupOf", () => {
   });
   it("gives the other three states a group each", () => {
     expect([groupOf("free"), groupOf("settling"), groupOf("dirty")]).toEqual(["available", "bill", "clear"]);
+  });
+});
+
+describe("a table paid in full (ADR-383)", () => {
+  const none = { minor: 0, currency: "INR" };
+  const owed = { minor: 33000, currency: "INR" };
+  it("is occupied, never Needs Bill, and says Paid", () => {
+    const paid = table({ status: "settling", balance: none });
+    expect(tableGroupOf(paid)).toBe("occupied");
+    expect(cardWords(paid)).toEqual({ label: "Paid", tone: "success" });
+  });
+  it("leaves a table still owing under Needs Bill", () => {
+    const paying = table({ status: "settling", balance: owed });
+    expect(tableGroupOf(paying)).toBe("bill");
+    expect(cardWords(paying).label).toBe("Needs Bill");
+  });
+  it("is not counted as needing its bill", () => {
+    const counts = filterCounts([table({ status: "settling", balance: none }), table({ id: 2, status: "settling", balance: owed })]);
+    expect(counts.bill).toBe(1);
+    expect(counts.occupied).toBe(1);
   });
 });
 

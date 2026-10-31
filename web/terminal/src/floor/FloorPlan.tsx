@@ -7,7 +7,7 @@ import { BellRingIcon, UsersIcon } from "lucide-react";
 import type { AreaResponse, LiveFloorResponse, LiveTableResponse } from "../../../shared/api-types";
 import { Money, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
-import { tableStatuses } from "../../../shared/ui/status";
+import { paidTable, tableChip, tablePaid, tableStatuses } from "../../../shared/ui/status";
 import { packed, tileText, tilesOf, turnOrder } from "./floor-logic";
 import { tableTone } from "./tones";
 
@@ -86,14 +86,15 @@ interface TableTileProps {
 
 function TableTile({ table: t, now, names, picked, wants, onTap }: TableTileProps) {
   const text = tileText(t, now, names);
-  const tone = tableTone(t.status);
+  const paid = tablePaid(t);
+  const tone = tableTone(t.status, paid);
   const owes = t.balance !== undefined && t.balance.minor !== 0;
   return (
     <button
       type="button"
       onClick={onTap}
       aria-pressed={picked}
-      aria-label={`Table ${t.name}, ${tableStatuses[t.status].word}, ${text.people}${text.time ? `, ${text.time}` : ""}${wants ? ", wants to order" : ""}`}
+      aria-label={`Table ${t.name}, ${tableChip(t.status, paid).word}, ${text.people}${text.time ? `, ${text.time}` : ""}${wants ? ", wants to order" : ""}`}
       className={cx(
         "relative flex h-full w-full flex-col items-center justify-center gap-1 rounded-card border-2 bg-raised p-1.5 shadow-rest 2xl:gap-1.5 2xl:p-3",
         "outline-offset-2 outline-attention hover:bg-raised-high focus-visible:outline-3",
@@ -109,7 +110,11 @@ function TableTile({ table: t, now, names, picked, wants, onTap }: TableTileProp
         <span className="truncate">{text.people}</span>
       </span>
       {/* A phone asking to order here is what staff need to know of this table, more than that it is free. */}
-      {wants ? <WantsToOrder brief className="relative" /> : <StatusChip status={{ kind: "table", status: t.status }} className="relative max-2xl:px-2" />}
+      {wants ? (
+        <WantsToOrder brief className="relative" />
+      ) : (
+        <StatusChip status={{ kind: "table", status: t.status, paid }} className="relative max-2xl:px-2" />
+      )}
       {/* How long, and under it what is owed: side by side they ran past a narrow tile's edge. */}
       {(text.time || owes) && (
         <span className="relative flex max-w-full flex-col items-center font-mono text-sm tabular-nums text-fg-2">
@@ -131,6 +136,11 @@ export function FloorLegend() {
           {tableStatuses[status].word}
         </li>
       ))}
+      {/* Paid is a settling table with nothing owed: a word of its own, not a sixth turn (ADR-383). */}
+      <li className="flex items-center gap-2">
+        <span aria-hidden="true" className={cx("size-3 rounded-round", tableTone("settling", true).dot)} />
+        {paidTable.word}
+      </li>
     </ul>
   );
 }

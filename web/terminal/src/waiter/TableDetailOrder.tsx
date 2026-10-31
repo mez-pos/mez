@@ -31,7 +31,7 @@ import { MoveTable } from "./MoveTable";
 import { OrderProgress } from "./OrderProgress";
 import { startedText } from "./table-logic";
 import { TableItems } from "./TableItems";
-import { groupOf, tableGroups } from "./waiter-logic";
+import { cardWords } from "./waiter-logic";
 
 interface TableDetailOrderProps {
   table: LiveTableResponse;
@@ -77,7 +77,7 @@ export function TableDetailOrder({ table, title, orderId, sendWaits, onAddItems,
       .finally(() => setBusy(false));
   };
   const courseName = courseNamer(menu.data?.courses ?? []);
-  const group = tableGroups[groupOf(table.status)];
+  const group = cardWords(table);
   const tone = toneClasses(group.tone);
   const held = order.status === "held";
   const plan = sendPlan(order);

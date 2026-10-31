@@ -35,6 +35,28 @@ func TestDayStatusOf(t *testing.T) {
 			order.State{Status: order.StatusClosed, Lines: []order.Line{line(order.LineStatusActive)}, Totals: order.Totals{Credited: inr(100)}},
 			DayRefunded,
 		},
+		// ADR-383: a ticket paid in full that stays at its table for the
+		// party's next round (ADR-372) reads as paid, not open.
+		{
+			"paid in full, still at its table",
+			order.State{Status: order.StatusSettling, Channel: order.ChannelCounter, TableID: 4, Invoiced: true, Lines: []order.Line{line(order.LineStatusActive)}},
+			DayPaid,
+		},
+		{
+			"a guest's round paid from the phone, still at its table",
+			order.State{Status: order.StatusSettling, Channel: order.ChannelQRTable, TableID: 4, Invoiced: true, Lines: []order.Line{line(order.LineStatusActive)}},
+			DayPaid,
+		},
+		{
+			"part paid at its table",
+			order.State{Status: order.StatusSettling, Channel: order.ChannelCounter, TableID: 4, Lines: []order.Line{line(order.LineStatusActive)}, Totals: order.Totals{BalanceDue: inr(100)}},
+			DayOpen,
+		},
+		{
+			"an order to collect, paid and not yet handed over (ADR-253)",
+			order.State{Status: order.StatusSettling, Channel: order.ChannelWeb, Invoiced: true, Lines: []order.Line{line(order.LineStatusActive)}},
+			DayOpen,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

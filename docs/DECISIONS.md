@@ -14666,3 +14666,50 @@ Because: neither failure shows in a test or a type check; only the built CSS or 
 at the size shows it, and the audit's screenshots are how these were found.
 Cost: none. The four remaining `min-[1700px]`/`min-[1800px]` classes (ItemEditor, CategoryRail,
 DashLists) each sit against an unprefixed class and work.
+
+## ADR-383 - A counter sale is sent and closed by the payment that settles it; a paid table reads Paid
+2026-10 · Status: accepted, at the human's word on 2026-10-31. Phase 17 Tasks 2 and 3 (TBS-1, TILL-1).
+Context: the UI audit (ADR-381) found two ways a paid order misled the venue. A payment that
+settled a bill left the order `settling` until someone tapped New Order on the paid panel
+(ADR-053 keeps Close its own command); leaving that panel any other way left a paid invoice
+reading "Open" in Order History, under "Paid (0)", and a paid table "Paying" on the floor and
+"Needs Bill" on the waiter's tablet, where a guest could be asked to pay twice. And nothing
+sent a counter sale to the kitchen but its own Send button: ring up, Pay, take the cash, New
+Order, and the guest had paid for food no station was told of. ADR-372 decided, for good
+reasons, that a table's ticket is not closed when it is paid (the party may still be seated
+and order again, and the ticket rolls then), and ADR-249 and ADR-253 that an order to collect
+stays open until it is handed over.
+Decision:
+  - **The tender that settles a sale rung up at the counter with no table** (channel
+    `counter`, no `table_id`: `closesWhenPaid`) appends, in its one transaction, what Send
+    would (`order.ToSend`), then the payment, the invoice (ADR-078) and `order.closed`. The
+    kitchen's tickets print, the boards hear of it, the stock is taken (ADR-112) and the guest
+    sessions end exactly as if the cashier had tapped Send and New Order, and a payment that
+    fails sends nothing. A part payment sends nothing and leaves the order open, and a table's
+    ticket and an order to collect are untouched.
+  - **Close on a closed order is answered as done**, appending nothing, so a till still
+    running the code from before this (Pay, then New Order) does not fail on every sale.
+  - **The till keeps the paid order in front** (`orderGone`, `paidHere` in `use-ticket`): its
+    ticket used to start afresh the moment its order read closed, which would have taken the
+    paid panel, the change and Print receipt away with the payment. It now waits for **Next
+    order** (New Order renamed), or for the payment screen to be left by another way.
+  - **A table's ticket paid in full and kept open reads Paid**: in Order History
+    (`DayStatusOf`; an order to collect still reads open, which is what puts it under To
+    collect), and as a word, not a sixth state of the turn (ADR-086 is unchanged): a settling
+    table with nothing owed is "Paid" in the success tone on the floor's tiles, list, panel,
+    legend and counts, and on the waiter's home it is occupied, never Needs Bill.
+  - **A table's lines the kitchen has not seen are a warning on the payment screen and the
+    paid panel**, "2 items have not gone to the kitchen", with Send now. They are not sent by
+    the payment: a table uses courses, and firing a held course because someone paid would be
+    wrong. On a counter sale the same screen says they go with the payment.
+Rejected: closing every order when paid (it undoes ADR-372 and the order to collect);
+relabelling a paid order without closing it (the stock still waited for New Order, open
+tickets piled into the next shift, and the kitchen gap stayed); sending on the tap of Pay in
+the till alone (a reload or a sleeping tablet between Pay and the payment still lost it).
+Because: both bugs came from the right outcome waiting on a tap that a cashier in a queue
+does not always make. The order service already plans printing, stock and sessions from the
+events a command appends (ADR-081, ADR-112, ADR-262), so the fix is the events, in the
+transaction that takes the money.
+Cost: a counter sale cannot be added to once it is paid, which New Order already meant; a
+mistaken payment is voided as before, and voiding one on a closed bill reopens it in the same
+command (ADR-084). The waiter's bill (T05) is a table's and does not warn of unsent lines yet.

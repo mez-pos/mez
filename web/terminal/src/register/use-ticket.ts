@@ -5,7 +5,7 @@
 
 import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { tenderFailure } from "../tender/tender-logic";
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ApiError } from "../../../shared/api";
 import type {
   AddLine,
@@ -25,6 +25,23 @@ import { useRealtimeNotices } from "../../../shared/use-realtime";
 import { TicketBook } from "./ticket-book";
 import { newKey, ticketMemory } from "./ticket-key";
 import { TicketQueue, type ModifyLine, type PendingLine } from "./ticket-queue";
+
+/**
+ * Whether the order in front has gone, so the till starts a counter ticket:
+ * the server no longer has it, or it was closed. An order this till took the
+ * payment for stays in front, closed or not, until Next order or until its
+ * payment screen is left (ADR-383): the payment that settles a counter sale
+ * closes it, and the paid panel, the change and the receipt must not vanish
+ * with it.
+ */
+export function orderGone(
+  read: { readonly missing: boolean; readonly status: OrderResponse["status"] | undefined },
+  orderId: string | null,
+  paidHere: string | null,
+): boolean {
+  if (read.missing) return true;
+  return read.status === "closed" && (orderId === null || orderId !== paidHere);
+}
 
 /** Every cached order, whichever id: the family orderQueryKey belongs to. */
 export const orderFamilyKey = ["order"] as const;
@@ -110,8 +127,16 @@ export interface Ticket {
   reread: () => Promise<OrderResponse>;
   /** Issues the invoice for a bill paid before invoices came with the payment. */
   issueInvoice: () => Promise<void>;
-  /** Closes the ticket; the register then starts a counter ticket. */
+  /**
+   * Next order: closes the ticket, unless the payment that settled it closed
+   * it already (ADR-383); the register then starts a counter ticket.
+   */
   close: () => Promise<void>;
+  /**
+   * Lets the order this till just paid go, once its payment screen is left
+   * by another way than Next order: closed, the register moves on from it.
+   */
+  release: () => void;
   /** Logs a copy of an invoice, with a manager's approval; no new number. */
   reprint: (invoiceSeq: number, reason: string, approval: Override) => Promise<void>;
 }
@@ -177,9 +202,15 @@ export function useTicket(): Ticket {
     refetchOnMount: "always",
   });
 
+  // The order this till took a payment for, kept in front once it closes
+  // until the cashier moves on (orderGone).
+  const [paidHere, setPaidHere] = useState<string | null>(null);
+  const release = useCallback(() => setPaidHere(null), []);
+
   // A remembered order the server no longer has (a fresh database, another
   // venue), or one closed elsewhere: start again rather than add to it.
-  const gone = (order.error instanceof ApiError && order.error.status === 404) || order.data?.status === "closed";
+  const missing = order.error instanceof ApiError && order.error.status === 404;
+  const gone = orderGone({ missing, status: order.data?.status }, orderId, paidHere);
   useEffect(() => {
     if (gone) book.startNew(counterSale);
   }, [gone, book]);
@@ -245,14 +276,22 @@ export function useTicket(): Ticket {
     compLine: (lineId, reasonCode, approval) => post(`/lines/${lineId}/comp`, { ...approval, reason_code: reasonCode }),
     discount: (request) => post("/discounts", request),
     removeDiscount: (seq, reason, approval) => post(`/discounts/${seq}/remove`, { ...approval, reason }),
-    tender: (payment, key) => post("/payments", payment, queue, key),
+    tender: (payment, key) => {
+      if (orderId) setPaidHere(orderId);
+      return post("/payments", payment, queue, key);
+    },
     reread: async () => {
       const read = await order.refetch({ throwOnError: true });
       if (!read.data) throw new Error("There is no order to read.");
       return read.data;
     },
     issueInvoice: () => post("/invoice", undefined),
-    close: () => post("/close", undefined),
+    close: async () => {
+      // A counter sale its payment closed is done: Next order only lets it go.
+      if (order.data?.status !== "closed") await post("/close", undefined);
+      release();
+    },
+    release,
     reprint: (invoiceSeq, reason, approval) => post(`/invoices/${invoiceSeq}/reprint`, { ...approval, reason }),
   };
 }

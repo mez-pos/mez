@@ -31,6 +31,8 @@ import { PaidPanel } from "./PaidPanel";
 import { ReceivedCard, RefusedCard, UncertainCard, WaitingCard, type Received } from "./PayStates";
 import { MethodTiles, PaySteps } from "./PaySteps";
 import { PaySummary } from "./PaySummary";
+import { UnsentNote } from "./UnsentNote";
+import { sendPlan } from "../register/send-logic";
 import { nextShare, payerLabel, splitStale, type SplitDraft } from "./split-logic";
 import { SplitPanel } from "./SplitPanel";
 import { ShareStrip, SplitShares } from "./SplitShares";
@@ -38,6 +40,7 @@ import {
   afterFailure,
   approvalRefused,
   attemptKey,
+  closesWhenPaid,
   collectOf,
   methodNames,
   payStep,
@@ -47,6 +50,7 @@ import {
   tenderOutcome,
   tipApprovalAsked,
   tipNote,
+  unsentWords,
   type Attempt,
 } from "./tender-logic";
 import { TipApprovalSheet } from "./TipApprovalSheet";
@@ -147,6 +151,7 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
   const [received, setReceived] = useState<Received | null>(null);
   const [panel, setPanel] = useState<Panel | null>(null);
   const [reprinting, setReprinting] = useState(false);
+  const [sending, setSending] = useState(false);
   // The tip ceiling (ADR-261): null until the venue is read, and the server decides meanwhile.
   const ceiling = useVenue()?.tips_max_percent ?? null;
   // Which payment the server asked a manager for, and the approval given for
@@ -158,6 +163,18 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
 
   const paid = due <= 0;
   const step = payStep(paid, splitting);
+  // What the kitchen has not seen (TILL-1): a counter sale's waiting lines go
+  // with the payment that settles it (ADR-383); a table's need Send now.
+  const sentWithPayment = closesWhenPaid(order) && !paid;
+  const unsent = unsentWords(sendPlan(order).waiting, sentWithPayment);
+  const sendNow = () => {
+    setSending(true);
+    setError(null);
+    ticket
+      .send()
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)))
+      .finally(() => setSending(false));
+  };
   const stale = inUse !== null && splitStale(inUse.split, inUse.paid, due);
   const share = inUse && inUse.current !== null && !stale ? inUse.split.shares[inUse.current] : undefined;
   const cash = method === "cash";
@@ -329,7 +346,7 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
     }
   };
 
-  /** New Order: this order is closed, and the till starts the next one. */
+  /** Next order: this order is closed (a counter sale is, by its payment), and the till starts the next one. */
   const closeOrder = () => {
     setBusy(true);
     setError(null);
@@ -491,6 +508,11 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
                   />
                 </div>
               )}
+              {unsent && (
+                <div className="mt-4 short:mt-3">
+                  <UnsentNote words={unsent} onSend={sentWithPayment ? null : sendNow} busy={busy || sending} />
+                </div>
+              )}
               <h2 className="mt-5 font-serif text-xl short:mt-3 2xl:mt-6 2xl:text-total">Select payment method</h2>
               <div className="mt-3 short:mt-2 2xl:mt-4">
                 <MethodTiles method={method} disabled={busy} onChoose={choose} />
@@ -610,6 +632,7 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
           busy={busy}
           message={error ? { text: error, tone: "error" } : !order.invoiced ? { text: "Issue the invoice first.", tone: "hint" } : null}
           onPrint={invoice ? () => setReprinting(true) : null}
+          unsent={unsent ? { words: unsent, onSend: sendNow, busy: sending } : null}
           onNewOrder={closeOrder}
         />
       )}

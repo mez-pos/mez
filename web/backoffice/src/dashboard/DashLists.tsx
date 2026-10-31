@@ -8,6 +8,7 @@ import { initials, roleText } from "../../../shared/auth/format";
 import { formatQty } from "../../../shared/stock-qty";
 import { Money, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { tablePaid } from "../../../shared/ui/status";
 import { activeTables, guestsText, lowRows, staffRows, topItems } from "./dashboard-logic";
 import { Nothing } from "./Panel";
 
@@ -53,7 +54,7 @@ export function ActiveTables({ tables, now }: { tables: readonly LiveTableRespon
               <span className="block truncate">{guestsText(t.covers)}</span>
               <span className="block font-mono text-fg-muted min-[1800px]:hidden">{t.since}</span>
             </span>
-            <StatusChip status={{ kind: "table", status: t.status }} />
+            <StatusChip status={{ kind: "table", status: t.status, paid: tablePaid(t) }} />
             <span className="hidden min-w-16 shrink-0 text-right font-mono text-sm tabular-nums text-fg-muted min-[1800px]:block">{t.since}</span>
           </li>
         ))}

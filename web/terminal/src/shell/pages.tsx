@@ -42,6 +42,11 @@ export function PayPage({ orderId }: { orderId: string }) {
   const asked = useRef(false);
   const waiter = useWaiterFrame();
 
+  // The order paid here stays in front while this screen shows its paid
+  // panel (ADR-383). Leaving by any other way than Next order lets it go.
+  const { release } = ticket;
+  useEffect(() => release, [release]);
+
   // Arriving by a link, the order named may not be the one in front: bring it
   // there, once. If the ticket moves on after that (the bill was paid and
   // closed, so a new ticket starts), the order screen is where to be.

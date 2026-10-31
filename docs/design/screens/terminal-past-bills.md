@@ -26,7 +26,10 @@ Tables, **Past bills** under the order screen's "...", and a waiter's
     printed)" while anything has failed, and **New Order** (terracotta).
   - **The tabs**, as pills with their counts: **All**, **To collect**,
     **Open**, **Paid**, **Refunded**, **Voided**. At the right, the search,
-    "Search order #, table or pickup code".
+    "Search order #, table or pickup code". A counter sale is closed by the
+    payment that settles it, and a table's ticket paid in full and kept open
+    for the party's next round is listed **Paid**, not Open (ADR-383); an
+    order to collect stays Open until it is handed over, under To collect.
   - **The table**, in a card that scrolls: Order #, Time, Table, Type, Items,
     Amount, Status, and **View**, from 1280px wide. Below that (TBS-6,
     ADR-381) the time sits under the order's number and the type under the

@@ -39,14 +39,18 @@ change to `mez-cloud`'s account area too (STATE.md): build it there.
 
 ### Money and state
 
-- [ ] **Task 2 - Paid means closed (TBS-1, P0).** A payment that brings
+- [x] **Task 2 - Paid means closed (TBS-1, P0).** Done 2026-10-31
+  (ADR-383): the payment that settles a counter sale closes it; a table's
+  ticket paid in full reads Paid. A payment that brings
   the balance to zero closes the order in the same transaction, or until
   then every reader treats a zero-balance `settling` order as paid: the
   Orders list and its counts, the order panel (a primary "Close order"),
   the table turn (To clear, not Paying), the waiter's home (not Needs
   Bill). New Order becomes "Next order". Go tests on the projection and
   the day orders; vitest on the readers.
-- [ ] **Task 3 - Nothing paid goes unsent (TILL-1, P0).** Pay on a
+- [x] **Task 3 - Nothing paid goes unsent (TILL-1, P0).** Done 2026-10-31
+  (ADR-383): that same payment sends what waits; a table's unsent lines are
+  a warning with Send now. Pay on a
   counter order sends what is waiting, then opens the tender screen; the
   tender foot and the paid panel say "2 items have not gone to the
   kitchen" with Send now while any line is unsent, and Next order asks

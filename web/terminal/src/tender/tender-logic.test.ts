@@ -6,6 +6,7 @@ import {
   attemptKey,
   chargeBlock,
   chargeLabel,
+  closesWhenPaid,
   collectOf,
   elapsedClock,
   payStep,
@@ -21,6 +22,7 @@ import {
   tipFor,
   tipNeedsApproval,
   tipNote,
+  unsentWords,
 } from "./tender-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
@@ -372,5 +374,32 @@ describe("the tip ceiling (ADR-261)", () => {
     expect(approvalRefused(new ApiError("forbidden", "x", 403, "payment.take"))).toBe(false);
     expect(approvalRefused(new ApiError("over_tender", "x", 409))).toBe(false);
     expect(approvalRefused(new Error("down"))).toBe(false);
+  });
+});
+
+describe("closesWhenPaid", () => {
+  // ADR-383: the server sends and closes a counter sale with the payment that settles it.
+  const cases: ReadonlyArray<{ name: string; order: Pick<OrderResponse, "channel" | "table_id">; closes: boolean }> = [
+    { name: "a counter sale with no table", order: { channel: "counter" }, closes: true },
+    { name: "a counter sale seated at a table", order: { channel: "counter", table_id: 4 }, closes: false },
+    { name: "a guest's round at a table", order: { channel: "qr_table", table_id: 4 }, closes: false },
+    { name: "an order to collect", order: { channel: "web" }, closes: false },
+  ];
+  it.each(cases)("$name: $closes", ({ order, closes }) => {
+    expect(closesWhenPaid(order)).toBe(closes);
+  });
+});
+
+describe("unsentWords", () => {
+  const cases: ReadonlyArray<{ waiting: number; sentWithPayment: boolean; words: string | null }> = [
+    { waiting: 0, sentWithPayment: true, words: null },
+    { waiting: 0, sentWithPayment: false, words: null },
+    { waiting: 1, sentWithPayment: true, words: "1 item goes to the kitchen with the payment." },
+    { waiting: 3, sentWithPayment: true, words: "3 items go to the kitchen with the payment." },
+    { waiting: 1, sentWithPayment: false, words: "1 item has not gone to the kitchen." },
+    { waiting: 2, sentWithPayment: false, words: "2 items have not gone to the kitchen." },
+  ];
+  it.each(cases)("$waiting waiting, sent with the payment $sentWithPayment", ({ waiting, sentWithPayment, words }) => {
+    expect(unsentWords(waiting, sentWithPayment)).toBe(words);
   });
 });

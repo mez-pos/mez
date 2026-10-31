@@ -10,6 +10,21 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **A counter sale sent and closed by its settling payment; a paid table
+  reads Paid** (ADR-383, Phase 17 Tasks 2 and 3; 2026-10-31). Seen in a
+  scripted Chromium: a takeaway paid in cash without Send reached the
+  kitchen board, the paid panel stayed until Next order, Order History
+  said Paid, a table paid at the till read Paid on the floor and on the
+  waiter's home, and a table's unsent lines showed the warning and Send
+  now. **Not seen:** a counter sale split in shares (the last share is the
+  one that sends and closes); card and UPI waits ending in Mark as paid;
+  a till still on the old bundle pressing New Order after the payment
+  (tested in Go: the close is answered as done); the paid panel left by
+  Back to Order or a nav pill (the order is let go, and the register
+  starts afresh). Left over: the waiter's bill (T05) does not warn of
+  unsent lines yet; a table's ticket paid in full still waits for Next
+  order or Close order to become To clear, by design (ADR-372).
+
 - **Phase 17's device-fit pass** (Tasks 4 to 12, ADR-381, ADR-382;
   2026-10-31). Seen in a scripted Chromium at 1024x768, 1366x768 and
   1920x1080: the lock, open shift, register and its rail, the item modal,
@@ -36,8 +51,6 @@
   - The kitchen board's ink is now the default; `index.html` still says
     `data-surface="paper"`, so a parchment frame can show for an instant
     before the script runs.
-  - The paid order still reads "Open" (TBS-1, Phase 17 Task 2) and Pay
-    still does not send (TILL-1, Task 3).
 
 - **The 2026-10-24 stability audit and the venue PC's three complaints**
   (ADR-366 to ADR-370). Built, tested in Go and vitest, **not yet seen on a

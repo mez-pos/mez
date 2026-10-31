@@ -1,6 +1,8 @@
 // The panel a paid bill ends on (D07): that it is paid, how much and how, the
-// change still to hand back, and New Order, which closes this order and starts
-// the next. The design heads it in script; a status is never script (tokens.md),
+// change still to hand back, and Next order, which starts the next. A counter
+// sale is closed already, by the payment that settled it (ADR-383); a table's
+// ticket is closed by Next order. A table's lines the kitchen has not seen
+// are a warning here, with Send now (TILL-1). The design heads it in script; a status is never script (tokens.md),
 // so the heading is the serif, in its own heading ink rather than terracotta,
 // which asks for attention a paid bill does not need (ADR-381), and the script
 // is the thank-you under it. The receipt is printed with the payment; Print
@@ -12,6 +14,7 @@ import type { Money as Amount, OrderResponse } from "../../../shared/api-types";
 import { Button, Money } from "../../../shared/ui";
 import { serviceLabels } from "../register/rail-logic";
 import { methodNames } from "./tender-logic";
+import { UnsentNote } from "./UnsentNote";
 
 interface PaidPanelProps {
   order: OrderResponse;
@@ -19,14 +22,16 @@ interface PaidPanelProps {
   /** Cash still to hand back from the last payment, if any. */
   change: Amount | null;
   busy: boolean;
-  /** Why New Order failed, or what it waits for. */
+  /** Why Next order failed, or what it waits for. */
   message: { text: string; tone: "hint" | "error" } | null;
   /** Prints a copy of the receipt, with a manager's approval. Null until there is an invoice. */
   onPrint: (() => void) | null;
+  /** Lines the kitchen has not seen, with Send now; null when there are none. */
+  unsent: { words: string; onSend: () => void; busy: boolean } | null;
   onNewOrder: () => void;
 }
 
-export function PaidPanel({ order, title, change, busy, message, onPrint, onNewOrder }: PaidPanelProps) {
+export function PaidPanel({ order, title, change, busy, message, onPrint, unsent, onNewOrder }: PaidPanelProps) {
   const methods = [...new Set(order.tenders.filter((t) => t.status !== "voided").map((t) => methodNames[t.method]))].join(" + ");
   return (
     <aside
@@ -58,6 +63,7 @@ export function PaidPanel({ order, title, change, busy, message, onPrint, onNewO
       </div>
 
       <div className="mt-7 grid gap-2.5 short:mt-5">
+        {unsent && <UnsentNote words={unsent.words} onSend={unsent.onSend} busy={busy || unsent.busy} />}
         {onPrint && (
           <Button disabled={busy} onClick={onPrint}>
             <PrinterIcon aria-hidden="true" size={18} />
@@ -71,7 +77,7 @@ export function PaidPanel({ order, title, change, busy, message, onPrint, onNewO
           onClick={onNewOrder}
           aria-describedby={message ? "paid-message" : undefined}
         >
-          {busy ? "Closing" : "New Order"}
+          {busy ? "Closing" : "Next order"}
           <ArrowRightIcon aria-hidden="true" size={19} />
         </Button>
         {message && (

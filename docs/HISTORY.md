@@ -8,6 +8,23 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Tasks 1 and 4 to 12: the UI audit and every screen at the
+venue's own size** (ADR-381, ADR-382), 2026-10-31, at the human's word.
+The impeccable skill's audit walked every screen of v0.2.0-beta.1 at
+1366x768, 1024x768, 1920x1080 and 390x844 (`docs/design/ui-audit-2026-10-31.md`):
+119 findings, 2 P0. Phase 17 carries the plan. The
+device-fit pass came first: the shared Modal scrolls its body, the till's
+toasts sit at the top, `--aside` and fluid kitchen sizes are tokens; the
+register shows four order lines and six dishes at 768 tall; tender keeps
+the change in its foot; split by item lists items first; the lock, open
+shift and setup keep their main action in view; tables, Orders, the
+waiter and close of day fit 1024; the kitchen board opens on ink with the
+station as its title and fits a ticket and its action at 768; the back
+office's side columns are tokens, the item editor's Save is sticky and a
+picked table's card sits beside the floor. Seen by a scripted walk at
+each size; 2,531 vitest tests pass. What was not seen is the top of
+`KNOWN.md`.
+
 **The venue PC's three complaints, a stability audit, the dead ends, and
 every owed fix from the audits, 2026-10-24 to 26** (ADR-366 to ADR-379),
 outside the phase plan at the human's word. ADR-376 to ADR-379 (the

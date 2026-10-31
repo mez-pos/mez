@@ -12,6 +12,7 @@ import { useState, type ReactNode } from "react";
 import type { LiveTableResponse, TicketSummary } from "../../../shared/api-types";
 import { Button, EmptyState, Money, Qty, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { tablePaid } from "../../../shared/ui/status";
 import { wordsOf } from "../register/order-messages";
 import { guestsText } from "../register/rail-logic";
 import { elapsed } from "../register/ticket-time";
@@ -110,7 +111,7 @@ function Picked({
           </button>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2 short:mt-2">
-          <StatusChip status={{ kind: "table", status: t.status }} />
+          <StatusChip status={{ kind: "table", status: t.status, paid: tablePaid(t) }} />
           {time && (
             <span
               className={cx(

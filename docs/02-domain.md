@@ -218,6 +218,8 @@ the three. It is a field of `order.opened`, always written by the service.
 ## States
 
 **Order:** open → (held) → open → settling → closed → (reopened) → closed
+(a counter sale with no table goes settling → closed in the one
+transaction of its settling payment, which also sends what waits: ADR-383)
 **Table:** free → seated → ordered → settling → dirty → free
 **Ticket at a station:** queued → fired → in progress → ready → collected,
 plus fired → ready (bumped straight off the display) and ready → fired

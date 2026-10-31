@@ -135,8 +135,14 @@ cards are under them, one across at 1024 and two at 1366.
   serif's heading ink (ADR-381: terracotta asks for attention a paid bill
   does not need), the amount paid large, "Paid for ord_..." with where, how
   served and by what; tips, apart; **Change to return** when cash is owed
-  back; a script thank-you; **Print receipt**; and **New Order**
-  (terracotta, 56px). Its gaps step down on a short screen.
+  back; a script thank-you; a table's lines the kitchen has not seen, as a
+  warning with **Send now** (TILL-1); **Print receipt**; and **Next order**
+  (terracotta, 56px), New Order until ADR-383. Its gaps step down on a short
+  screen.
+- **Lines the kitchen has not seen** (TILL-1, ADR-383), over Select payment
+  method: on a counter sale with no table a quiet line, "2 items go to the
+  kitchen with the payment"; on a table's ticket a warning in the warning
+  tint, "2 items have not gone to the kitchen", with **Send now** (48px).
 
 ## Data
 
@@ -161,7 +167,10 @@ cards are under them, one across at 1024 and two at 1366.
 - **A share is paid whole, in one payment.** Card and UPI take exactly it;
   cash takes at least it, with change.
 - The settling payment issues the invoice in the same transaction and queues
-  the receipt, with the drawer kick for cash (ADR-081).
+  the receipt, with the drawer kick for cash (ADR-081). On a counter sale
+  with no table it also sends what is waiting, before the money, and closes
+  the order after the invoice (ADR-383). The till keeps that closed order in
+  front, with this panel, until Next order or until the screen is left.
   `GET /api/v1/orders/{id}/invoices/{seq}` for the preview.
 - `POST .../invoice` for a bill paid with no invoice; `POST .../close`; a
   reprint with its approval.
@@ -199,9 +208,10 @@ cards are under them, one across at 1024 and two at 1366.
 | Complete split | Fixes the shares | | Collect on each card; Guest 1's is next |
 | Collect on a card | Step 1 for that share | | Paid, the card says so and the next share is green |
 | Change the split | Drops the split | | The whole balance again |
-| The balance reaches zero | The settling payment issues the invoice | `invoice.issued` | Step 3 |
+| The balance reaches zero | The settling payment issues the invoice; on a counter sale it also sends what waits and closes it (ADR-383) | `invoice.issued`; on a counter sale `ticket.sent`, `order.closed` too | Step 3 |
 | Print receipt | A reason, then an approver and their PIN | `invoice.reprinted` | A DUPLICATE prints; "Reprinted 1 time" |
-| New Order | Closes the order | `order.closed` | The order screen, on a new order |
+| Next order | Closes a table's ticket; a counter sale is closed already, so it only moves on | `order.closed` for a table's | The order screen, on a new order |
+| Send now | Sends a table's waiting lines to their stations | `ticket.sent` | The warning goes |
 | Add Discount, Add order note | The order screen's sheets | `discount.applied`, `note.added` | The totals redraw |
 | Back to Order | Returns to the order screen | | The order shows its payments and balance |
 
@@ -238,7 +248,7 @@ cards are under them, one across at 1024 and two at 1366.
   split's left column `w-panel`; the quick amounts and the guests' cards are
   `auto-fill` grids (tokens.md, ADR-381).
 - One green commit per view: the paying button, Mark as paid, Complete split,
-  or the next share's Collect. New Order is terracotta: it starts something,
+  or the next share's Collect. Next order is terracotta: it starts something,
   it does not take money.
 - A tip is never added into the amount the server records. The button names
   the sum the guest hands over, because that is what a card machine is keyed

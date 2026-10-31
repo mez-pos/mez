@@ -12,8 +12,8 @@
 the UI audit (`docs/design/ui-audit-2026-10-31.md`). Tasks 1 and 4 to
 12 are done: at the human's word the device-fit pass came first, built
 and seen at 1024x768, 1366x768 and 1920x1080 on 2026-10-31 (ADR-381,
-ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s are
-Tasks 2 and 3, next. It runs before Phase 16, which is mostly
+ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s,
+Tasks 2 and 3, are done too (ADR-383). It runs before Phase 16, which is mostly
 `mez-cloud`'s.
 
 Before it, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
@@ -28,27 +28,25 @@ list below.
 
 ## Last completed task
 
-**Phase 17, Tasks 1 and 4 to 12: the UI audit and every screen at the
-venue's own size** (ADR-381, ADR-382), 2026-10-31, at the human's word.
-The impeccable skill's audit walked every screen of v0.2.0-beta.1 at
-1366x768, 1024x768, 1920x1080 and 390x844 (`docs/design/ui-audit-2026-10-31.md`):
-119 findings, 2 P0. Phase 17 carries the plan. The
-device-fit pass came first: the shared Modal scrolls its body, the till's
-toasts sit at the top, `--aside` and fluid kitchen sizes are tokens; the
-register shows four order lines and six dishes at 768 tall; tender keeps
-the change in its foot; split by item lists items first; the lock, open
-shift and setup keep their main action in view; tables, Orders, the
-waiter and close of day fit 1024; the kitchen board opens on ink with the
-station as its title and fits a ticket and its action at 768; the back
-office's side columns are tokens, the item editor's Save is sticky and a
-picked table's card sits beside the floor. Seen by a scripted walk at
-each size; 2,531 vitest tests pass. What was not seen is the top of
-`KNOWN.md`.
+**Phase 17, Tasks 2 and 3: the two P0s** (ADR-383), 2026-10-31. The
+payment that settles a sale rung up at the counter with no table sends
+what is still waiting to its stations, takes the money, issues the
+invoice and closes the order, in one transaction, so the kitchen always
+hears of a paid counter sale and Order History never calls it open. A
+table's ticket stays open when paid (ADR-372) and an order to collect
+until it is handed over (ADR-253); a table paid in full now reads Paid in
+Order History, on the floor and on the waiter's home (never Needs Bill).
+The till keeps the order it paid in front until **Next order** (New Order
+renamed); Close on a closed order is answered as done, for tills not yet
+reloaded. A table's unsent lines are a warning on the payment screen
+and the paid panel, with Send now. Seen in a browser: a counter sale paid
+without Send on the kitchen board, the paid panel held, Order History's
+Paid, a paid T5 as Paid on the floor and the waiter's home.
 
 ## Next task
 
-**Here: Phase 17 Task 2, paid means closed (TBS-1, P0)**, then Task 3
-(TILL-1, P0), then Task 13 onward. Each screen is checked by eye at
+**Here: Phase 17 Task 13, close the day knows what is open (TBS-2)**,
+then Task 14 onward; Tasks 1 to 12 are done. Each screen is checked by eye at
 1024x768 and 1366x768 before it is ticked: the audit's walk (a demo venue
 from `mez setup -demo-menu` in a scratch data directory, a scripted
 Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel

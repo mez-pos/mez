@@ -321,6 +321,11 @@ func waiting(s order.State, station string) []int64 {
 // TenderPayment records a payment against the order. The tender that
 // settles the bill also issues its invoice, in the same transaction: the
 // number is allocated with the payment that earned it, or not at all.
+//
+// On a sale rung up at the counter with no table, that tender also sends
+// whatever is still waiting to its stations, before the money, and closes
+// the order after the invoice (ADR-383): a paid counter sale always reaches
+// the kitchen, and never reads "open" because nobody tapped New Order.
 func (s *Service) TenderPayment(ctx context.Context, meta Meta, orderID int64, cmd TenderPayment) (Result, error) {
 	return s.run(ctx, meta, orderID, "tender_payment", cmd, func(ctx context.Context, tx *db.OrderTx, v venue, at time.Time) ([]order.Payload, error) {
 		tip := cmd.Tip
@@ -344,8 +349,23 @@ func (s *Service) TenderPayment(ctx context.Context, meta Meta, orderID int64, c
 		if err != nil {
 			return nil, err
 		}
-		return []order.Payload{tendered, inv}, nil
+		if !closesWhenPaid(tx.State) {
+			return []order.Payload{tendered, inv}, nil
+		}
+		// What Send would append, then the money, the number and the close:
+		// the kitchen's tickets print and the stock is taken with them.
+		out := order.ToSend(tx.State)
+		return append(out, tendered, inv, order.OrderClosed{ClosedBy: meta.ActorID}), nil
 	})
+}
+
+// closesWhenPaid reports whether the payment that settles an order also
+// sends what waits and closes it (ADR-383): a sale rung up at the counter
+// with no table. A table's ticket stays open for the party's next round
+// (ADR-372), and an order to collect stays open until it is handed over
+// (ADR-253); both come in by other channels or sit at a table.
+func closesWhenPaid(st order.State) bool {
+	return st.Channel == order.ChannelCounter && st.TableID == 0
 }
 
 // checkTip refuses a tip over the venue's ceiling that no manager let
@@ -418,7 +438,19 @@ func (s *Service) IssueInvoice(ctx context.Context, meta Meta, orderID int64) (R
 // Close closes a settled order. If this settlement has no invoice yet and
 // the bill is not zero, one is issued first, in the same transaction: a sale
 // never closes without its number.
+//
+// An order already closed is answered as done, with nothing appended: the
+// payment that settled a counter sale closed it (ADR-383), and a till still
+// running the code from before that closes again on New Order.
 func (s *Service) Close(ctx context.Context, meta Meta, orderID int64) (Result, error) {
+	res, err := s.closeOnce(ctx, meta, orderID)
+	if errors.Is(err, order.ErrOrderClosed) {
+		return s.Order(ctx, meta.VenueID, orderID)
+	}
+	return res, err
+}
+
+func (s *Service) closeOnce(ctx context.Context, meta Meta, orderID int64) (Result, error) {
 	return s.run(ctx, meta, orderID, "close", struct{}{}, func(ctx context.Context, tx *db.OrderTx, v venue, at time.Time) ([]order.Payload, error) {
 		var payloads []order.Payload
 		if !tx.State.Invoiced && !tx.State.Totals.Total.IsZero() {

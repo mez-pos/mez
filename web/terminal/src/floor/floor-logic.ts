@@ -3,7 +3,7 @@
 // tile's small print. The tables and their states are the server's (ADR-086).
 
 import type { AreaResponse, LiveFloorResponse, LiveTableResponse, TableStatus } from "../../../shared/api-types";
-import { tableStatuses } from "../../../shared/ui/status";
+import { paidTable, tablePaid, tableStatuses } from "../../../shared/ui/status";
 import { elapsed } from "../register/ticket-time";
 
 /** One cell of an area's grid: a table in service, or nothing. */
@@ -66,13 +66,20 @@ export function areasShown(floor: LiveFloorResponse, choice: AreaChoice): readon
 /** A table's five states, in the order a table goes through them. */
 export const turnOrder: readonly TableStatus[] = ["free", "seated", "ordered", "settling", "dirty"];
 
-/** "3 free · 4 seated · 1 paying · 2 to clear": every state there is, in turn order. */
+/**
+ * "3 free · 4 seated · 1 paying · 1 paid · 2 to clear": every state there is,
+ * in turn order. A settling table with nothing owed is paid (ADR-383).
+ */
 export function countsText(tables: readonly LiveTableResponse[]): string {
-  const counts = new Map<TableStatus, number>();
-  for (const t of tables) counts.set(t.status, (counts.get(t.status) ?? 0) + 1);
-  return turnOrder
+  const counts = new Map<TableStatus | "paid", number>();
+  for (const t of tables) {
+    const key = tablePaid(t) ? "paid" : t.status;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const order: readonly (TableStatus | "paid")[] = [...turnOrder.slice(0, 4), "paid", ...turnOrder.slice(4)];
+  return order
     .filter((s) => counts.has(s))
-    .map((s) => `${counts.get(s)} ${tableStatuses[s].word.toLowerCase()}`)
+    .map((s) => `${counts.get(s)} ${(s === "paid" ? paidTable : tableStatuses[s]).word.toLowerCase()}`)
     .join(" · ");
 }
 

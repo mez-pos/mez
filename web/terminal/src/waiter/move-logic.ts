@@ -5,7 +5,7 @@
 
 import type { LiveFloorResponse, LiveTableResponse } from "../../../shared/api-types";
 import { listRows, type FloorAction } from "../floor/floor-logic";
-import { groupOf, tableGroups } from "./waiter-logic";
+import { cardWords } from "./waiter-logic";
 
 export type MoveMode = "transfer" | "merge";
 
@@ -24,7 +24,7 @@ export function moveTiles(floor: LiveFloorResponse, party: LiveTableResponse): M
     .map((t) => {
       if (t.joined_to === party.id) return { table: t, state: "joined", word: "Joined" };
       if (t.status === "free") return { table: t, state: "free", word: `Available · ${t.seats}` };
-      return { table: t, state: "taken", word: tableGroups[groupOf(t.status)].label };
+      return { table: t, state: "taken", word: cardWords(t).label };
     });
 }
 

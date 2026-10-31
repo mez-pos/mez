@@ -5,7 +5,7 @@
 
 import type { TableStatus } from "../../../shared/api-types";
 import type { ChipTone } from "../../../shared/ui";
-import { tableStatuses } from "../../../shared/ui/status";
+import { tableChip } from "../../../shared/ui/status";
 
 export interface TableTone {
   readonly border: string;
@@ -56,8 +56,9 @@ const tones: Readonly<Record<ChipTone, TableTone>> = {
   info: { border: "border-chip-info-border", fill: "bg-chip-info-bg", dot: "bg-chip-info-fg", ink: "text-chip-info-fg", wash: "bg-chip-info-bg/40" },
 };
 
-export function tableTone(status: TableStatus): TableTone {
-  return tones[tableStatuses[status].tone];
+/** A table's tone: a settling table with nothing owed is paid, in the success tone (ADR-383). */
+export function tableTone(status: TableStatus, paid = false): TableTone {
+  return tones[tableChip(status, paid).tone];
 }
 
 /** The same classes by tone, for a screen that groups the states its own way (T01). */
