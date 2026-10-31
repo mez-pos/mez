@@ -5,6 +5,7 @@ import { createRoot } from "react-dom/client";
 import { createAppAuth } from "../../shared/auth/app-auth";
 import { browserStorage } from "../../shared/auth/storage";
 import { AuthProvider } from "../../shared/auth/use-auth";
+import { setErrorReporter } from "../../shared/error-report";
 import { createQueryClient } from "../../shared/query";
 import { ErrorBoundary, ToastProvider } from "../../shared/ui";
 import { RealtimeProvider } from "../../shared/use-realtime";
@@ -36,6 +37,12 @@ const durable = browserStorage("local");
 if (kitchen) document.documentElement.dataset.surface = surfaceOf(readPrefs(durable));
 const station = kitchen ? readStation(durable) : null;
 const { store, realtime } = kitchen ? createAppAuth("kitchen", station ? [`station:${station}`] : []) : createAppAuth("terminal");
+// A screen that fails to draw is told to the server's log, as this device (TECH-8, ADR-402).
+// Not before it is paired: the server would refuse it, and the refusal would
+// read as this device being forgotten.
+setErrorReporter(kitchen ? "kitchen" : "terminal", (report) =>
+  store.credentials.deviceToken() ? store.api.post("/api/v1/client-errors", report) : Promise.resolve(),
+);
 
 /** Keeps the display's station and starts again, subscribed to it alone. */
 function chooseStation(code: string | null) {

@@ -8,6 +8,7 @@
 import { useId, type ReactNode } from "react";
 import { Button, type ButtonVariant } from "./Button";
 import { cx } from "./cx";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { CloseIcon } from "./icons";
 import { useDialog } from "./use-dialog";
 
@@ -54,8 +55,11 @@ export function Modal({ open, onClose, title, children, footer, size = "sm", ico
               <CloseIcon />
             </Button>
           </div>
-          <div className={cx("min-h-0 overflow-y-auto px-6 pt-4 text-base text-fg-2", footer ? "pb-2" : "pb-6 short:pb-5")}>{children}</div>
-          {footer && <div className="flex flex-wrap justify-end gap-tap-gap px-6 pb-6 pt-2 short:pb-5">{footer}</div>}
+          {/* A body that fails to draw takes its actions with it: the title and Close stay (TECH-8). */}
+          <ErrorBoundary where="modal" size="modal" onClose={onClose}>
+            <div className={cx("min-h-0 overflow-y-auto px-6 pt-4 text-base text-fg-2", footer ? "pb-2" : "pb-6 short:pb-5")}>{children}</div>
+            {footer && <div className="flex flex-wrap justify-end gap-tap-gap px-6 pb-6 pt-2 short:pb-5">{footer}</div>}
+          </ErrorBoundary>
         </div>
       )}
     </dialog>

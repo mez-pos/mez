@@ -3,6 +3,7 @@
 
 import { Redirect, Route, Router, Switch, useLocation } from "wouter";
 import { Gate } from "../../shared/auth/Gate";
+import { RouteBoundary } from "../../shared/RouteBoundary";
 import { LockScreen } from "../../shared/screens/LockScreen";
 import { PairScreen } from "../../shared/screens/PairScreen";
 import { Splash } from "../../shared/screens/Splash";
@@ -33,22 +34,27 @@ export function App() {
     // Matches the mount in web/web.go and the Vite base.
     <Router base="/backoffice">
       <Gate splash={<Splash />}>
-        <Switch>
-          <Route path="/pair">
-            <PairScreen app="backoffice" />
-          </Route>
-          <Route path="/lock">
-            <LockScreen />
-          </Route>
-          <Route>
-            <BackOfficeShell>
-              {/* Above the routes, so the days picked on one report are the days on the next. */}
-              <ReportRangeProvider>
-                <SignedInRoutes />
-              </ReportRangeProvider>
-            </BackOfficeShell>
-          </Route>
-        </Switch>
+        {/* A screen with no shell around it fails as a page; one inside the shell, below, as a region (TECH-8). */}
+        <RouteBoundary size="page">
+          <Switch>
+            <Route path="/pair">
+              <PairScreen app="backoffice" />
+            </Route>
+            <Route path="/lock">
+              <LockScreen />
+            </Route>
+            <Route>
+              <BackOfficeShell>
+                {/* Above the routes, so the days picked on one report are the days on the next. */}
+                <ReportRangeProvider>
+                  <RouteBoundary>
+                    <SignedInRoutes />
+                  </RouteBoundary>
+                </ReportRangeProvider>
+              </BackOfficeShell>
+            </Route>
+          </Switch>
+        </RouteBoundary>
       </Gate>
     </Router>
   );

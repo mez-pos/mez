@@ -12,6 +12,7 @@
 import { useId, type MouseEvent, type ReactNode } from "react";
 import { Button } from "./Button";
 import { cx } from "./cx";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { CloseIcon } from "./icons";
 import { useDialog } from "./use-dialog";
 
@@ -72,8 +73,11 @@ export function Sheet({ open, onClose, title, children, footer, holdsForm = fals
               <CloseIcon />
             </Button>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">{children}</div>
-          {footer && <div className="flex flex-wrap justify-end gap-tap-gap border-t border-line px-6 py-4 *:grow">{footer}</div>}
+          {/* A body that fails to draw takes its actions with it: the title and Close stay (TECH-8). */}
+          <ErrorBoundary where="modal" size="modal" onClose={onClose}>
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">{children}</div>
+            {footer && <div className="flex flex-wrap justify-end gap-tap-gap border-t border-line px-6 py-4 *:grow">{footer}</div>}
+          </ErrorBoundary>
         </div>
       )}
     </dialog>

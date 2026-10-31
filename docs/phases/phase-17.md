@@ -198,7 +198,11 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
 
 ### The shared kit
 
-- [ ] **Task 29 - Error boundaries (TECH-8).**
+- [x] **Task 29 - Error boundaries (TECH-8).** Done 2026-10-31 (ADR-402):
+  a boundary behind each app's gate, inside each shell, around the till's
+  order rail and its pay screen, and inside every Modal and Sheet; Try again
+  reads afresh before it draws; each failure is told to the server's log
+  through `POST /api/v1/client-errors`.
 - [ ] **Task 30 - One focus rule, one field rule (TECH-10, TECH-11,
   TECH-12, TECH-20, TECH-14).**
 - [ ] **Task 31 - Kit cleanup (TECH-21 to TECH-24, BO-12, BO-13, BO-16 to

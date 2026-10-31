@@ -983,6 +983,15 @@ export interface TunnelPairing {
   paired_at: string;
 }
 
+export interface ClientErrorRequest {
+  app: string;
+  where: string;
+  path: string;
+  message: string;
+  stack: string;
+  component_stack: string;
+}
+
 export interface GuestTableResponse {
   venue: GuestVenueResponse;
   table: GuestTableNameResponse;

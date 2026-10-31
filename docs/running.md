@@ -238,6 +238,12 @@ Logs are in `logs/` inside it, as `mez.log`. The current file is rotated to
 `mez.log.1` once it reaches 8 MB, and five rotations are kept, so the logs
 never grow past about 48 MB.
 
+A screen that failed to draw on a till, a kitchen display or the back office
+is written there too, as an error line, `"msg":"a screen failed to draw"`,
+naming the device, the app, the screen's address, the part that failed
+(`where`: route, rail, pay, modal or root) and the error with its stack
+(ADR-402). The guest's phone does not report.
+
 ## Changing the port, and everything else
 
 There are four places a setting can come from. Each one beats the ones above it:

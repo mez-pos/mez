@@ -82,6 +82,11 @@ var remoteRoutes = map[string]struct{}{
 	// The owner, vouched for by mez Cloud. It is only ever from away.
 	"POST /api/v1/sessions/cloud": {},
 
+	// A screen that failed to draw, told to the venue's log (ADR-402): the
+	// back office from away fails like any other, and the line is all it
+	// changes.
+	"POST /api/v1/client-errors": {},
+
 	// What every screen reads to draw itself.
 	"GET /api/v1/venue":  {},
 	"GET /api/v1/health": {},

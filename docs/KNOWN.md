@@ -10,6 +10,20 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Error boundaries, told to the server's log** (ADR-402, Phase 17 Task 29;
+  2026-10-31). Seen in a scripted Chromium at 1024x768 and 1366x768 on the
+  composition venue of Task 28, each part made to throw by bending the
+  server's answers in flight (a list sent as a number): the till's rail in
+  its own column with the menu still ringing up, and mended by Try again
+  once the answers were right; the pay screen's fallback under the till's
+  header; a back office route inside the shell, mended by Try again; the
+  import window's fallback, closed by its Close. Each reached `logs/mez.log`
+  once, as "a screen failed to draw". **Not seen:** the page-size fallback
+  behind the gate (lock, pair, the kitchen's pass) and at the root; a Sheet's
+  fallback (the same component as Modal's); the kitchen display reporting as
+  `kitchen`. **Left out:** the guest's app does not report (no device token;
+  ADR-402); a stack is the production bundle's minified names.
+
 - **The GST composition scheme** (ADR-401, Phase 17 Task 28; 2026-10-31).
   Seen in a scripted Chromium at 1024x768 and 1366x768 on a venue set up by
   the wizard under it: the wizard's five tax cards, no "Menu prices"; the
@@ -309,8 +323,8 @@
   - The printed receipt's layout does not show the cash rounding row
     (ADR-377); its figures add up through the tender line.
   - `pair` sends no idempotency key, so a code consumed with its answer
-    lost needs a new code; one `ErrorBoundary` at the root takes the whole
-    till down on a render error; the lock screen's "Add staff in the back
+    lost needs a new code (one `ErrorBoundary` at the root no longer takes
+    the whole till down: ADR-402); the lock screen's "Add staff in the back
     office" has no link, since nobody is signed in to carry one; the
     open-shift sold-out card and a few screens still not seen by eye.
   - Android before 12 does not resolve `mez.local`; those tablets use the

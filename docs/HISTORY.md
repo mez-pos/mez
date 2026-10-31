@@ -8,6 +8,19 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 28: the GST composition scheme** (SET-7, ADR-401),
+2026-10-31, the proposal put to the human and agreed. A fifth profile,
+`gst_in_composition`: no tax computed; its bill is a bill of supply with
+the GSTIN and, under the title, "Composition taxable person, not eligible
+to collect tax on supplies" (paper, till, guest); numbers of 16
+characters at most; an order keeps the scheme it opened under, and its
+invoice names the seller so. Migration 00058 builds `venues` again to
+widen its CHECK (foreign keys off, one transaction, every row kept: a
+test proves it). Offered in the wizard and Settings; a No tax or
+composition venue starts with a "No tax" class. Before it, out of phase
+(ADR-400): a new venue starts with a Kitchen and course 1, Main, and the
+import says once what the venue lacks. Walked at 1024 and 1366.
+
 **Phase 17, Task 27: back office onboarding** (BO-8, BO-9, BO-10, BO-11,
 BO-15, ADR-399), 2026-10-31. Missing setup is said in an owner's words,
 mez Cloud first: table codes, ordering from phones and the back office

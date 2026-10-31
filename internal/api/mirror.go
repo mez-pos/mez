@@ -50,6 +50,10 @@ var mirrorWrites = map[string]struct{}{
 	// Reads sent as POST because they carry a draft: nothing is kept.
 	"POST /api/v1/settings/receipt/preview":   {},
 	"POST /api/v1/settings/numbering/preview": {},
+
+	// A screen that failed to draw: a line in this server's log, and no
+	// change to the copy (ADR-402).
+	"POST /api/v1/client-errors": {},
 }
 
 // mirrorGate stands outside the relay's gate on a mirror. It marks every

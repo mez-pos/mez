@@ -8,6 +8,8 @@
 
 import { Redirect, Route, Switch } from "wouter";
 import { Gate } from "../../shared/auth/Gate";
+import { RouteBoundary } from "../../shared/RouteBoundary";
+import { ErrorBoundary } from "../../shared/ui/ErrorBoundary";
 import { LockScreen } from "../../shared/screens/LockScreen";
 import { PairScreen } from "../../shared/screens/PairScreen";
 import { setupPath } from "../../shared/screens/setup/setup-path";
@@ -42,33 +44,41 @@ export function App() {
 function Gated() {
   return (
     <Gate splash={<Splash />}>
-      <Switch>
-        <Route path="/pair">
-          <PairScreen app="terminal" />
-        </Route>
-        <Route path="/lock">
-          <LockScreen />
-        </Route>
-        {/* The kitchen's board has its own header and foot (D10): no shell, and no shift to wait for. */}
-        <Route path={route.pass}>
-          <CookBoard />
-        </Route>
-        <Route path="/">
-          <Landing />
-        </Route>
-        <Route>
-          <TerminalProvider>
-            <TerminalShell>
-              <ShiftGate>
-                <Screens />
-              </ShiftGate>
-            </TerminalShell>
-          </TerminalProvider>
-        </Route>
-      </Switch>
+      {/* A screen with no shell around it fails as a page; one inside the shell, below, as a region (TECH-8). */}
+      <RouteBoundary size="page">
+        <Switch>
+          <Route path="/pair">
+            <PairScreen app="terminal" />
+          </Route>
+          <Route path="/lock">
+            <LockScreen />
+          </Route>
+          {/* The kitchen's board has its own header and foot (D10): no shell, and no shift to wait for. */}
+          <Route path={route.pass}>
+            <CookBoard />
+          </Route>
+          <Route path="/">
+            <Landing />
+          </Route>
+          <Route>
+            <TerminalProvider>
+              <TerminalShell>
+                <ShiftGate>
+                  <RouteBoundary>
+                    <Screens />
+                  </RouteBoundary>
+                </ShiftGate>
+              </TerminalShell>
+            </TerminalProvider>
+          </Route>
+        </Switch>
+      </RouteBoundary>
     </Gate>
   );
 }
+
+/** What the pay screen's fallback says: a payment taken before it failed is not lost (TECH-8). */
+const payLine = "Any payment already taken is recorded, and the order shows it. Try again, or reload.";
 
 /** The screens inside the shell. */
 function Screens() {
@@ -93,7 +103,13 @@ function Screens() {
       </Route>
       {/* One route for the list and the order picked on it, so the tab and the search stay as rows are picked. */}
       <Route path={`${route.orders}/:id?`}>{(params) => <OrdersPage orderId={params.id ?? null} />}</Route>
-      <Route path="/pay/:id">{(params) => <PayPage key={params.id} orderId={params.id} />}</Route>
+      <Route path="/pay/:id">
+        {(params) => (
+          <ErrorBoundary where="pay" size="region" resetKey={params.id} line={payLine}>
+            <PayPage key={params.id} orderId={params.id} />
+          </ErrorBoundary>
+        )}
+      </Route>
       <Route path={route.shift}>
         <ShiftPage />
       </Route>

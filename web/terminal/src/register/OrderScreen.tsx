@@ -32,6 +32,8 @@ import { ItemModal, type ItemChoice } from "./ItemModal";
 import { MenuHeader } from "./MenuHeader";
 import { sameModifiers } from "../../../shared/modifier-selection";
 import { OrderRail } from "./OrderRail";
+import { ErrorBoundary } from "../../../shared/ui/ErrorBoundary";
+import { useFreshRetry } from "../../../shared/use-fresh-retry";
 import { courseNamer } from "./rail-logic";
 import {
   addLineFor,
@@ -55,6 +57,8 @@ export function OrderScreen() {
   const menu = useMenu();
   const { ticket, names } = useTerminal();
   const [, navigate] = useLocation();
+  // Try again on a failed ticket reads it afresh first (TECH-8).
+  const retry = useFreshRetry();
   const index = useMemo(() => (menu.data ? indexMenu(menu.data) : null), [menu.data]);
   // Once a minute, so a dish sold out yesterday is back when the trading day turns.
   const now = useClock(60_000);
@@ -195,28 +199,38 @@ export function OrderScreen() {
         </div>
       </section>
 
-      <OrderRail
-        ticket={ticket}
-        currency={index?.menu.currency ?? "INR"}
-        names={names}
-        dietFor={(line) => index?.item(line.item_id)?.diet}
-        onOpenLine={(line) => setPanel({ kind: "line", lineId: line.id })}
-        onVoidLine={(line) => setPanel({ kind: "void", lineId: line.id })}
-        onNote={() => setPanel({ kind: "note" })}
-        onDiscount={() => setPanel({ kind: "discount", lineId: null })}
-        onRemoveDiscount={(d) => setPanel({ kind: "remove_discount", seq: d.seq })}
-        onOrders={() => setOrdersOpen(true)}
-        onHistory={() => setHistoryOpen(true)}
-        onPastBills={() => navigate(route.orders)}
-        onTables={() => navigate(route.tables)}
-        onPay={() => {
-          if (ticket.orderId) navigate(route.pay(ticket.orderId));
-        }}
-        onFail={fail}
-        waiter={waiter}
-        courseName={courseName}
-        {...(waiter ? { onSaved: () => navigate(route.waiter) } : {})}
-      />
+      {/* The ticket fails on its own: the menu beside it still rings up (TECH-8). Its frame is the rail's. */}
+      <ErrorBoundary
+        where="rail"
+        size="region"
+        resetKey={ticket.orderId ?? ""}
+        onRetry={retry}
+        frame="w-rail shrink-0 border-l border-line bg-chrome p-6"
+        line="The ticket's lines are kept on the server. Try again, or reload."
+      >
+        <OrderRail
+          ticket={ticket}
+          currency={index?.menu.currency ?? "INR"}
+          names={names}
+          dietFor={(line) => index?.item(line.item_id)?.diet}
+          onOpenLine={(line) => setPanel({ kind: "line", lineId: line.id })}
+          onVoidLine={(line) => setPanel({ kind: "void", lineId: line.id })}
+          onNote={() => setPanel({ kind: "note" })}
+          onDiscount={() => setPanel({ kind: "discount", lineId: null })}
+          onRemoveDiscount={(d) => setPanel({ kind: "remove_discount", seq: d.seq })}
+          onOrders={() => setOrdersOpen(true)}
+          onHistory={() => setHistoryOpen(true)}
+          onPastBills={() => navigate(route.orders)}
+          onTables={() => navigate(route.tables)}
+          onPay={() => {
+            if (ticket.orderId) navigate(route.pay(ticket.orderId));
+          }}
+          onFail={fail}
+          waiter={waiter}
+          courseName={courseName}
+          {...(waiter ? { onSaved: () => navigate(route.waiter) } : {})}
+        />
+      </ErrorBoundary>
 
       {historyOpen && ticket.orderId && <HistorySheet key={ticket.orderId} orderId={ticket.orderId} onClose={() => setHistoryOpen(false)} />}
 

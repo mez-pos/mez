@@ -341,6 +341,8 @@ func generate() (*ts.Generator, error) {
 		Error{}, errorBody{}, pairRequest{}, deviceResponse{}, pairResponse{},
 		discoverResponse{}, addressesResponse{}, addressResponse{}, addressAppResponse{}, setupStatusResponse{}, setupRequest{}, setupResponse{},
 		newCodeRequest{}, pairingCodeResponse{}, pairingPlaceResponse{}, deviceRecordResponse{}, waitingCodeResponse{}, deviceListResponse{}, renameDeviceRequest{}, tunnelResponse{},
+		// A screen that failed to draw (ADR-402).
+		clientErrorRequest{},
 		// The guest's API.
 		guestTableResponse{}, guestPickupResponse{}, guestMenuResponse{}, guestOrderRequest{}, guestRoundResponse{}, guestBillResponse{}, guestPaidResponse{}, guestChargeResponse{}, guestShareRequest{}, guestReceiptResponse{}, resolveChargeRequest{}, tableCodesResponse{}, tableCodeQRResponse{}, tableCodeSheetResponse{}, pickupCodeQRResponse{},
 		paymentSettingsRequest{}, paymentSettingsResponse{},

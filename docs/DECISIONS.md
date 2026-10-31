@@ -15434,3 +15434,42 @@ had either broke the law on every bill or left off what the law asks the bill to
 Cost: moving from the composition scheme to regular GST leaves items on "No tax", which is
 exempt, so they sell without GST until moved to a rated class; Settings lists items without
 an HSN when the venue moves to GST, but not items on an exempt class (KNOWN).
+
+## ADR-402 - Error boundaries where a screen can fail, told to the server's log
+2026-10 · Status: accepted. Phase 17 Task 29 (TECH-8).
+Context: each app had one ErrorBoundary, at its root. A render error anywhere, a ticket's rail
+or a settings card, took the whole till down to "Something went wrong" and a reload, and was
+written to the browser's console, which nobody at a venue opens.
+Decision:
+  - **Boundaries where a part can fail on its own.** Behind the gate, a page (there is no shell
+    to keep). Inside each app's shell, a region, so its header and the way out stay. The till's
+    order rail, in the rail's own column, so the menu beside it still rings up ("The ticket's
+    lines are kept on the server."). The pay screen ("Any payment already taken is recorded,
+    and the order shows it."). Inside every Modal and Sheet, around body and footer together:
+    a window's actions go with a body that failed, and its title and Close stay. A route's
+    boundary clears when the address changes; the rail's when the ticket does.
+  - **Try again reads afresh, then draws** (`useFreshRetry`): data for screens no longer drawn
+    is dropped and data still drawn is fetched again and waited for, so a failure that came
+    from what the server sent is not drawn twice. A window's Try again only draws again, beside
+    Close: the kit carries no React Query, for the guest's bundle.
+  - **Each failure is told to the server**: `POST /api/v1/client-errors`, behind a device's
+    token and no signed-in person (a lock screen can fail), 30 a minute a device, counted after
+    the token is judged (through the relay every request shares the tunnel's address, and a
+    stranger's refused requests must not spend a till's reports). An app with no device token
+    sends nothing: the server's refusal would read as the device being forgotten. One error
+    line, "a screen failed to draw", with the venue, the device and its kind, the app, the
+    boundary, the path, the message, the stack and React's component stack, each cut (4000
+    characters for a stack) and with control characters out. No table and no event. Open from
+    away and on a mirror: a line changes nothing.
+  - **The browser sends each different failure once**, ten at most a page load, never waits
+    on it, drops what it cannot send, and sends the path alone: a query or a fragment can carry
+    a pairing code or a token from mez Cloud.
+Rejected: reporting from the guest's app (it has no device token, and a public route for it
+would let anyone fill a venue's log: KNOWN); a table of failures for the back office to list
+(the log is where an installer looks, and a screen of them is a feature); shipping source maps
+so a stack reads as source (they double what a till downloads; the bundle's name in the stack
+says which build it was).
+Because: a till is a shop's register: one failed card should cost that card, not the till, and
+whoever looks after mez should hear of it without asking the cashier what the screen said.
+Cost: a production stack is minified names, so it says which bundle and where in it, not which
+source file. The guest's failures are still unheard.
