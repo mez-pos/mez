@@ -8,7 +8,7 @@ with the bill. Following the kitchen was added in Task 5c (ADR-239).
 
 ## Purpose
 
-Tell a guest who pressed Place Order the truth about it: the venue has not
+Tell a guest who pressed Place order the truth about it: the venue has not
 answered yet, the kitchen has it, or it was not accepted; and once the
 kitchen has it, each thing the kitchen does with it. Never a timer, never a
 guess at how long, and never "being made" before a cook has started it.
@@ -138,7 +138,7 @@ guess at how long, and never "being made" before a cook has started it.
 
 | Action | Does | Then |
 |---|---|---|
-| Place Order, on the cart | Sends the cart | This screen, as the venue answered |
+| Place order, on the cart | Sends the cart | This screen, as the venue answered |
 | Order more, Back to the menu | The menu | The strip stays over it |
 | Order this again | Adds this order's dishes to the cart | The cart, with them in it and anything it had before. Nothing is placed |
 | View, on the strip | This screen | |

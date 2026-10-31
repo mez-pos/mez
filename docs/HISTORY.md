@@ -8,6 +8,18 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 23: the guest's order tells the truth** (GST-3, GST-4,
+GST-5, ADR-395), 2026-10-31. The order screen says when the order was
+placed ("Placed at 6:42 PM · 3 minutes ago"), nudges the guest to ask staff
+after five minutes waiting, says "We can't reach the venue right now..."
+after twenty seconds of failed checks and "The venue no longer has this
+order..." on a not found (`useOrder` keeps `failingSince` and `lost`). The
+strip sticks with the menu's and the cart's head. A declined or cancelled
+order offers "Put these back in my cart". Seen on a phone at 390: placed
+time, the strip at the top after scrolling, a decline from the till and the
+dishes back in the cart, the venue out of reach and the order lost (both
+made up in the walk).
+
 **Phase 17, Task 22b: tables and follow-ups** (TBS-9, TBS-11, TBS-19,
 TBS-14, TILL-17, TILL-19, ADR-394), 2026-10-31. The waiter's tablet speaks
 the till's table words (Seated, Ordered, Paying, To clear, Free; a paid

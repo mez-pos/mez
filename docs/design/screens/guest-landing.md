@@ -20,8 +20,11 @@ One column, at most a phone and a half wide, on parchment.
   in green ("Table T4"; a table already named "Window table" is left as it
   is), a hairline, "Welcome to <venue>" in the serif, "The whole menu, at
   your table.", and one script line, "A small place for big moments ♡".
-- **Start Ordering**, the primary button, full width, at the foot of the
-  screen where a thumb is.
+- **Start ordering**, the primary button, full width, at the foot of the
+  screen where a thumb is, at least a home bar's inset clear of the edge
+  (GST-6). On a screen wider than the column (768 and up: a tablet, a
+  laptop) the whole stands in the middle and the button sits under the
+  card, not far below it (GST-14).
 
 ## Data
 
@@ -44,7 +47,7 @@ One column, at most a phone and a half wide, on parchment.
 
 | Action | Does | Then |
 |---|---|---|
-| Start Ordering | Sets the hash to `#menu` | The menu, from the top |
+| Start ordering | Sets the hash to `#menu` | The menu, from the top |
 | The phone's Back, on the menu | Clears the hash | This screen |
 
 ## States
@@ -90,7 +93,7 @@ One column, at most a phone and a half wide, on parchment.
   guest should see whose table they are at.
 - "Scan. Order. Relax." is "The whole menu, at your table." The button was
   "See the menu" until a guest could order (Task 4c), and is the design's
-  "Start Ordering" since.
+  "Start ordering" since, in sentence case like every button (GST-13).
 - M11d's "Session ended" is "This code does not lead to a table": that is
   what happened. A session that has ended (ADR-262) is never a screen: the
   app drops it and reads the landing again, which hands out another where it

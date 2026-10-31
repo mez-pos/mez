@@ -11,7 +11,7 @@ import { cx } from "../../shared/ui/cx";
 import { DietMark } from "../../shared/ui/DietMark";
 import { Logo } from "../../shared/ui/Logo";
 import { SearchField } from "../../shared/ui/SearchField";
-import { itemsText } from "./cart-logic";
+import { countsByDish, inCartText, itemsText } from "./cart-logic";
 import { ItemSheet } from "./ItemSheet";
 import { tableLabel } from "./Landing";
 import { Notice } from "./Notice";
@@ -55,6 +55,7 @@ export function Menu({ table, menu, cart, onViewCart, strip }: MenuProps) {
   const diets = offeredDietFilters(menu);
   const items = visibleItems(menu, filter);
   const framed = showsPhotoFrames(menu);
+  const inCart = countsByDish(cart.lines);
   const filtered = filter.search.trim() !== "" || filter.diets.length > 0 || filter.category !== null;
 
   const clear = () => {
@@ -152,6 +153,7 @@ export function Menu({ table, menu, cart, onViewCart, strip }: MenuProps) {
                 key={item.id}
                 item={item}
                 framed={framed}
+                inCart={inCart.get(item.id) ?? 0}
                 onOpen={() => setOpenId(item.id)}
                 // Nothing to choose: one tap adds one. Anything to choose opens it.
                 onAdd={() => (item.modifier_groups.length === 0 ? cart.add({ item_id: item.id, modifier_ids: [], qty: 1 }) : setOpenId(item.id))}
@@ -162,7 +164,8 @@ export function Menu({ table, menu, cart, onViewCart, strip }: MenuProps) {
       </main>
 
       {cart.count > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-10 mx-auto w-full max-w-md px-3 pb-3">
+        // Clear of the phone's home bar: the page is drawn to the edges (GST-6).
+        <div className="fixed inset-x-0 bottom-0 z-10 mx-auto w-full max-w-md px-3 pb-[max(--spacing(3),env(safe-area-inset-bottom))]">
           <button
             type="button"
             onClick={onViewCart}
@@ -185,11 +188,13 @@ interface DishCardProps {
   item: GuestItemResponse;
   /** Whether cards have a frame for a photo: once any dish on the menu has one. */
   framed: boolean;
+  /** How many of it the cart holds already, whatever was chosen (GST-8). */
+  inCart: number;
   onOpen: () => void;
   onAdd: () => void;
 }
 
-function DishCard({ item, framed, onOpen, onAdd }: DishCardProps) {
+function DishCard({ item, framed, inCart, onOpen, onAdd }: DishCardProps) {
   return (
     // Sold out is a sunken card with its photo in grey and every word at full
     // contrast, never a fade (TECH-13, ADR-390).
@@ -221,8 +226,13 @@ function DishCard({ item, framed, onOpen, onAdd }: DishCardProps) {
             <span className="font-serif text-base leading-snug">{item.name}</span>
           </span>
           {item.description && <span className="mt-1 line-clamp-2 text-sm text-fg-muted">{item.description}</span>}
-          {item.gluten_free && <span className="mt-1 text-sm font-semibold text-fg-2">Gluten free</span>}
-          <span className={cx("mt-auto block pt-2 font-serif text-lg", item.sold_out && "text-fg-muted")}>{formatMoney(item.price)}</span>
+          {/* Said quietly: on a menu of coffees it is on nearly every card (GST-9). */}
+          {item.gluten_free && <span className="mt-1 text-sm text-fg-muted">Gluten free</span>}
+          {/* What is in the cart already, beside the price; under it on a narrow card (GST-8). */}
+          <span className="mt-auto flex flex-wrap items-baseline justify-between gap-x-2 pt-2">
+            <span className={cx("font-serif text-lg", item.sold_out && "text-fg-muted")}>{formatMoney(item.price)}</span>
+            {inCart > 0 && <span className="text-sm font-bold text-accent-text">{inCartText(inCart)}</span>}
+          </span>
         </span>
       </button>
       <div className="px-3 pb-3">
@@ -231,7 +241,8 @@ function DishCard({ item, framed, onOpen, onAdd }: DishCardProps) {
             Sold out
           </p>
         ) : (
-          <Button variant="primary" className="w-full" aria-label={`Add ${item.name}`} onClick={onAdd}>
+          // The tint, not the fill: one on every dish, and View cart is the primary (GST-9).
+          <Button variant="tint" className="w-full" aria-label={`Add ${item.name}`} onClick={onAdd}>
             + Add
           </Button>
         )}

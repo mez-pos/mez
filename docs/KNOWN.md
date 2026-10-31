@@ -10,6 +10,19 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The guest's phone: edges, thumb, and words** (ADR-396, Phase 17 Task
+  24; 2026-10-31). Seen in a scripted Chromium: at 360 and 390, "2 in cart"
+  beside a card's price, + Add in the tint, "Gluten free" muted; the sheet's
+  "Add · ₹2,280.00" beside the count at twelve, and a made-up long "Choose
+  ..." ending in an ellipsis with the count in place; the cart's 48px Clear
+  and "Tap again to clear" with the count stepped aside; "Place order",
+  "Start ordering". With a 34px home bar faked through the DevTools
+  protocol, View cart 34px clear and the sheet's Add 51px. The landing at
+  768, 1366 and 1920 with its button 32px under the card. **Not seen:** a
+  real iPhone (the insets were Chromium's override); a phone on its side,
+  where the sheet pads by the notch's inset; the terminal's and back
+  office's sheets since (no insets there, so no change by construction).
+
 - **The guest's order tells the truth** (ADR-395, Phase 17 Task 23;
   2026-10-31). Seen in a scripted Chromium at 390x844: "Placed at 6:24 PM ·
   just now"; the strip at the top of the menu after scrolling; a request

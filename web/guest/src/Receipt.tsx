@@ -50,7 +50,7 @@ export function Receipt({ code, table, bill, onBack }: ReceiptProps) {
         <p className="mr-2 ml-auto text-sm text-fg-muted">{tableLabel(table.table.name)}</p>
       </header>
 
-      <main className="flex flex-1 flex-col px-4 pb-8">
+      <main className="flex flex-1 flex-col px-4 pb-[max(--spacing(8),env(safe-area-inset-bottom))]">
         {receipt === undefined ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16 text-center">
             {problem === null ? (

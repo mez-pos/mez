@@ -3,7 +3,7 @@
 What the guest has chosen and what it comes to. Built in phase 11 Task 3c
 (ADR-208). `web/guest/src/`: `Cart.tsx`, `cart-logic.ts`, `use-cart.ts`,
 `Notice.tsx`. The hash `#cart` on a table's path. It is the phone's own
-list until **Place Order**, which Task 4c added (ADR-213, `guest-order.md`).
+list until **Place order**, which Task 4c added (ADR-213, `guest-order.md`).
 
 ## Purpose
 
@@ -14,7 +14,9 @@ each, how many, and the total.
 
 - **The bar,** stuck to the top: back to the menu, "Your cart" in the
   serif, the count in a green-tint pill ("3 items"), and **Clear** at the
-  right. The count and Clear are left out of an empty cart.
+  right, 48px like everything else a guest taps (GST-7). While Clear asks
+  ("Tap again to clear") the count steps aside, so the question fits a 360
+  phone. The count and Clear are left out of an empty cart.
 - **A notice,** when a dish was taken out (see States).
 - **Each line,** a card: the diet mark and the dish's name in the serif,
   the line's total at the right; its choices in words under it ("Large,
@@ -27,9 +29,10 @@ each, how many, and the total.
   the prices hold it or the venue charges none (GST-2, ADR-386).
 - "Allergies or a special request? Please tell a member of staff."
 - **Why it was not placed,** when it was not, in the danger tint.
-- **Place Order · ₹530.00**, the primary button, 58px, full width. While it
+- **Place order · ₹530.00**, the primary button, 58px, full width. While it
   is being sent it reads "Placing your order" and is off, and Clear is
-  hidden.
+  hidden. The page's end keeps at least a phone's home-bar inset clear
+  (GST-6).
 - **The strip** over the screen while the phone remembers an order placed
   (`guest-order.md`), sticking with the head (GST-4).
 
@@ -50,10 +53,10 @@ each, how many, and the total.
 |---|---|---|
 | + | One more, up to 20 | The line and the total follow |
 | − | One fewer | At none the line is taken out: it is the way to remove a dish |
-| Clear | Arms: the button reads "Tap again to clear" for four seconds | A second tap empties the cart |
+| Clear | Arms: the button reads "Tap again to clear" for four seconds, and the count steps aside for it | A second tap empties the cart |
 | Add more dishes, Back | The menu | The cart's bar is at its foot |
 | OK on a notice | Dismisses it | |
-| Place Order | Sends the cart as ids and counts | The order placed, and the cart is empty; refused, the cart stays and says why |
+| Place order | Sends the cart as ids and counts | The order placed, and the cart is empty; refused, the cart stays and says why |
 
 The same dish with the same choices is one line, however many times it is
 added; with other choices it is another.
@@ -72,7 +75,7 @@ added; with other choices it is another.
 
 ## Constraints
 
-- **The figure on Place Order is the menu's arithmetic**, as the total is.
+- **The figure on Place order is the menu's arithmetic**, as the total is.
   What the venue will bill is in its answer, on the next screen.
 - The cart is emptied only once the venue has the order.
 - Money is integer minor units from the menu to the total, never a float.
@@ -98,6 +101,7 @@ added; with other choices it is another.
 - The summary is one figure and a sentence about tax, where the design
   itemises a bill.
 - Clear is asked twice, on the button itself. The design asks nothing.
+- "Place Order" is "Place order": buttons are in sentence case (GST-13).
 - − at one removes the line; the design draws no way to remove a dish.
 
 **Kept that the design does not draw:** the notice for a dish that can no

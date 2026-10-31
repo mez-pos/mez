@@ -206,6 +206,22 @@ export function itemsText(count: number): string {
 }
 
 /**
+ * How many of each dish the cart holds, by the dish's id, whatever was chosen
+ * on each line: what a card on the menu says is in the cart already (GST-8).
+ * Read from the priced lines, so a dish taken out of the cart is not counted.
+ */
+export function countsByDish(lines: readonly Pick<PricedLine, "item" | "qty">[]): ReadonlyMap<number, number> {
+  const counts = new Map<number, number>();
+  for (const line of lines) counts.set(line.item.id, (counts.get(line.item.id) ?? 0) + line.qty);
+  return counts;
+}
+
+/** "2 in cart", on a dish's card. */
+export function inCartText(count: number): string {
+  return `${count} in cart`;
+}
+
+/**
  * Where a total's tax is: on a table's bill, added before an order to
  * collect is paid, or in what was paid for one already.
  */

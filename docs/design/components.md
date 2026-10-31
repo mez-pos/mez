@@ -8,12 +8,12 @@ the same task, don't invent a one-off.
 
 | Component | Notes |
 |---|---|
-| `Button` | variants: primary (green), attention (terracotta), secondary, ghost (terracotta text), danger (brick on its tint). All pills. sizes: sm (32px), md (40px), tap (48px, the default), charge (56px). Labels are 15px at every size and never wrap |
+| `Button` | variants: primary (green), attention (terracotta), secondary, ghost (terracotta text), danger (brick on its tint), tint (green on its tint, for an add repeated down a list). All pills. sizes: sm (32px), md (40px), tap (48px, the default), charge (56px). Labels are 15px at every size and never wrap |
 | `Money` | renders an `Amount`. The numeral face, tabular, right-aligned, currency-aware. **The only way money is ever rendered.** `variant="total"` is the one serif total on a screen. Negative uses U+2212 |
 | `Qty` | tabular, in one pill, with +/− tap targets. Reports the next value; holds none |
 | `StatusChip` | colour **and** word. Takes `{ kind, status }` from `web/shared/ui/status.ts`: kitchen, order, payment or line. Never free text |
 | `Card` | an ivory card on a hairline and a warm shadow; the ticket surface on espresso night |
-| `Sheet` | bottom sheet on touch, side panel on desktop. Decided by `pointer`, not width. Escape, close control or scrim closes it; one that holds something typed or chosen (`holdsForm`: an approval, a note, a line being changed) is not closed by the scrim (TECH-9, ADR-387) |
+| `Sheet` | bottom sheet on touch, side panel on desktop. Decided by `pointer`, not width. Escape, close control or scrim closes it; one that holds something typed or chosen (`holdsForm`: an approval, a note, a line being changed) is not closed by the scrim (TECH-9, ADR-387). Its panel pads by a phone's safe-area insets, so its foot clears the home bar (GST-6, ADR-396) |
 | `Modal` | confirm, form. Escape and a visible close, always. The scrim does not close it. `Confirm` is the yes/no form |
 | `NumPad` | for amounts and PINs. Keys are 56px. Amounts shift in from the right as minor units; `numpad-keys.ts` does the arithmetic |
 | `SearchField` | debounced, clearable, keyboard-dismissible. Escape clears, Enter reports and blurs |

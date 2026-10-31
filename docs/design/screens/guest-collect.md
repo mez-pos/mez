@@ -73,8 +73,8 @@ Each screen is as its own spec draws it, with these differences.
 
 | Action | Does | Then |
 |---|---|---|
-| Start Ordering | The menu | |
-| Place Order, on the cart | Sends the cart | The order, unpaid, with Pay |
+| Start ordering | The menu | |
+| Place order, on the cart | Sends the cart | The order, unpaid, with Pay |
 | Pay | Starts the order's charge | The gateway's page; then the order |
 | Order something else | The menu | The strip stays over it, with the code |
 | Order this again | Adds the order's dishes to the cart | The cart. Nothing is placed |

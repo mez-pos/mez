@@ -35,12 +35,18 @@ One column, at most a phone and a half wide.
   - the diet mark (a dot in a square for veg, a triangle for non-veg, as
     FSSAI marks them, GST-1) and the name in the serif;
   - the description, two lines at most;
-  - "Gluten free" when it is;
-  - the price in the serif, in full ("₹60.00");
-  - **+ Add**, the green button, across the foot of the card, or **Sold
-    out** in its place. A sold-out card is faded.
+  - "Gluten free" when it is, quietly: regular weight, muted. On a menu of
+    coffees it is on nearly every card, and it should not outweigh the
+    dishes (GST-9);
+  - the price in the serif, in full ("₹60.00"), and beside it, in green,
+    **"2 in cart"** when the cart holds any of the dish, whatever was
+    chosen on it; under the price on a card too narrow for both (GST-8);
+  - **+ Add**, the green tint button (`tint`), across the foot of the card,
+    or **Sold out** in its place. A sold-out card is sunken (Constraints).
 - **The cart's bar,** fixed to the foot while the cart has anything in it:
-  "View cart" and "3 items · ₹350.00", in green.
+  "View cart" and "3 items · ₹350.00", in green. It is the screen's one
+  primary. On a phone with a home bar it keeps at least the bar's inset
+  clear (GST-6).
 - **A notice** over the dishes when a dish was taken out of the cart
   (`guest-cart.md`, States).
 
@@ -63,7 +69,7 @@ One column, at most a phone and a half wide.
 | Typing in search | Narrows, 200 ms after the last key | Every word must be in the name or the description, in any order |
 | Show everything | Clears the search, the category and the diets | The whole menu |
 | A card, above its button | Opens the dish | `guest-item.md` |
-| + Add, on a dish with no choices | Adds one to the cart | The cart's bar counts it |
+| + Add, on a dish with no choices | Adds one to the cart | The cart's bar counts it, and the card says "1 in cart" |
 | + Add, on a dish with choices | Opens the dish | The choices are made there |
 | View cart | The cart | `guest-cart.md` |
 
@@ -119,6 +125,10 @@ dish that does not say what it is is in no diet's list.
   every card: most venues start with none, and a wall of empty frames is
   not a menu. From the first photo the venue adds, every card has one.
 - "GF" is "Gluten free", in words.
+- **+ Add is the green tint, not the fill** (GST-9, ADR-396): one on every
+  dish made eighteen solid green buttons that outweighed the dishes, and
+  the cart's bar is the one primary.
 
 **Kept that the design does not draw:** the count beside the title, the
-empty and no-match states, and sold-out dishes sinking to the end.
+empty and no-match states, sold-out dishes sinking to the end, and "2 in
+cart" on a card (GST-8).

@@ -55,6 +55,11 @@ export function Sheet({ open, onClose, title, children, footer, holdsForm = fals
         <div
           className={cx(
             "flex max-h-[85dvh] flex-col border-line bg-raised",
+            // A phone drawn to its edges (the guest app's viewport-fit=cover):
+            // the panel's ground runs under the home bar and the notch, and
+            // its head, body and foot stay inside them (GST-6). Nothing on a
+            // screen without insets.
+            "pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]",
             "rounded-t-sheet border-t shadow-modal",
             "pointer-fine:h-full pointer-fine:max-h-none pointer-fine:rounded-none pointer-fine:border-l pointer-fine:border-t-0",
           )}

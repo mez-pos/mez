@@ -7,7 +7,7 @@ import { Button, Card, Meta, Money, Qty, StatusChip, type ButtonSize, type Butto
 
 const inr = (minor: number): Amount => ({ minor, currency: "INR" });
 
-const variants: ButtonVariant[] = ["primary", "secondary", "ghost", "danger"];
+const variants: ButtonVariant[] = ["primary", "secondary", "ghost", "danger", "tint"];
 const sizes: ButtonSize[] = ["sm", "md", "tap", "charge"];
 
 const bill: [string, Amount][] = [

@@ -1,4 +1,4 @@
-// The button. Five variants, four sizes (docs/design/components.md).
+// The button. Six variants, four sizes (docs/design/components.md).
 //
 // Every label is --text-base, even on `sm`: the 15px floor for anything
 // interactive is not relaxed for density (tokens.md, ADR-014). `sm` and `md`
@@ -8,7 +8,7 @@
 import type { ButtonHTMLAttributes } from "react";
 import { cx } from "./cx";
 
-export type ButtonVariant = "primary" | "attention" | "secondary" | "ghost" | "danger";
+export type ButtonVariant = "primary" | "attention" | "secondary" | "ghost" | "danger" | "tint";
 export type ButtonSize = "sm" | "md" | "tap" | "charge";
 
 const variants: Record<ButtonVariant, string> = {
@@ -21,6 +21,9 @@ const variants: Record<ButtonVariant, string> = {
   // Tinted, not filled: a void is serious, and a filled brick button next to
   // a green one reads as two calls to action.
   danger: "border border-danger-line bg-danger-tint text-danger hover:bg-danger-tint-hover",
+  // Green words on the green tint: an add repeated down a list (the guest's
+  // + Add on every dish), where a fill on each would outweigh the one primary.
+  tint: "bg-accent-tint text-accent-text hover:bg-accent hover:text-accent-fg",
 };
 
 const sizes: Record<ButtonSize, string> = {

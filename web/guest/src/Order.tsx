@@ -73,7 +73,7 @@ export function Order({ code, table, placed, onRefresh, onMenu, onBill, onAgain,
         <p className="ml-auto text-sm text-fg-muted">{tableLabel(table.table.name)}</p>
       </header>
 
-      <main className="flex flex-1 flex-col px-4 pb-8">
+      <main className="flex flex-1 flex-col px-4 pb-[max(--spacing(8),env(safe-area-inset-bottom))]">
         <section
           role="status"
           aria-live="polite"

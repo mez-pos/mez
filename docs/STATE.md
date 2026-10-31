@@ -13,7 +13,7 @@ the UI audit (`docs/design/ui-audit-2026-10-31.md`). Tasks 1 and 4 to
 12 are done: at the human's word the device-fit pass came first, built
 and seen at 1024x768, 1366x768 and 1920x1080 on 2026-10-31 (ADR-381,
 ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s,
-Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 23 (ADR-384 to ADR-395). It runs before Phase 16, which is mostly
+Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 24 (ADR-384 to ADR-396). It runs before Phase 16, which is mostly
 `mez-cloud`'s.
 
 Before it, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
@@ -28,22 +28,22 @@ list below.
 
 ## Last completed task
 
-**Phase 17, Task 23: the guest's order tells the truth** (GST-3, GST-4,
-GST-5, ADR-395), 2026-10-31. The order screen says when the order was
-placed ("Placed at 6:42 PM · 3 minutes ago"), nudges the guest to ask staff
-after five minutes waiting, says "We can't reach the venue right now..."
-after twenty seconds of failed checks and "The venue no longer has this
-order..." on a not found (`useOrder` keeps `failingSince` and `lost`). The
-strip sticks with the menu's and the cart's head. A declined or cancelled
-order offers "Put these back in my cart". Seen on a phone at 390: placed
-time, the strip at the top after scrolling, a decline from the till and the
-dishes back in the cart, the venue out of reach and the order lost (both
-made up in the walk).
+**Phase 17, Task 24: phone ergonomics** (GST-6, GST-7, GST-8, GST-9,
+GST-12, GST-13, GST-14, ADR-396), 2026-10-31. The guest app keeps clear of
+a phone's home bar and notch: the Sheet's panel pads by the safe-area
+insets (a change in `web/shared`), the cart's bar and each page's end keep
+at least the bottom inset (the rule is in tokens.md's Layout). Clear is
+48px and its count steps aside while it asks. A card says "2 in cart"
+beside its price (`countsByDish`). + Add is a new `tint` Button variant and
+"Gluten free" is muted. The sheet's button says "Add · ₹190.00" and
+truncates before it pushes the count off. "Start ordering", "Place order";
+the landing stands in the middle from 768 wide. Seen at 360 and 390 (a
+home bar faked at 34px through the DevTools protocol), 768, 1366 and 1920.
 
 ## Next task
 
-**Here: Phase 17 Task 24, phone ergonomics (GST-6, GST-7, GST-8, GST-9, GST-12, GST-13, GST-14)**,
-then Task 25 onward; Tasks 1 to 23 are done. Each screen is checked by eye at
+**Here: Phase 17 Task 25, the venue's menu, light on 3G (GST-10, GST-11, TECH-18)**,
+then Task 26 onward; Tasks 1 to 24 are done. Each screen is checked by eye at
 1024x768 and 1366x768 before it is ticked: the audit's walk (a demo venue
 from `mez setup -demo-menu` in a scratch data directory, a scripted
 Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel

@@ -44,10 +44,13 @@ export function ItemSheet({ menu, item, onAdd, onClose }: ItemSheetProps) {
   const footer = item.sold_out ? (
     <p className="py-2 text-center text-base font-semibold text-fg-2">Sold out for now</p>
   ) : (
-    <div className="flex items-center gap-3">
+    <div className="flex min-w-0 items-center gap-3">
       <Qty value={qty} onChange={setQty} bounds={{ min: 1, max: MAX_QTY }} label={item.name} />
       <Button variant="primary" className="min-w-0 flex-1" disabled={unmet !== null} onClick={add}>
-        {unmet ? `Choose ${unmet.name.toLowerCase()}` : `Add to order · ${formatMoney(lineTotal(item.price, modifiers, qty))}`}
+        {/* "Add", as on the card: the cart's words, not the order's, and short
+            enough to sit beside the count on a 360 phone. A group with a long
+            name ends in an ellipsis rather than push the count off (GST-12, GST-13). */}
+        <span className="min-w-0 truncate">{unmet ? `Choose ${unmet.name.toLowerCase()}` : `Add · ${formatMoney(lineTotal(item.price, modifiers, qty))}`}</span>
       </Button>
     </div>
   );

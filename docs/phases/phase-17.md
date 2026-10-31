@@ -163,8 +163,11 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
   2026-10-31 (ADR-395): when it was placed, a nudge after five minutes, the
   venue out of reach and a lost order said, the strip sticky, and "Put these
   back in my cart" after a decline.
-- [ ] **Task 24 - Phone ergonomics (GST-6, GST-7, GST-8, GST-9, GST-12,
-  GST-13, GST-14).**
+- [x] **Task 24 - Phone ergonomics (GST-6, GST-7, GST-8, GST-9, GST-12,
+  GST-13, GST-14).** Done 2026-10-31 (ADR-396): clear of the home bar, a
+  48px Clear, "2 in cart" on a card, + Add in the tint and "Gluten free"
+  quieter, "Add · ₹190.00" in the sheet, sentence case, and the landing's
+  button under its card on a wide screen.
 - [ ] **Task 25 - The venue's menu, light on 3G (GST-10, GST-11, TECH-18).**
 
 ### First run and empty states

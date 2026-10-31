@@ -6,9 +6,11 @@ import {
   addAll,
   addLine,
   countOf,
+  countsByDish,
   droppedText,
   emptyCart,
   groupsFor,
+  inCartText,
   itemsText,
   lineKey,
   linesOfRequest,
@@ -207,6 +209,26 @@ describe("the figures", () => {
   it("says how many in words", () => {
     expect(itemsText(1)).toBe("1 item");
     expect(itemsText(3)).toBe("3 items");
+  });
+
+  it("counts each dish across its lines, whatever was chosen on them (GST-8)", () => {
+    const { lines } = reconcile([{ ...filter, qty: 2 }, flatWhiteOat, { item_id: 1, modifier_ids: [100], qty: 3 }], menu);
+    const counts = countsByDish(lines);
+    expect(counts.get(1)).toBe(4);
+    expect(counts.get(2)).toBe(2);
+    expect(counts.get(3)).toBeUndefined();
+    expect(countsByDish([]).size).toBe(0);
+  });
+
+  it("does not count a dish the menu took out of the cart (GST-8)", () => {
+    const { lines } = reconcile([{ item_id: 3, modifier_ids: [], qty: 2 }, filter], menu);
+    expect(countsByDish(lines).get(3)).toBeUndefined();
+    expect(countsByDish(lines).get(2)).toBe(1);
+  });
+
+  it("says how many of a dish are in the cart", () => {
+    expect(inCartText(1)).toBe("1 in cart");
+    expect(inCartText(12)).toBe("12 in cart");
   });
 
   it("says a total is before tax only where the bill adds it (GST-2)", () => {

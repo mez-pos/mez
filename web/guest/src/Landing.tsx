@@ -21,7 +21,10 @@ export function tableLabel(name: string): string {
 
 export function Landing({ table, collect = false, onStart }: LandingProps) {
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-canvas px-5 pt-10 pb-8 text-center text-fg">
+    // On a phone the button is at the foot, where a thumb is. On a screen wider
+    // than the column the whole stands in the middle, the button under the
+    // card, not far below it (GST-14).
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-canvas px-5 pt-10 pb-[max(--spacing(8),env(safe-area-inset-bottom))] text-center text-fg md:justify-center">
       <Logo className="mx-auto h-12" />
       <p className="mt-3 text-meta font-bold tracking-[.16em] text-fg-faint uppercase">Good food brings people together</p>
 
@@ -38,9 +41,9 @@ export function Landing({ table, collect = false, onStart }: LandingProps) {
         </p>
       </div>
 
-      <div className="mt-auto pt-8">
+      <div className="mt-auto pt-8 md:mt-0">
         <Button variant="primary" size="charge" className="w-full" onClick={onStart}>
-          Start Ordering
+          Start ordering
           <svg
             aria-hidden="true"
             viewBox="0 0 24 24"

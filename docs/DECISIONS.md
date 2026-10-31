@@ -15176,3 +15176,45 @@ the dishes back by themselves on a decline (a guest may not want them again; the
 Because: a guest waiting on a phone has only the screen to go by, and a screen that cannot
 tell them apart makes them wait for an order that will not come.
 Cost: the waiting card is a line taller.
+
+## ADR-396 - The guest's phone: its edges, its thumb, and words that fit
+2026-10 · Status: accepted. Phase 17 Task 24 (GST-6, GST-7, GST-8, GST-9, GST-12, GST-13,
+GST-14). Overturns `guest-menu.md`'s green **+ Add**, as the audit said it would need.
+Context: the guest app draws to the phone's edges (`viewport-fit=cover`) and nothing kept clear
+of them: the cart's bar and a sheet's Add sat on the home bar. Clear in the cart's head was 40px,
+under the 48px everything else a guest taps is, and its "Tap again to clear" crowded the head at
+360. A dish's card never said it was in the cart already. Every card had a solid green + Add,
+eighteen of them on the demo menu, and "Gluten free" in semibold on nearly every coffee: the
+buttons and the labels outweighed the dishes. "Add to order · ₹2,280.00" did not fit beside the
+count at 360 and pushed the count off the screen; "Add to order" read as sending, and "Start
+Ordering" and "Place Order" were the only Title Case buttons in the app. On a laptop the
+landing's button sat at the foot of the window, far below its card.
+Decision:
+  - **The phone's edges**: a sheet's panel runs its ground under the home bar and the notch and
+    pads its content by the insets (`env(safe-area-inset-*)`); the cart's bar and the end of
+    each guest page keep at least the bottom inset clear (`max(padding, inset)`). The rule is
+    in tokens.md's Layout. A screen with no insets is as it was.
+  - **Clear is 48px**, and while it asks "Tap again to clear" the count's pill steps aside, so
+    the question fits a 360 phone.
+  - **"2 in cart" on a card**, beside the price in green, under it on a narrow card: every line
+    of the dish counted, whatever was chosen on it (`countsByDish`).
+  - **+ Add is the tint** (a new `tint` Button variant: green words on the green tint, filled on
+    hover). The cart's bar is the screen's one primary. "Gluten free" stays in words (GF is the
+    till's shorthand, not a guest's) in regular weight, muted.
+  - **The sheet's button says "Add · ₹190.00"**, as the card says + Add: it puts the dish in
+    the cart and sends nothing. Its label ends in an ellipsis before it pushes the count off
+    (a long group's "Choose ..."), and the row can shrink to the sheet.
+  - **Sentence case**: "Start ordering", "Place order".
+  - **The landing on a wide screen** (768 and up) stands in the middle with the button under
+    the card; on a phone the button stays at the foot, where a thumb is.
+Rejected: "Add to cart · ₹190.00" (it does not fit beside the count at 360, nor at 390 with a
+four-figure total); the count and the button on two rows (a line of choices less on a small
+phone, for a word); the label switching by width (a row that changes as + is tapped); a stepper
+on each card in place of + Add (a dish with choices has several lines, and − would not know
+which); `viewport-fit=cover` taken out (the parchment would stop short of the edges, and the
+sheet would still need to clear a home bar in some browsers); "GF" on the guest's card.
+Because: on a phone the guest holds the whole venue in one hand. What they tap must be big
+enough and clear of the phone's own controls, what they chose must show where they chose it,
+and the one thing to press next must be the loudest.
+Cost: a sixth Button variant in the shared kit (mez-cloud's account area reads the same file;
+nothing there changes). The sheet's button no longer names the cart.

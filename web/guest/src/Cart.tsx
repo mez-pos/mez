@@ -1,5 +1,5 @@
 // M04's cart and M11a (docs/design/screens/guest-cart.md): what the guest has
-// chosen, how many of each, what it comes to, and Place Order. The list is
+// chosen, how many of each, what it comes to, and Place order. The list is
 // the phone's own until then; what is sent is ids and counts, and the venue
 // prices it (ADR-210, ADR-213).
 
@@ -30,6 +30,7 @@ interface CartProps {
 }
 
 export function Cart({ cart, order, onBack, onPlaced, onBill, collect = false, taxAdded, strip }: CartProps) {
+  const [armed, arm] = useArmed();
   const place = () => {
     void order.place().then((ok) => {
       if (ok) onPlaced();
@@ -61,12 +62,17 @@ export function Cart({ cart, order, onBack, onPlaced, onBill, collect = false, t
             </svg>
           </button>
           <h1 className="font-serif text-xl">Your cart</h1>
-          {cart.count > 0 && <p className="rounded-pill bg-accent-tint px-3 py-1 text-sm font-bold text-accent-text">{itemsText(cart.count)}</p>}
-          {cart.count > 0 && !order.placing && <ClearButton onClear={cart.clear} />}
+          {/* The count steps aside while Clear asks, so the question fits a 360 phone (GST-7). */}
+          {cart.count > 0 && !armed && <p className="rounded-pill bg-accent-tint px-3 py-1 text-sm font-bold text-accent-text">{itemsText(cart.count)}</p>}
+          {cart.count > 0 && !order.placing && (
+            <Button variant="danger" className="mr-2 ml-auto" onClick={armed ? cart.clear : arm}>
+              {armed ? "Tap again to clear" : "Clear"}
+            </Button>
+          )}
         </header>
       </div>
 
-      <main className="flex flex-1 flex-col px-4 pb-8">
+      <main className="flex flex-1 flex-col px-4 pb-[max(--spacing(8),env(safe-area-inset-bottom))]">
         <Notice text={cart.notice} onDismiss={cart.dismissNotice} />
 
         {cart.count === 0 ? (
@@ -136,7 +142,7 @@ export function Cart({ cart, order, onBack, onPlaced, onBill, collect = false, t
               </p>
             )}
             <Button variant="primary" size="charge" className="mt-4 w-full" disabled={order.placing} onClick={place}>
-              {order.placing ? "Placing your order" : `Place Order · ${formatMoney(cart.total)}`}
+              {order.placing ? "Placing your order" : `Place order · ${formatMoney(cart.total)}`}
             </Button>
           </>
         )}
@@ -149,16 +155,12 @@ export function Cart({ cart, order, onBack, onPlaced, onBill, collect = false, t
  * Clear, asked twice: the first tap arms it and says so, a second within a
  * few seconds empties the cart. No dialog for one question on a phone.
  */
-function ClearButton({ onClear }: { onClear: () => void }) {
+function useArmed(): [boolean, () => void] {
   const [armed, setArmed] = useState(false);
   useEffect(() => {
     if (!armed) return;
     const t = setTimeout(() => setArmed(false), 4000);
     return () => clearTimeout(t);
   }, [armed]);
-  return (
-    <Button variant="danger" size="md" className="mr-2 ml-auto" onClick={armed ? onClear : () => setArmed(true)}>
-      {armed ? "Tap again to clear" : "Clear"}
-    </Button>
-  );
+  return [armed, () => setArmed(true)];
 }

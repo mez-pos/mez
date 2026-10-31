@@ -200,6 +200,15 @@ still fits and the drawn width. The middle of a screen is what gives.
   sidebars and rails carry none, so a 1024 tablet spends every pixel on
   the order.
 
+- **A phone's edges** (the guest app, drawn to them with
+  `viewport-fit=cover`; GST-6, ADR-396). A band with a ground of its own
+  (a sheet's panel) runs under the home bar and the notch and pads its
+  content by the inset: `pb-[env(safe-area-inset-bottom)]`, and the same
+  left and right. Anything floating at the foot (the cart's bar) and the
+  end of a page keep at least the inset clear:
+  `pb-[max(--spacing(8),env(safe-area-inset-bottom))]`. On a screen with
+  no insets both are what they were.
+
 Tailwind's own breakpoints are used as drawn: `xl` (1280) is where a
 screen gains a second column, `2xl` (1536) is where it takes the full
 drawn spacing. Nothing is tuned to one resolution.
@@ -255,6 +264,7 @@ blur is the most expensive thing a cheap tablet can be asked to paint.
 | `secondary` | Ivory, strong hairline | Reversible, beside a primary |
 | `ghost` | Terracotta text (`attention-text`, the pressed shade) | Navigation, inline links |
 | `danger` | Brick text on brick tint | Void, refund. Always confirmed |
+| `tint` | Green text on the green tint, filled on hover | An add repeated down a list (the guest's **+ Add** on every dish), where a fill on each would outweigh the screen's one primary (GST-9, ADR-396) |
 
 All pills. Sizes: `charge` 56, `tap` 48, `md` 40, `sm` 32.
 

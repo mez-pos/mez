@@ -12,7 +12,8 @@ Let a guest make a dish theirs, see what that costs, and add it.
 ## Layout
 
 A sheet: from the bottom on a phone, at most 85% of the height, the menu
-dimmed behind it.
+dimmed behind it. Its ground runs under a phone's home bar, and its foot
+sits above it (GST-6).
 
 - **The head:** the dish's name in the serif, and a close control.
 - **The body,** which scrolls:
@@ -29,9 +30,12 @@ dimmed behind it.
     the choice's name, and what it adds ("+₹40.00"), takes off ("−₹10.00")
     or nothing when it costs the same. A chosen row is the green tint with
     a green border.
-- **The foot,** which stays: how many (1 to 20), and **Add to order ·
-  ₹200.00**, the primary button, with the figure for the dish, its choices
-  and the count.
+- **The foot,** which stays: how many (1 to 20), and **Add · ₹200.00**,
+  the primary button, with the figure for the dish, its choices and the
+  count. One line beside the count on a 360 phone, at twelve of a dish
+  too ("Add · ₹2,280.00"); a group with a long name, on a button that says
+  what is missing, ends in an ellipsis rather than push the count off the
+  screen (GST-12).
 
 ## Data
 
@@ -45,7 +49,7 @@ its defaults. Nothing is sent.
 | A choice in a choose-one group | Swaps to it | Tapping the chosen one clears it only if the group is optional |
 | A choice in a choose-several group | Adds or removes it | When the group is full the others are dimmed until one is let go |
 | − and + | Changes how many | The button's figure follows |
-| Add to order | Adds the line to the cart and closes | Onto the line with the same dish and choices, if the cart has one |
+| Add | Adds the line to the cart and closes | Onto the line with the same dish and choices, if the cart has one |
 | Close, the scrim, Escape | Closes | Nothing is added |
 
 ## States
@@ -85,6 +89,10 @@ its defaults. Nothing is sent.
 - "Bestseller" is **Popular**, the menu's own word, and sits with the
   other pills.
 - Prices in full, as on the menu.
+- "Add to order" is **"Add"**, as on the card (GST-12, GST-13, ADR-396):
+  it puts the dish in the cart and sends nothing, and "Add to order" read
+  as sending. "Add to cart · ₹2,280.00" does not fit beside the count at
+  360.
 
 **Kept that the design does not draw:** the button naming the unmet
 group, the dimmed rows of a full group, and the sold-out state.
