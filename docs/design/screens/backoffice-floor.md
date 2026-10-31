@@ -27,12 +27,23 @@ Inside the frame (`backoffice-shell.md`).
   struck. Under the tabs, the chosen area's **Rename** and **Retire** (or
   **Bring back**).
 - **The grid:** the chosen area as 12 columns by 8 rows, every cell at least
-  56px, the whole grid scrolling sideways on a narrow screen rather than
-  shrinking under that. A free cell is a dashed outline; a table fills its
-  cell with its name and its seats ("4 seats"), drawn as its shape: square,
-  round or long.
-- **The chosen table**, a card under the grid: "Table T4", its seats, shape,
-  and where ("Inside, column 3, row 2"). **Edit**, **Move**, **Retire**.
+  48px (the touch floor), the whole grid scrolling sideways on a narrow
+  screen rather than shrinking under that. A free cell is a dashed outline;
+  a table fills its cell with its name and its seats ("4 seats"), drawn as
+  its shape: square, round or long.
+- **The chosen table**, a card: "Table T4", its seats, shape, and where
+  ("Inside, column 3, row 2"). **Edit**, **Move**, **Retire**. From 1280px
+  it is a column beside the grid at the back office's side width
+  (`w-aside`), and stays in sight as the page scrolls; with no table picked
+  that column says "Pick a table to edit, move or retire it." (BO-7). The
+  page is 1280px wide at most there, so the grid keeps its room. Under
+  1280px the card follows the grid, and picking a table scrolls it into
+  view. An area with no tables has no such column.
+- **At 1366x768** the 12 by 8 grid has 56px cells and fits under the head,
+  tabs and area buttons with the card beside it, so the chosen table's
+  card is in sight the moment a table is picked. **At 1024x768** the grid
+  is the full width (60px cells) and the card is scrolled up from under
+  it. On a screen 820px tall or less the page's gaps are 16px, not 24px.
 - **Retired tables** in this area, a list under that: the name and **Bring
   back**.
 - **Add, Edit table** (a modal): name; seats; shape; area; **column** and
@@ -212,7 +223,8 @@ Every one is the same `PUT /api/v1/floor/tables/{id}`.
 
 - One primary: **Add a table**. The chosen table is shown with the focus
   outline, not a fill.
-- Every control 48px; every cell 56px. Seats, columns and rows tabular.
+- Every control 48px; every cell 48px or more (56px at 1366). Seats,
+  columns and rows tabular.
 - No hover-dependent behaviour: a drag is a shortcut, not the way.
 - The grid has tables only: no walls, doors or a bar, so Tables draws none.
 - **A code is a credential.** It is shown only to a role that may edit

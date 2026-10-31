@@ -19,7 +19,7 @@ does not. A faint leaf sits behind.
   venue's zone (morning from 5, afternoon from 12, evening from 5 PM; before 5
   AM is still last night). Under it, "Here are the tables for tonight." At
   the right, a script line from 1280px and a green card ("Same Tables. New
-  Stories.") from 1024px.
+  Stories.") from 1024px, on a screen taller than 820px.
 - **The pills**, 52px, each with its count: **All Tables**, then
   **Occupied**, **Available**, **Needs Bill**, **To Clear**, each with a dot
   in its tone. The pressed one is green. At the right, the search, "Search
@@ -33,6 +33,21 @@ does not. A faint leaf sits behind.
   chevron at the right.
 - **The bar, 96px, chrome:** **Active Orders** with the count of open orders
   at the venue; a script line; and **New Order** (the primary, 64px).
+
+**On a screen 820px tall or less** (`short:`, the 1024x768 tablet and the
+1366x768 laptop), the home is a working screen and its decoration gives way
+(tokens.md, TBS-12): the green card is not drawn, and the search takes its
+place at the right of the greeting, so it costs no row of its own; the pills
+are 48px; the paddings step down; the bar is 72px, without its script line,
+New Order 56px. The tables start under the pills at about y=235 instead of
+350.
+
+- **At 1024x768:** the greeting with the search beside it, the five pills in
+  one row, then the cards three across: three full rows, nine tables, in
+  view.
+- **At 1366x768:** the greeting, the script line and the search in one row,
+  the pills, then the cards four across: all twelve of the demo venue's
+  tables in view.
 
 | Group | Table states | Tone | Word |
 |---|---|---|---|

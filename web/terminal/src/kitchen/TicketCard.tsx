@@ -2,29 +2,37 @@
 // how long it has waited, what to make, and the one thing to do with it next.
 //
 // The design draws a card for a desk: 20px titles and 16px lines. A pass is
-// read from three metres with wet hands (ADR-091), so where it goes is 32px,
-// the lines 26px and the action 64px tall. The column gives the card its
-// colour, as drawn; the timer keeps its own tone and word, calm, Waiting, Late.
+// read from two or three metres with wet hands, so where it goes and its timer
+// are `text-display` and the lines, choices and notes `text-kitchen`, both of
+// which grow with the screen (ADR-381, over ADR-176's 32px and 20px). The
+// column gives the card its colour, as drawn; the timer keeps its own tone and
+// word, calm, Waiting, Late, on the digits' line.
+//
+// Where it goes and the timer share the first row when the column has room,
+// so D10's icon tile is gone and the time it was placed sits in the line under
+// them, with a small icon for how it leaves the pass. A 1024 display has three
+// columns of 300px; there the timer wraps under where it goes.
 //
 // Left out: "Called Rohan" on a ready ticket (nothing calls anyone, and the
 // display knows no waiter). Recall stands there instead (rule 4).
 
-import { BikeIcon, CheckIcon, PlayIcon, ShoppingBagIcon, TimerIcon, Undo2Icon, UtensilsIcon, type LucideIcon } from "lucide-react";
+import { BikeIcon, CheckIcon, PlayIcon, ShoppingBagIcon, Undo2Icon, UtensilsIcon, type LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import type { KitchenTicketResponse, ServiceType } from "../../../shared/api-types";
 import { cx } from "../../../shared/ui/cx";
 import { clockText } from "../../../shared/venue-text";
-import { agoText, latePercent, metaText, timerText, timerTone, toneWord, whereText, type TimerTone } from "./kitchen-logic";
+import { agoText, latePercent, metaText, timerText, timerTone, toneWord, whereParts, whereText, type TimerTone } from "./kitchen-logic";
 
 /** Which column a card is in. */
 export type CardStage = "fresh" | "preparing" | "ready";
 
 const serviceIcons: Readonly<Record<ServiceType, LucideIcon>> = { dine_in: UtensilsIcon, takeaway: ShoppingBagIcon, delivery: BikeIcon };
 
-// The column's colour: the rule down the card's left, its border and its icon tile.
-const stageClass: Readonly<Record<CardStage, { card: string; tile: string; qty: string }>> = {
-  fresh: { card: "border-chip-danger-border border-l-attention", tile: "bg-chip-danger-bg text-chip-danger-fg", qty: "text-attention-text" },
-  preparing: { card: "border-chip-warning-border border-l-highlight", tile: "bg-chip-warning-bg text-chip-warning-fg", qty: "text-attention-text" },
-  ready: { card: "border-chip-success-border border-l-accent", tile: "bg-chip-success-bg text-chip-success-fg", qty: "text-chip-success-fg" },
+// The column's colour: the rule down the card's left, its border, and the quantities.
+const stageClass: Readonly<Record<CardStage, { card: string; qty: string }>> = {
+  fresh: { card: "border-chip-danger-border border-l-attention", qty: "text-attention-text" },
+  preparing: { card: "border-chip-warning-border border-l-highlight", qty: "text-attention-text" },
+  ready: { card: "border-chip-success-border border-l-accent", qty: "text-chip-success-fg" },
 };
 
 // The timer's own tone: how long it has waited against the venue's late time.
@@ -35,7 +43,7 @@ const tonePill: Readonly<Record<TimerTone, string>> = {
 };
 
 const action =
-  "mt-4 flex min-h-16 w-full items-center justify-center gap-2.5 rounded-pill text-xl font-semibold outline-offset-2 outline-line-focus focus-visible:outline-4 disabled:opacity-50";
+  "mt-4 flex min-h-16 w-full items-center justify-center gap-2.5 rounded-pill text-xl font-semibold outline-offset-2 outline-line-focus focus-visible:outline-4 disabled:opacity-50 short:mt-3";
 
 interface TicketCardProps {
   ticket: KitchenTicketResponse;
@@ -58,58 +66,55 @@ export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, o
   const look = stageClass[stage];
   const placed = clockText(new Date(t.sent_at), null).split(" · ")[1] ?? "";
   const ready = stage === "ready";
+  const where = whereParts(t);
 
   return (
     <article
       aria-label={ready ? `${whereText(t)}, ready` : `${whereText(t)}, ${timerText(elapsed)}${word ? `, ${word}` : ""}`}
-      className={cx("rounded-card border border-l-8 bg-raised p-4 shadow-rest", look.card)}
+      className={cx("rounded-card border border-l-8 bg-raised p-4 shadow-rest short:p-3", look.card)}
     >
-      {/* The timer wraps under the title where a column is too narrow for both: a 1024 display has three columns of 300px. */}
-      <header className="flex flex-wrap items-start gap-3">
-        <span aria-hidden="true" className={cx("flex size-12 shrink-0 items-center justify-center rounded", look.tile)}>
-          <Icon size={24} strokeWidth={1.9} />
-        </span>
-        <div className="min-w-32 flex-1">
+      <header>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           {/* Where it goes: what a runner reads first. */}
-          <h3 className="wrap-break-word font-serif text-total leading-tight">{whereText(t)}</h3>
-          <p className="text-lg text-fg-muted">{metaText(t)}</p>
-        </div>
-        {ready ? (
-          <span className="ml-auto inline-flex min-h-10 shrink-0 items-center rounded-pill bg-chip-success-bg px-4 text-lg font-bold text-chip-success-fg">
-            Ready{t.ready_at ? ` · ${agoText(now - Date.parse(t.ready_at))}` : ""}
-          </span>
-        ) : (
-          <div className="ml-auto flex shrink-0 flex-col items-end gap-1.5">
-            <span className="font-mono text-base tabular-nums text-fg-muted">{placed}</span>
-            <span className={cx("inline-flex min-h-10 items-center gap-2 rounded-pill px-4 font-bold", tonePill[tone])}>
-              <TimerIcon aria-hidden="true" size={18} strokeWidth={2.2} />
-              {word && <span className="text-base uppercase">{word}</span>}
-              <span className="font-mono text-xl tabular-nums">{timerText(elapsed)}</span>
+          <h3 className="min-w-0 wrap-break-word font-serif text-display leading-tight">
+            {where.lead && <span className="text-kitchen">{where.lead} · </span>}
+            {where.main}
+          </h3>
+          {ready ? (
+            <span className="ml-auto inline-flex min-h-10 shrink-0 items-center rounded-pill bg-chip-success-bg px-4 text-xl font-bold text-chip-success-fg">
+              Ready{t.ready_at ? ` · ${agoText(now - Date.parse(t.ready_at))}` : ""}
             </span>
-          </div>
-        )}
+          ) : (
+            <span className={cx("ml-auto inline-flex shrink-0 items-baseline gap-2 rounded-pill px-3.5 py-1 font-bold", tonePill[tone])}>
+              {word && <span className="text-xl uppercase">{word}</span>}
+              <span className="font-mono text-display leading-none tabular-nums">{timerText(elapsed)}</span>
+            </span>
+          )}
+        </div>
+        <p className="mt-0.5 flex items-center gap-2 text-lg text-fg-muted">
+          <Icon aria-hidden="true" size={18} strokeWidth={1.9} className="shrink-0" />
+          <span className="min-w-0">{[metaText(t), placed].filter(Boolean).join(" · ")}</span>
+        </p>
       </header>
 
-      {t.notes.length > 0 && <p className="mt-3 rounded bg-chip-warning-bg px-3 py-2 text-lg text-chip-warning-fg">{t.notes.join(" · ")}</p>}
+      {t.notes.length > 0 && <Note className="mt-3 short:mt-2">{t.notes.join(" · ")}</Note>}
 
-      <ul className="mt-3 grid gap-2 border-t border-line-soft pt-3">
+      <ul className="mt-3 grid gap-2 border-t border-line-soft pt-3 short:mt-2 short:pt-2">
         {t.lines.map((l) => {
           const voided = l.status === "voided";
           return (
             <li key={l.id} className={cx("flex gap-3", voided && "text-fg-muted line-through")}>
-              <span className={cx("min-w-7 font-mono text-kitchen font-bold tabular-nums", !voided && look.qty)}>{l.qty}</span>
-              <div className="min-w-0">
+              <span className={cx("min-w-7 font-mono text-kitchen font-bold leading-tight tabular-nums", !voided && look.qty)}>{l.qty}</span>
+              <div className="grid min-w-0 flex-1 gap-1">
                 <p className="text-kitchen font-semibold leading-tight">
                   {l.name}
                   {voided && <span className="ml-2 text-lg no-underline">Void</span>}
                 </p>
-                {!ready && l.modifiers.length > 0 && <p className="text-lg text-fg-2">{l.modifiers.join(", ")}</p>}
-                {!ready &&
-                  l.notes.map((n, i) => (
-                    <p key={i} className="text-lg text-chip-warning-fg">
-                      {n}
-                    </p>
-                  ))}
+                {/* A ready card is for the runner: names and quantities, and the notes still. */}
+                {!ready && l.modifiers.length > 0 && <p className="text-kitchen leading-tight text-fg-2">{l.modifiers.join(", ")}</p>}
+                {l.notes.map((n, i) => (
+                  <Note key={i}>{n}</Note>
+                ))}
               </div>
             </li>
           );
@@ -117,7 +122,7 @@ export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, o
       </ul>
 
       {stage === "preparing" && (
-        <div aria-hidden="true" className="mt-4 h-2 rounded-pill bg-sunken">
+        <div aria-hidden="true" className="mt-4 h-2 rounded-pill bg-sunken short:mt-3">
           <div className={cx("h-2 rounded-pill", tone === "late" ? "bg-attention" : "bg-highlight")} style={{ width: `${latePercent(elapsed, lateAfter)}%` }} />
         </div>
       )}
@@ -141,5 +146,19 @@ export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, o
         </button>
       )}
     </article>
+  );
+}
+
+interface NoteProps {
+  className?: string;
+  children: ReactNode;
+}
+
+/** An order's or a line's note: a box that starts with the word, so it reads apart from a choice without its colour. */
+function Note({ className, children }: NoteProps) {
+  return (
+    <p className={cx("rounded bg-chip-warning-bg px-2.5 py-1 text-kitchen leading-tight text-chip-warning-fg", className)}>
+      <span className="font-bold">Note:</span> {children}
+    </p>
   );
 }

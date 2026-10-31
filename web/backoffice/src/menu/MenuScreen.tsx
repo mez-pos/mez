@@ -215,7 +215,9 @@ export function MenuScreen() {
         </div>
       )}
       {menu && view === "items" && (
-        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[220px_300px_minmax(0,1fr)] min-[1700px]:grid-cols-[230px_340px_minmax(0,1fr)]">
+        // The categories take the sidebar width and the list the back office's side
+        // width (tokens.md), so the editor is what gives as the screen narrows.
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[var(--side)_minmax(0,1fr)] xl:grid-cols-[var(--side)_var(--aside)_minmax(0,1fr)]">
           <CategoryRail
             menu={menu}
             scope={scope}

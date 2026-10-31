@@ -233,9 +233,14 @@ export function chargeBlock(order: OrderResponse | undefined, pending: number): 
   return null;
 }
 
-/** Pay while money is owed; once paid, the same button finishes the order. */
+/**
+ * Pay while money is owed; once paid, the same button finishes the order. An
+ * order with nothing on it owes nothing either, but it is not paid: it reads
+ * Pay, shut, never "Invoice and close" (TILL-12).
+ */
 export function chargeLabel(order: OrderResponse | undefined): string {
-  if (!order || order.totals.balance_due.minor !== 0 || order.status === "closed") return "Pay";
+  if (!order || !order.lines.some((l) => l.status === "active")) return "Pay";
+  if (order.totals.balance_due.minor !== 0 || order.status === "closed") return "Pay";
   return order.invoiced ? "Close order" : "Invoice and close";
 }
 

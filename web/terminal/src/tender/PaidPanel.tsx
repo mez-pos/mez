@@ -1,9 +1,11 @@
 // The panel a paid bill ends on (D07): that it is paid, how much and how, the
 // change still to hand back, and New Order, which closes this order and starts
 // the next. The design heads it in script; a status is never script (tokens.md),
-// so the heading is the serif and the script is the thank-you under it. The
-// receipt is printed with the payment; Print receipt here prints a copy, which
-// is a reprint and a manager's call. Sending one by SMS or email does not exist.
+// so the heading is the serif, in its own heading ink rather than terracotta,
+// which asks for attention a paid bill does not need (ADR-381), and the script
+// is the thank-you under it. The receipt is printed with the payment; Print
+// receipt here prints a copy, which is a reprint and a manager's call. Sending
+// one by SMS or email does not exist.
 
 import { ArrowRightIcon, PrinterIcon } from "lucide-react";
 import type { Money as Amount, OrderResponse } from "../../../shared/api-types";
@@ -27,10 +29,13 @@ interface PaidPanelProps {
 export function PaidPanel({ order, title, change, busy, message, onPrint, onNewOrder }: PaidPanelProps) {
   const methods = [...new Set(order.tenders.filter((t) => t.status !== "voided").map((t) => methodNames[t.method]))].join(" + ");
   return (
-    <aside aria-label="Payment complete" className="flex w-rail shrink-0 flex-col overflow-y-auto border-l border-line bg-sunken px-5 py-6 2xl:px-6 2xl:py-7">
+    <aside
+      aria-label="Payment complete"
+      className="flex w-rail shrink-0 flex-col overflow-y-auto border-l border-line bg-sunken px-5 py-6 short:py-4 2xl:px-6 2xl:py-7"
+    >
       <div className="text-center" aria-live="polite">
-        <h2 className="font-serif text-total text-attention-text">Payment successful</h2>
-        <Money amount={order.totals.net_paid} variant="display" tone="accent" className="mt-5 block text-center leading-tight" />
+        <h2 className="font-serif text-total leading-tight">Payment successful</h2>
+        <Money amount={order.totals.net_paid} variant="display" tone="accent" className="mt-5 block text-center leading-tight short:mt-3" />
         <p className="mt-2 text-base text-fg-2">
           Paid for <span className="font-mono">{order.id}</span>
           <br />
@@ -42,17 +47,17 @@ export function PaidPanel({ order, title, change, busy, message, onPrint, onNewO
           </p>
         )}
         {change && change.minor > 0 && (
-          <div className="mt-5 rounded-card border border-chip-success-border bg-raised px-5 py-4">
+          <div className="mt-5 rounded-card border border-chip-success-border bg-raised px-5 py-4 short:mt-3 short:py-3">
             <p className="text-base text-fg-2">Change to return</p>
             <Money amount={change} variant="total" tone="accent" className="block text-center leading-tight" />
           </div>
         )}
-        <p aria-hidden="true" className="mt-5 font-script text-xl text-fg-2">
+        <p aria-hidden="true" className="mt-5 font-script text-xl text-fg-2 short:mt-3">
           Thank you for dining with us ♡
         </p>
       </div>
 
-      <div className="mt-7 grid gap-2.5">
+      <div className="mt-7 grid gap-2.5 short:mt-5">
         {onPrint && (
           <Button disabled={busy} onClick={onPrint}>
             <PrinterIcon aria-hidden="true" size={18} />
@@ -80,7 +85,7 @@ export function PaidPanel({ order, title, change, busy, message, onPrint, onNewO
         )}
       </div>
 
-      <p className="mt-auto pt-8 text-center text-meta uppercase text-fg-faint">Good food brings people together</p>
+      <p className="mt-auto pt-8 text-center text-meta uppercase text-fg-faint short:pt-5">Good food brings people together</p>
     </aside>
   );
 }

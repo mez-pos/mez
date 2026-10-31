@@ -58,11 +58,13 @@ export function CloseDayScreen({ shift, currency, commands, onBack, onClosed }: 
 
   return (
     <div className="flex min-w-0 flex-1">
-      <section aria-label="Close the day" className="flex min-w-0 flex-1 justify-center overflow-y-auto px-6 py-6">
-        <div className={cx("flex w-full flex-col gap-5", rec ? "max-w-2xl" : "max-w-3xl")}>
+      {/* The scroll keeps clear of the sticky foot: a row the counter scrolls into sight
+          lands above Submit count, not under it (TBS-15). */}
+      <section aria-label="Close the day" className="flex min-w-0 flex-1 scroll-pb-28 justify-center overflow-y-auto px-6 py-6 short:py-4">
+        <div className={cx("flex w-full flex-col gap-5 short:gap-3", rec ? "max-w-2xl" : "max-w-3xl")}>
           <header>
             <p className="text-meta font-bold uppercase text-attention-text">Step {rec ? 2 : 1} of 2</p>
-            <h1 className="mt-2 font-serif text-total">Close the day</h1>
+            <h1 className="mt-2 font-serif text-total short:mt-1">Close the day</h1>
             {/* The rail beside the steps holds the shift's facts; without room for it they are said here. */}
             <p className="mt-1 font-mono text-sm tabular-nums text-fg-muted lg:hidden">
               {shift.trading_day} · {shift.public_id}
@@ -80,7 +82,7 @@ export function CloseDayScreen({ shift, currency, commands, onBack, onClosed }: 
               {stock.sheet.data && <ClosingStock sheet={stock.sheet.data} onRecord={stock.record} />}
             </>
           ) : (
-            <DrawerCounter title="Count the drawer" currency={currency} value={counted} onChange={setCounted} disabled={busy} />
+            <DrawerCounter title="Count the drawer" currency={currency} value={counted} onChange={setCounted} disabled={busy} totalBeside />
           )}
 
           {/* Kept in sight under a long closing count: the way on, and what went wrong, stay at the foot. */}

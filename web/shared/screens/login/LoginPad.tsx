@@ -2,7 +2,11 @@
 // grid of keys, and the green Login as the twelfth key where a Clear would be.
 // Keys report themselves; the screen owns what is typed and what Login does.
 // Keys are 76px on a tall screen and shrink with its height, never below the 48px
-// a thumb needs (ADR-014): clamp(48px, 7vh, 76px).
+// a thumb needs (ADR-014): clamp(48px, 7vh, 76px). On a short screen the gap
+// between them closes to the 8px two targets need, and no further.
+//
+// The 900px trims stop at 821px: an arbitrary media variant is emitted after
+// `short:`, and would otherwise win over it on a 768 screen.
 
 import { ArrowRightIcon, DeleteIcon } from "lucide-react";
 import { cx } from "../../ui/cx";
@@ -36,7 +40,7 @@ const keyShape = cx(
 export function LoginPad({ name, length, disabled, canSubmit, busy, onKey, onSubmit }: LoginPadProps) {
   const slots = Math.max(minPin, length);
   return (
-    <div className="mt-12 w-full max-w-120 [@media(max-height:900px)]:mt-6 [@media(max-height:800px)]:mt-4">
+    <div className="mt-12 w-full max-w-120 [@media(min-height:821px)_and_(max-height:900px)]:mt-6 short:mt-4">
       <div className="relative flex h-[clamp(3rem,6.7vh,4.5rem)] items-center justify-center gap-5.5 rounded-card bg-sunken">
         <span className="absolute left-5 max-w-[30%] truncate text-sm font-semibold text-fg-2">{name ?? "Choose a profile"}</span>
         <span role="img" aria-label={`${length} of ${slots} digits entered`} className="flex gap-5.5">
@@ -45,7 +49,7 @@ export function LoginPad({ name, length, disabled, canSubmit, busy, onKey, onSub
           ))}
         </span>
       </div>
-      <div role="group" aria-label="PIN" className="mt-5 grid grid-cols-3 gap-3.5 [@media(max-height:900px)]:mt-3 [@media(max-height:800px)]:gap-3">
+      <div role="group" aria-label="PIN" className="mt-5 grid grid-cols-3 gap-3.5 [@media(max-height:900px)]:mt-3 short:gap-2">
         {digits.flat().map((key) => (
           <button
             key={key}

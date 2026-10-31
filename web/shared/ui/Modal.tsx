@@ -1,6 +1,9 @@
 // A modal: a confirmation or a short form. Escape closes it, and so does a
 // close control that is always visible (docs/design/components.md). A click
 // on the scrim does not: a half-filled void reason is not lost to a stray tap.
+//
+// On a short screen the body scrolls and the title and footer stay put, so
+// the action a manager's PIN is typed for is never below the fold (TECH-2).
 
 import { useId, type ReactNode } from "react";
 import { Button, type ButtonVariant } from "./Button";
@@ -33,8 +36,10 @@ export function Modal({ open, onClose, title, children, footer, size = "sm", ico
       className={cx("m-auto w-full rounded-sheet border border-line bg-raised p-0 text-fg shadow-modal", widths[size])}
     >
       {open && (
-        <div className="flex flex-col gap-4 p-6">
-          <div className="flex items-start justify-between gap-4">
+        // Under the dialog's own height limit (about 100dvh less 2em), so the
+        // dialog never scrolls as a whole; only the body does.
+        <div className="flex max-h-[calc(100dvh-3rem)] flex-col">
+          <div className="flex items-start justify-between gap-4 px-6 pt-6 short:pt-5">
             <div className="min-w-0">
               {icon && (
                 <span aria-hidden="true" className="mb-3 flex size-14 items-center justify-center rounded-round bg-danger-tint text-danger">
@@ -49,8 +54,8 @@ export function Modal({ open, onClose, title, children, footer, size = "sm", ico
               <CloseIcon />
             </Button>
           </div>
-          <div className="text-base text-fg-2">{children}</div>
-          {footer && <div className="flex flex-wrap justify-end gap-tap-gap">{footer}</div>}
+          <div className={cx("min-h-0 overflow-y-auto px-6 pt-4 text-base text-fg-2", footer ? "pb-2" : "pb-6 short:pb-5")}>{children}</div>
+          {footer && <div className="flex flex-wrap justify-end gap-tap-gap px-6 pb-6 pt-2 short:pb-5">{footer}</div>}
         </div>
       )}
     </dialog>

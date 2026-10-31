@@ -8,8 +8,12 @@
 // (an order names people by an id this screen cannot read), and "Email to
 // guest". In its place are the two things the old bill screen had and the
 // design does not draw: the invoice as issued, and the order's history.
+//
+// The head says what is due or what was paid beside the status, and the foot
+// draws only the buttons that do something, with Invoice, History and Void
+// under More: on a 768 screen seven buttons pushed "Paid" out of sight (TBS-16).
 
-import { BanIcon, FileTextIcon, HistoryIcon, PrinterIcon, RotateCcwIcon } from "lucide-react";
+import { PrinterIcon, RotateCcwIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import type { GuestRoundProgress, Money as Amount, OrderResponse, TenderResponse } from "../../../shared/api-types";
 import { Button, Money, StatusChip, useToast } from "../../../shared/ui";
@@ -20,8 +24,9 @@ import { taxRows } from "../register/rail-logic";
 import { ReprintSheet } from "../tender/InvoicePanel";
 import { methodNames } from "../tender/tender-logic";
 import { anythingLeft, refundReasonText } from "./bills-logic";
+import { BillMore } from "./BillMore";
 import { InvoiceSheet, PickPaymentSheet, VoidSheet } from "./BillSheets";
-import { collectWords, paymentText, statusOf, timeText, voidableTenders, whereText } from "./orders-logic";
+import { billActions, collectWords, paymentText, standing, statusOf, timeText, voidableTenders, whereText } from "./orders-logic";
 import { RefundSheet } from "./RefundSheet";
 import { useBill } from "./use-bills";
 
@@ -43,6 +48,7 @@ type Open =
 
 const negate = (a: Amount): Amount => ({ ...a, minor: -a.minor });
 const shell = "flex w-panel shrink-0 flex-col border-l border-line bg-chrome";
+const standTones = { warning: "bg-chip-warning-bg text-chip-warning-fg", success: "bg-chip-success-bg text-chip-success-fg" } as const;
 
 export function OrderPanel({ orderId, names, pickupCode, progress, onOpenOrder, onPay }: OrderPanelProps) {
   const { order, error, commands } = useBill(orderId);
@@ -71,6 +77,15 @@ export function OrderPanel({ orderId, names, pickupCode, progress, onOpenOrder, 
   // code and hands it over, which closes its ticket and frees the code.
   const collecting = pickupCode !== undefined && pickupCode !== "" && !closed;
   const kitchen = collectWords(progress);
+  const stands = standing(totals);
+  const can = billActions({
+    status: order.status,
+    owed,
+    invoiced: invoice !== undefined,
+    creditable: canRefund,
+    voidable: canVoid.length,
+    collecting,
+  });
   const handOver = () => {
     setHanding(true);
     commands
@@ -92,6 +107,12 @@ export function OrderPanel({ orderId, names, pickupCode, progress, onOpenOrder, 
           </div>
           <StatusChip status={{ kind: "day", status: statusOf(order) }} className="shrink-0" />
         </header>
+        {stands && (
+          <p className={cx("mt-3 flex items-baseline justify-between gap-3 rounded px-3 py-2 text-base font-semibold", standTones[stands.tone])}>
+            {stands.word}
+            <Money amount={stands.amount} className="font-bold" />
+          </p>
+        )}
 
         {collecting && (
           <section
@@ -106,13 +127,13 @@ export function OrderPanel({ orderId, names, pickupCode, progress, onOpenOrder, 
           </section>
         )}
 
-        <dl className="mt-5 grid gap-2.5 text-base">
+        <dl className="mt-5 grid gap-2.5 text-base short:mt-4">
           {invoice && <Fact label="Order">{order.id}</Fact>}
           {order.covers > 0 && <Fact label="Guests">{order.covers}</Fact>}
           <Fact label="Payment">{payment ?? "Not paid yet"}</Fact>
         </dl>
 
-        <div aria-hidden="true" className="my-5 h-px bg-line" />
+        <div aria-hidden="true" className="my-5 h-px bg-line short:my-4" />
         <h3 className="mb-2 text-meta font-bold uppercase text-fg-muted">Items</h3>
         <ul>
           {order.lines.map((l) => (
@@ -191,12 +212,12 @@ export function OrderPanel({ orderId, names, pickupCode, progress, onOpenOrder, 
       </div>
 
       <footer className="grid shrink-0 gap-2.5 border-t border-line p-4 pt-3 xl:p-5 xl:pt-4 2xl:p-6 2xl:pt-4">
-        {owed && order.status === "reopened" && (
+        {can.takeBalance && (
           <Button variant="primary" onClick={() => onPay(order)}>
             Take the balance
           </Button>
         )}
-        {collecting && (
+        {can.handOver && (
           <>
             <Button variant="primary" size="charge" disabled={owed || handing} onClick={handOver}>
               {handing ? "Handing over" : "Handed over"}
@@ -204,44 +225,37 @@ export function OrderPanel({ orderId, names, pickupCode, progress, onOpenOrder, 
             {owed && <p className="text-center text-sm text-fg-muted">Take payment first: Pay, then Handed over.</p>}
           </>
         )}
-        {!closed && order.status !== "reopened" && (
+        {can.openOrder && (
           <div className="flex gap-2.5">
             <Button variant={collecting ? "secondary" : "primary"} onClick={() => onOpenOrder(order)} className="flex-1">
               Open order
             </Button>
-            <Button disabled={!owed || order.status === "held"} onClick={() => onPay(order)} className="flex-1">
-              Pay
-            </Button>
+            {can.pay && (
+              <Button onClick={() => onPay(order)} className="flex-1">
+                Pay
+              </Button>
+            )}
           </div>
         )}
-        <Button disabled={!invoice} onClick={() => setOpen({ kind: "reprint" })}>
-          <PrinterIcon aria-hidden="true" size={18} />
-          Reprint receipt
-        </Button>
-        <div className="flex gap-2.5">
-          <Button disabled={!invoice} onClick={() => setOpen({ kind: "invoice" })} className="flex-1">
-            <FileTextIcon aria-hidden="true" size={18} />
-            Invoice
-          </Button>
-          <Button onClick={() => setOpen({ kind: "history" })} className="flex-1">
-            <HistoryIcon aria-hidden="true" size={18} />
-            History
-          </Button>
-        </div>
-        <div className="flex gap-2.5">
-          <Button variant="danger" disabled={!canRefund || owed} onClick={() => setOpen({ kind: "refund" })} className="flex-1">
-            <RotateCcwIcon aria-hidden="true" size={17} />
-            Refund
-          </Button>
-          <Button
-            variant="danger"
-            disabled={canVoid.length === 0}
-            onClick={() => setOpen(canVoid.length === 1 && canVoid[0] ? { kind: "void", tender: canVoid[0] } : { kind: "pick" })}
-            className="flex-1"
-          >
-            <BanIcon aria-hidden="true" size={17} />
-            Void
-          </Button>
+        {/* As many to a row as the panel's width holds: two rows on a 1024 tablet. */}
+        <div className="flex flex-wrap gap-2.5">
+          {can.reprint && (
+            <Button onClick={() => setOpen({ kind: "reprint" })} className="flex-auto">
+              <PrinterIcon aria-hidden="true" size={18} />
+              Reprint receipt
+            </Button>
+          )}
+          {can.refund && (
+            <Button variant="danger" onClick={() => setOpen({ kind: "refund" })} className="flex-auto">
+              <RotateCcwIcon aria-hidden="true" size={17} />
+              Refund
+            </Button>
+          )}
+          <BillMore
+            onInvoice={can.invoice ? () => setOpen({ kind: "invoice" }) : null}
+            onHistory={() => setOpen({ kind: "history" })}
+            onVoid={can.voidPayment ? () => setOpen(canVoid.length === 1 && canVoid[0] ? { kind: "void", tender: canVoid[0] } : { kind: "pick" }) : null}
+          />
         </div>
         {closed && !canRefund && (
           <p className="text-sm text-fg-muted">{invoice ? "Everything on this bill has been credited." : "This bill has no invoice."}</p>

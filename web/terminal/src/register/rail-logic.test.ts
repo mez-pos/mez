@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { OpenOrder, OrderResponse } from "../../../shared/api-types";
-import { amountOwed, courseNamer, guestsText, needsTable, railTitle, saveParks, serviceLocked, serviceOf, taxRows } from "./rail-logic";
+import { amountOwed, courseNamer, foldedTax, guestsText, needsTable, railTitle, saveParks, serviceLocked, serviceOf, taxRows } from "./rail-logic";
 
 const opening = (extra: Partial<OpenOrder> = {}): OpenOrder => ({ channel: "counter", covers: 0, ...extra });
 
@@ -30,6 +30,31 @@ describe("taxRows", () => {
   });
   it("is zero in the venue's currency before there is an order", () => {
     expect(taxRows(undefined, "EUR")).toEqual([{ label: "Tax", amount: { minor: 0, currency: "EUR" } }]);
+  });
+});
+
+describe("foldedTax", () => {
+  const inr = (minor: number) => ({ minor, currency: "INR" });
+  const totals = { tax: inr(1572) } as OrderResponse["totals"];
+  const component = (name: string, minor: number) => ({ name, rate: 2500, taxable: inr(31428), amount: inr(minor) });
+  const tax = (pricing: "inclusive" | "exclusive", components: ReturnType<typeof component>[]) =>
+    ({ profile: "gst_in", pricing, components, taxable: inr(31428), tax: inr(1572), total: inr(33000) }) as NonNullable<OrderResponse["tax"]>;
+  const both = [component("CGST", 786), component("SGST", 786)];
+
+  const cases: [string, Pick<OrderResponse, "tax" | "totals"> | undefined, { label: string; amount: { minor: number; currency: string } } | null][] = [
+    ["inclusive GST folds into one row with the order's tax", { tax: tax("inclusive", both), totals }, { label: "incl. GST", amount: inr(1572) }],
+    ["exclusive GST says no incl.", { tax: tax("exclusive", both), totals }, { label: "GST", amount: inr(1572) }],
+    [
+      "components that are not GST fold as Tax",
+      { tax: tax("exclusive", [component("VAT", 786), component("Cess", 786)]), totals },
+      { label: "Tax", amount: inr(1572) },
+    ],
+    ["one component has nothing to fold", { tax: tax("inclusive", [component("IGST", 1572)]), totals }, null],
+    ["no components has nothing to fold", { totals }, null],
+    ["no order has nothing to fold", undefined, null],
+  ];
+  it.each(cases)("%s", (_name, order, want) => {
+    expect(foldedTax(order, "INR")).toEqual(want);
   });
 });
 

@@ -20,7 +20,18 @@ but the screen.
 ## Layout
 
 One column, 58rem at most, centred on the sunken ground with D24's pale
-round behind the head. It scrolls as a page; nothing is fixed.
+round behind the head. It scrolls as a page; the one thing held still is
+the card's row of buttons, below.
+
+At 768px high (`short:`, 820px or less) the head gives way, never its text
+size: the small-caps line goes, the logo steps down from 48px to 36px, and
+the lead shows only on the first step of a run (step 1, the printer step
+after Create, and the number of I had mez before). The card's last row, its
+buttons, stays at the foot of the window while the card runs past it, on
+the card's own ground and over its padding, and comes to rest at the card's
+foot as before; the page keeps room above it, so a field that takes the
+focus is never under it. So Continue, Skip for now and Start selling are in
+view on every step at 1366x768 and 1024x768 (SET-4).
 
 - **Head:** the logo with "Good food brings people together" in small caps;
   "Welcome. Let's set up your venue." in the serif; one line saying how many
@@ -164,7 +175,12 @@ PIN is in memory until the wizard is left.
 ## Interactions
 
 - **Continue** checks the step's own fields and says what is missing under
-  each. It does not ask the server until the last step.
+  each, and the first field refused takes the focus. It does not ask the
+  server until the last step.
+- **A step arriving** (Continue, Back, a done step's round, each step after
+  Create, and each of I had mez before) brings the page to its top and puts
+  the focus on the step's heading (SET-3). A step that focuses its own first
+  field (Your venue, You, the phone number) keeps it there.
 - **Changing the tax profile** sets the currency, the financial year's
   first month and how prices are quoted to that profile's usual, unless
   they have been changed by hand.

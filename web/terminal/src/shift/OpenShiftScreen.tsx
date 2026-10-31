@@ -11,8 +11,8 @@ import { LockIcon, UnlockIcon } from "lucide-react";
 import { useState } from "react";
 import { formatMoney } from "../../../shared/money";
 import { Button, Card, useToast } from "../../../shared/ui";
-import { FloatCount } from "./FloatCount";
-import { emptyFloat, floatRequest, type FloatCounted } from "./open-shift-logic";
+import { FloatCount, FloatTotal } from "./FloatCount";
+import { countedTotal, emptyFloat, floatRequest, type FloatCounted } from "./open-shift-logic";
 import { ShiftDetailsCard, ShiftStage, SoldOutCard, type DetailRow } from "./ShiftStage";
 import type { ShiftCommands } from "./use-shift";
 
@@ -67,23 +67,32 @@ export function OpenShiftScreen({ currency, open, details, soldOut, menuHref, la
               <Button onClick={onViewZ}>View the report</Button>
             </Card>
           )}
-          <div className="mt-8">
+          <div className="mt-8 short:mt-6">
             <FloatCount currency={currency} value={counted} onChange={setCounted} disabled={busy} />
           </div>
-          {error && (
-            <p role="alert" className="mt-4 text-base text-danger">
-              {error}
-            </p>
-          )}
-          <div className="mt-6 flex flex-col gap-3.5 sm:flex-row">
-            <Button size="charge" className="sm:w-48" disabled={busy} onClick={onCancel}>
-              <LockIcon aria-hidden="true" size={19} />
-              Lock
-            </Button>
-            <Button variant="primary" size="charge" className="flex-1" disabled={busy || float === null} onClick={() => void submit()}>
-              <UnlockIcon aria-hidden="true" size={19} />
-              Open shift &amp; start selling
-            </Button>
+          {/* The foot stays in view while the notes scroll under it (ADR-381): on a 768 screen nine boxes
+              put the total and Open shift below the fold. It runs to the card's edges, over the padding
+              ShiftStage gives the card (p-6, sm:p-9). */}
+          <div className="sticky bottom-0 -mx-6 -mb-6 mt-6 rounded-b-sheet border-t border-line bg-raised px-6 pb-6 pt-5 sm:-mx-9 sm:-mb-9 sm:px-9 sm:pb-9 short:pb-5 short:pt-4">
+            {error && (
+              <p role="alert" className="mb-3.5 text-base text-danger">
+                {error}
+              </p>
+            )}
+            {/* One row where the total and both buttons fit; otherwise the buttons wrap under the total. */}
+            <div className="flex flex-wrap items-center gap-3.5">
+              <FloatTotal currency={currency} total={countedTotal(currency, counted)} className="grow" />
+              <div className="flex grow flex-wrap gap-3.5">
+                <Button size="charge" className="grow sm:w-48 sm:grow-0 lg:w-auto" disabled={busy} onClick={onCancel}>
+                  <LockIcon aria-hidden="true" size={19} />
+                  Lock
+                </Button>
+                <Button variant="primary" size="charge" className="grow" disabled={busy || float === null} onClick={() => void submit()}>
+                  <UnlockIcon aria-hidden="true" size={19} />
+                  Open shift &amp; start selling
+                </Button>
+              </div>
+            </div>
           </div>
         </>
       }

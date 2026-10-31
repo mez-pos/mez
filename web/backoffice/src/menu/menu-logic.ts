@@ -182,6 +182,20 @@ export function priceChange(saved: EditorItem | null, typed: string): { was: Mon
   return { was: saved.price, now: { minor, currency: saved.price.currency } };
 }
 
+/**
+ * Whether the form says something the saved item does not (for a new item,
+ * the blank form it opened with): the editor's "Unsaved changes". Compared as
+ * the server would keep it, so spaces at either end and "180" against
+ * "180.00" are no change, and a price that cannot be read yet is one.
+ */
+export function formChanged(saved: ItemForm, typed: ItemForm, currency: string): boolean {
+  const kept = (key: keyof ItemForm, value: ItemForm[keyof ItemForm]) => {
+    if (typeof value !== "string") return value;
+    return key === "price" ? (parseAmount(value, currency) ?? value.trim()) : value.trim();
+  };
+  return (Object.keys(saved) as (keyof ItemForm)[]).some((key) => kept(key, saved[key]) !== kept(key, typed[key]));
+}
+
 const itemFields: readonly string[] = ["name", "category_id", "price", "hsn", "tax_class_id", "station_id", "course_id", "ids", "photo", "description", "diet"];
 
 export function problemOf(err: unknown): Problem {

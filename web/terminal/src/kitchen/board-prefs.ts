@@ -14,8 +14,12 @@ export interface BoardPrefs {
   groupByTable: boolean;
 }
 
-/** A display starts on paper, silent, in the order tickets were sent. */
-export const defaultPrefs: BoardPrefs = { night: false, sound: false, groupByTable: false };
+/**
+ * A display starts on espresso night, silent, in the order tickets were sent.
+ * Night is the kitchen's surface (tokens.md): a bright screen over a hot pass
+ * is the wrong tool. Paper stays a choice in the foot (ADR-381, over ADR-177).
+ */
+export const defaultPrefs: BoardPrefs = { night: true, sound: false, groupByTable: false };
 
 export const prefsKey = "mez.kitchen.prefs";
 

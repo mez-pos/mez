@@ -21,7 +21,23 @@ const ToastContext = createContext<ShowToast | null>(null);
 // the cart for a whole transaction.
 const defaultDurationMs = 4000;
 
-export function ToastProvider({ children }: { children: ReactNode }) {
+export interface ToastProviderProps {
+  children: ReactNode;
+  /**
+   * Where toasts stack. The terminal's are at the top, under its header: at
+   * the bottom they sat over the last row of dishes and the charge button
+   * (TILL-11).
+   */
+  placement?: "top" | "bottom";
+}
+
+// Clears the terminal's header at its tallest (the waiter's, 88px; 72px short).
+const stacks = {
+  top: "top-0 pt-24 short:pt-20",
+  bottom: "bottom-0 p-4",
+} as const;
+
+export function ToastProvider({ children, placement = "bottom" }: ToastProviderProps) {
   const [state, dispatch] = useReducer(toastReducer, emptyToasts);
 
   const show = useCallback<ShowToast>((message, options = {}) => {
@@ -32,7 +48,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={show}>
       {children}
-      <div role="status" aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex flex-col items-center gap-2 p-4">
+      <div role="status" aria-live="polite" className={cx("pointer-events-none fixed inset-x-0 z-50 flex flex-col items-center gap-2 px-4", stacks[placement])}>
         {state.toasts.map((toast) => (
           <ToastItem key={toast.id} toast={toast} onDismiss={dismiss} />
         ))}
@@ -68,7 +84,8 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number)
   }, [toast.id, toast.durationMs, onDismiss]);
 
   return (
-    <div className={cx("pointer-events-auto flex w-full max-w-md items-center gap-3 rounded border py-1 pl-4 pr-1", shells[toast.tone])}>
+    // The message lets a tap through to what is under it; only Dismiss takes one.
+    <div className={cx("flex w-full max-w-md items-center gap-3 rounded border py-1 pl-4 pr-1", shells[toast.tone])}>
       <span aria-hidden="true" className={cx("size-2 shrink-0 rounded-round bg-current", dots[toast.tone])} />
       <p className="flex-1 text-base font-medium">{toast.message}</p>
       {/* Not a Button: its ghost is terracotta, and this sits on any tone's fill. */}
@@ -76,7 +93,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number)
         type="button"
         aria-label="Dismiss"
         onClick={() => onDismiss(toast.id)}
-        className="inline-flex size-tap shrink-0 items-center justify-center rounded-pill outline-current focus-visible:outline-2"
+        className="pointer-events-auto inline-flex size-tap shrink-0 items-center justify-center rounded-pill outline-current focus-visible:outline-2"
       >
         <CloseIcon />
       </button>

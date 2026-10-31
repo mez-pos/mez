@@ -22,9 +22,12 @@ import { SalesOverview } from "./SalesOverview";
 import { ChangeNote, StatTile } from "./StatTile";
 import { useDaySales, useFloorNow } from "./use-dashboard";
 
-// Three across from 1280px: the wide card, then two lists. At the design's
-// width the lists are its 400px.
-const row = "grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)_minmax(0,2fr)] min-[1800px]:grid-cols-[minmax(0,1fr)_400px_400px]";
+// Three across from 1280px: the wide card, then two lists. From 1536px the
+// lists take the back office's side width (the design's 400px is 380 there)
+// and the wide card the rest. A named breakpoint, not min-[1800px]: Tailwind
+// writes px breakpoints before rem ones, so xl's columns won over it.
+const row =
+  "grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)_minmax(0,2fr)] 2xl:grid-cols-[minmax(0,1fr)_var(--aside)_var(--aside)]";
 const wide = "lg:col-span-2 xl:col-span-1";
 
 export function Dashboard() {

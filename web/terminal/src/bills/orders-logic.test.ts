@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { DayOrderResponse, LineResponse, OrderResponse, TenderResponse } from "../../../shared/api-types";
 import {
+  billActions,
   collectWords,
   countText,
   filterOrders,
@@ -8,6 +9,7 @@ import {
   orderNumber,
   pastStatus,
   paymentText,
+  standing,
   statusOf,
   tabCounts,
   tableText,
@@ -15,6 +17,8 @@ import {
   toCollect,
   voidableTenders,
   whereText,
+  type BillActions,
+  type BillFacts,
 } from "./orders-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
@@ -209,5 +213,50 @@ describe("orders to collect", () => {
   it("says where a collected order was, by its code", () => {
     expect(whereText({ service: "takeaway" }, names, "B7K")).toBe("To collect · B7K");
     expect(whereText({ service: "takeaway" }, names)).not.toContain("collect");
+  });
+});
+
+describe("standing", () => {
+  const cases: [string, number, number, ReturnType<typeof standing>][] = [
+    ["money due wins over what was paid", 50000, 36000, { word: "Amount due", amount: inr(50000), tone: "warning" }],
+    ["paid in full, the order still open", 0, 86000, { word: "Paid", amount: inr(86000), tone: "success" }],
+    ["nothing due and nothing paid", 0, 0, null],
+  ];
+  it.each(cases)("%s", (_n, due, paid, want) => {
+    expect(standing({ balance_due: inr(due), net_paid: inr(paid) })).toEqual(want);
+  });
+});
+
+describe("billActions", () => {
+  const facts = (extra: Partial<BillFacts>): BillFacts => ({
+    status: "open",
+    owed: false,
+    invoiced: false,
+    creditable: false,
+    voidable: 0,
+    collecting: false,
+    ...extra,
+  });
+  const drawn = (a: BillActions) =>
+    Object.entries(a)
+      .filter(([, on]) => on)
+      .map(([name]) => name);
+
+  const cases: [string, BillFacts, string[]][] = [
+    ["an open order that owes", facts({ owed: true }), ["openOrder", "pay"]],
+    ["a saved order that owes: Open order brings it back, Pay is not drawn", facts({ status: "held", owed: true }), ["openOrder"]],
+    [
+      "paid and still open: no Pay, the invoice's buttons and Refund",
+      facts({ status: "settling", invoiced: true, creditable: true, voidable: 1 }),
+      ["openOrder", "reprint", "refund", "invoice", "voidPayment"],
+    ],
+    ["a closed bill", facts({ status: "closed", invoiced: true, creditable: true, voidable: 2 }), ["reprint", "refund", "invoice", "voidPayment"]],
+    ["a closed bill credited in full", facts({ status: "closed", invoiced: true }), ["reprint", "invoice"]],
+    ["a bill closed at nothing has no invoice", facts({ status: "closed" }), []],
+    ["a reopened bill that owes", facts({ status: "reopened", owed: true, invoiced: true, creditable: true }), ["takeBalance", "reprint", "invoice"]],
+    ["an order to collect still out", facts({ collecting: true, invoiced: true, creditable: true }), ["handOver", "openOrder", "reprint", "refund", "invoice"]],
+  ];
+  it.each(cases)("%s", (_n, f, want) => {
+    expect(drawn(billActions(f))).toEqual(want);
   });
 });

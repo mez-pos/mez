@@ -28,9 +28,10 @@ const queryClient = createQueryClient();
 // The kitchen display is served from this bundle at /kitchen (ADR-091): its
 // own device, paired as kitchen, listening to its station alone.
 const kitchen = window.location.pathname === "/kitchen" || window.location.pathname.startsWith("/kitchen/");
-// The kitchen's board is drawn on paper (D10), as index.html says of every
-// screen. Espresso night (D11) is a choice kept on the device (ADR-177): set
-// here, before anything is drawn, so a dark pass is never lit by a flash.
+// The kitchen's board opens on espresso night (D11), the ink surface tokens.md
+// gives the kitchen; paper is a choice kept on the device (ADR-381, over
+// ADR-177). Set here, before anything is drawn, so a dark pass is never lit
+// by a flash.
 const durable = browserStorage("local");
 if (kitchen) document.documentElement.dataset.surface = surfaceOf(readPrefs(durable));
 const station = kitchen ? readStation(durable) : null;
@@ -67,7 +68,7 @@ createRoot(root).render(
           <AuthProvider store={store} realtime={realtime}>
             {/* The design's line icons: 1.75px strokes (tokens.md, Icons). */}
             <LucideProvider strokeWidth={1.75}>
-              <ToastProvider>
+              <ToastProvider placement="top">
                 <Screen />
               </ToastProvider>
             </LucideProvider>

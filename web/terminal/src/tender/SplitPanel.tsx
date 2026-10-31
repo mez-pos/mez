@@ -1,14 +1,18 @@
-// Making a split (D08a): by item, equally, or custom amounts. The mode and
-// what it needs down the left, a card for each guest on the right, and Back
-// and Complete split along the foot. Every figure on a card comes from
-// POST /orders/{id}/split, which runs the domain's split package; the panel
-// only says what was chosen. "Complete split" fixes the shares, and each is
-// then collected as one payment (SplitShares.tsx).
+// Making a split (D08a): by item, equally, or custom amounts. The mode is
+// chosen in the frame's title bar; what it needs (how many guests, or a pad for
+// an amount) is down the left; the wide column has a card for each guest, and
+// Back and Complete split are along the foot. Every figure on a card comes
+// from POST /orders/{id}/split, which runs the domain's split package; the
+// panel only says what was chosen. "Complete split" fixes the shares, and each
+// is then collected as one payment (SplitShares.tsx).
 //
-// By item, a guest is picked and the items tapped go to them. An item can be
-// shared between every guest, and a guest taken off it again on their card.
-// The design's "Share of tax" row is left out: a line's figure here already
-// has its tax in it, as the bill's does.
+// By item, the wide column starts with the items nobody has yet, under a row
+// of the guests as chips: a chip is tapped to pick a guest, and the items
+// tapped go to them, so a 768-tall till shows items to give out without a
+// scroll (ADR-381). An item can be shared between every guest, and a guest
+// taken off it again on their card, under the items. The design's "Share of
+// tax" row is left out: a line's figure here already has its tax in it, as
+// the bill's does.
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { DivideIcon, PercentIcon, UserPlusIcon, UsersIcon, type LucideIcon } from "lucide-react";
@@ -34,7 +38,7 @@ import {
   type SplitDraft,
   type TillSplit,
 } from "./split-logic";
-import { ColumnHeading, GuestCard, SplitFrame, modeTile, modeTileOn, type ShareLine } from "./SplitParts";
+import { ColumnHeading, GuestCard, GuestGrid, SplitFrame, chosen, type ShareLine } from "./SplitParts";
 
 interface SplitPanelProps {
   order: OrderResponse;
@@ -103,36 +107,36 @@ export function SplitPanel({ order, title, draft, onDraft, onUse, onBack }: Spli
           ];
         });
 
+  const modeSwitch = (
+    <div role="radiogroup" aria-label="Split mode" className="flex gap-1 rounded-pill bg-sunken p-1">
+      {modes.map(({ kind, icon: Icon }) => {
+        const on = draft.kind === kind;
+        return (
+          <button
+            key={kind}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            disabled={kind === "item" && partPaid}
+            onClick={() => set({ kind, ways: Math.min(draft.ways, kind === "item" ? maxWays - 1 : maxWays) })}
+            className={cx(
+              "flex min-h-tap items-center justify-center gap-2 whitespace-nowrap rounded-pill border px-3.5 text-base",
+              "outline-offset-2 outline-attention focus-visible:outline-3 disabled:opacity-40",
+              on ? chosen : "border-transparent font-semibold text-fg-2 hover:bg-raised-high",
+            )}
+          >
+            {/* Below 1280 the icons give way, so the three words fit beside the title. */}
+            <Icon aria-hidden="true" size={18} strokeWidth={1.9} className="hidden xl:block" />
+            {splitNames[kind]}
+          </button>
+        );
+      })}
+    </div>
+  );
+
   const aside = (
     <>
-      <ColumnHeading>Split mode</ColumnHeading>
-      <div role="radiogroup" aria-label="Split mode" className="grid gap-2.5">
-        {modes.map(({ kind, icon: Icon }) => {
-          const on = draft.kind === kind;
-          return (
-            <button
-              key={kind}
-              type="button"
-              role="radio"
-              aria-checked={on}
-              disabled={kind === "item" && partPaid}
-              onClick={() => set({ kind, ways: Math.min(draft.ways, kind === "item" ? maxWays - 1 : maxWays) })}
-              className={cx(
-                modeTile,
-                "outline-offset-2 outline-attention focus-visible:outline-3 disabled:opacity-40",
-                on ? modeTileOn : "border-line-strong bg-raised font-semibold text-fg hover:bg-raised-high",
-              )}
-            >
-              <Icon aria-hidden="true" size={19} strokeWidth={1.9} />
-              {splitNames[kind]}
-            </button>
-          );
-        })}
-      </div>
-      {partPaid && <p className="mt-2.5 text-sm text-fg-muted">By item is for a bill with nothing paid yet.</p>}
-
-      <div aria-hidden="true" className="my-5 h-px bg-line" />
-
+      {partPaid && <p className="mb-4 text-sm text-fg-muted">By item is for a bill with nothing paid yet.</p>}
       {draft.kind === "amount" ? (
         <AmountChooser
           guest={draft.amounts.length + 1}
@@ -150,52 +154,12 @@ export function SplitPanel({ order, title, draft, onDraft, onUse, onBack }: Spli
           <Qty value={draft.ways} onChange={(ways) => set({ ways })} bounds={{ min: 2, max: most }} label="Guests" className="mb-3.5" />
         </div>
       )}
-
       {draft.kind === "evenly" && <p className="text-sm text-fg-muted">Each guest pays an equal share of what is owed.</p>}
-
       {draft.kind === "item" && (
         <>
-          <ColumnHeading>Unassigned items</ColumnHeading>
-          {loose.length === 0 ? (
-            <p className="text-sm text-fg-muted">Every item has a guest.</p>
-          ) : (
-            <>
-              <p className="mb-2.5 text-sm text-fg-muted">Tap an item to give it to Guest {guest + 1}, or share it between everyone.</p>
-              <ul className="grid gap-2.5">
-                {loose.map((l) => (
-                  <li key={l.id} className="flex items-stretch gap-1 rounded border border-dashed border-line-strong p-1">
-                    <button
-                      type="button"
-                      aria-label={`Give ${l.name} to Guest ${guest + 1}`}
-                      onClick={() => onDraft(assign(draft, l.id, [guest]))}
-                      className="flex min-h-tap min-w-0 flex-1 items-center gap-2.5 rounded-tight px-2.5 text-left text-base outline-offset-2 outline-attention hover:bg-raised-high focus-visible:outline-3"
-                    >
-                      <span className="min-w-0 flex-1">
-                        {l.qty} × {l.name}
-                      </span>
-                      <Money amount={l.due} className="font-bold" />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Share ${l.name} between every guest`}
-                      onClick={() =>
-                        onDraft(
-                          assign(
-                            draft,
-                            l.id,
-                            Array.from({ length: draft.ways }, (_, i) => i),
-                          ),
-                        )
-                      }
-                      className="min-h-tap shrink-0 rounded-tight px-3 text-base font-semibold text-attention-text outline-offset-2 outline-attention hover:bg-attention-tint focus-visible:outline-3"
-                    >
-                      Share
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-4 rounded bg-chip-warning-bg p-3 text-sm text-chip-warning-fg">Assign every item before completing the split.</p>
-            </>
+          <p className="text-sm text-fg-muted">Tap an item to give it to Guest {guest + 1}, or share it between everyone.</p>
+          {loose.length > 0 && (
+            <p className="mt-4 rounded bg-chip-warning-bg p-3 text-sm text-chip-warning-fg">Assign every item before completing the split.</p>
           )}
         </>
       )}
@@ -213,61 +177,142 @@ export function SplitPanel({ order, title, draft, onDraft, onUse, onBack }: Spli
         {draft.kind !== "item" && fresh && `${fresh.shares.length} shares`}
         {block && loose.length === 0 && !split.isError && <span className="block text-sm">{block}</span>}
       </p>
-      <Button onClick={onBack} size="charge" className="w-40">
+      {/* Set widths only from 1280: on a tablet the words beside them want the room. */}
+      <Button onClick={onBack} size="charge" className="xl:w-40">
         Back
       </Button>
-      <Button variant="primary" size="charge" disabled={!fresh || block !== null} onClick={() => fresh && onUse(fresh, draft.amounts.length)} className="w-64">
+      <Button
+        variant="primary"
+        size="charge"
+        disabled={!fresh || block !== null}
+        onClick={() => fresh && onUse(fresh, draft.amounts.length)}
+        className="xl:w-64"
+      >
         Complete split
       </Button>
     </>
   );
 
+  const cards = Array.from({ length: guests }, (_, payer) => {
+    const share = answer?.shares.find((s) => s.payer === payer);
+    const keyedHere = draft.kind === "amount" && payer < draft.amounts.length;
+    return (
+      <GuestCard
+        key={payer}
+        seat={payer + 1}
+        name={payerLabel(draft.kind, payer, draft.amounts.length)}
+        paid={false}
+        lines={linesOf(payer)}
+        due={share?.amount ?? (keyedHere ? money(draft.amounts[payer] ?? 0) : undefined)}
+        settling={settling}
+        selected={draft.kind === "item" && payer === guest}
+        onSelect={draft.kind === "item" ? () => setPicked(payer) : undefined}
+      >
+        {keyedHere && (
+          <Button variant="ghost" onClick={() => set({ amounts: draft.amounts.filter((_, j) => j !== payer) })}>
+            Remove
+          </Button>
+        )}
+      </GuestCard>
+    );
+  });
+
   return (
-    <SplitFrame heading={`Split bill · ${title}`} totalLabel={partPaid ? "Still owed" : "Total"} total={order.totals.balance_due} aside={aside} footer={footer}>
-      {split.isError && request && (
-        <p role="alert" className="col-span-2 text-base text-danger">
-          {failureOf(split.error)}
-        </p>
-      )}
-      {Array.from({ length: guests }, (_, payer) => {
-        const share = answer?.shares.find((s) => s.payer === payer);
-        const keyedHere = draft.kind === "amount" && payer < draft.amounts.length;
-        return (
-          <GuestCard
-            key={payer}
-            seat={payer + 1}
-            name={payerLabel(draft.kind, payer, draft.amounts.length)}
-            paid={false}
-            lines={linesOf(payer)}
-            due={share?.amount ?? (keyedHere ? money(draft.amounts[payer] ?? 0) : undefined)}
-            settling={settling}
-            selected={draft.kind === "item" && payer === guest}
-            onSelect={draft.kind === "item" ? () => setPicked(payer) : undefined}
-          >
-            {keyedHere && (
-              <Button variant="ghost" onClick={() => set({ amounts: draft.amounts.filter((_, j) => j !== payer) })}>
-                Remove
-              </Button>
-            )}
-          </GuestCard>
-        );
-      })}
-      {draft.kind === "amount" ? (
-        draft.amounts.length === 0 && <p className="col-span-2 text-base text-fg-muted">Key what the first guest pays, then add them.</p>
-      ) : (
-        <button
-          type="button"
-          disabled={draft.ways >= most}
-          onClick={() => {
-            set({ ways: draft.ways + 1 });
-            setPicked(draft.ways);
-          }}
-          className="flex min-h-40 flex-col items-center justify-center gap-2.5 rounded-card border border-dashed border-line-strong p-4 text-base font-semibold text-fg-muted outline-offset-2 outline-attention hover:bg-raised-high focus-visible:outline-3 disabled:opacity-40"
-        >
-          <UserPlusIcon aria-hidden="true" size={26} strokeWidth={1.75} />
-          Add another guest
-        </button>
-      )}
+    <SplitFrame title={title} totalLabel={partPaid ? "Still owed" : "Total"} total={order.totals.balance_due} mode={modeSwitch} aside={aside} footer={footer}>
+      <div className="flex flex-col gap-5 short:gap-4">
+        {split.isError && request && (
+          <p role="alert" className="text-base text-danger">
+            {failureOf(split.error)}
+          </p>
+        )}
+
+        {draft.kind === "item" && (
+          <>
+            <div role="group" aria-label="Who the next item goes to" className="flex flex-wrap gap-2">
+              {Array.from({ length: draft.ways }, (_, payer) => {
+                const on = payer === guest;
+                const due = answer?.shares.find((s) => s.payer === payer)?.amount;
+                return (
+                  <button
+                    key={payer}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => setPicked(payer)}
+                    className={cx(
+                      "flex min-h-tap items-center gap-2.5 rounded-pill border px-4 text-base outline-offset-2 outline-attention focus-visible:outline-3",
+                      on ? chosen : "border-line-strong bg-raised font-semibold text-fg hover:bg-raised-high",
+                    )}
+                  >
+                    {payerLabel("item", payer, 0)}
+                    {due && <Money amount={due} className={cx(settling && "opacity-50")} />}
+                  </button>
+                );
+              })}
+            </div>
+
+            <section aria-label="Unassigned items">
+              <ColumnHeading>Unassigned items</ColumnHeading>
+              {loose.length === 0 ? (
+                <p className="text-sm text-fg-muted">Every item has a guest.</p>
+              ) : (
+                <ul className="grid gap-2.5">
+                  {loose.map((l) => (
+                    <li key={l.id} className="flex items-stretch gap-1 rounded border border-dashed border-line-strong bg-raised p-1">
+                      <button
+                        type="button"
+                        aria-label={`Give ${l.name} to Guest ${guest + 1}`}
+                        onClick={() => onDraft(assign(draft, l.id, [guest]))}
+                        className="flex min-h-tap min-w-0 flex-1 items-center gap-2.5 rounded-tight px-2.5 text-left text-base outline-offset-2 outline-attention hover:bg-raised-high focus-visible:outline-3"
+                      >
+                        <span className="min-w-0 flex-1">
+                          {l.qty} × {l.name}
+                        </span>
+                        <Money amount={l.due} className="font-bold" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Share ${l.name} between every guest`}
+                        onClick={() =>
+                          onDraft(
+                            assign(
+                              draft,
+                              l.id,
+                              Array.from({ length: draft.ways }, (_, i) => i),
+                            ),
+                          )
+                        }
+                        className="min-h-tap shrink-0 rounded-tight px-3 text-base font-semibold text-attention-text outline-offset-2 outline-attention hover:bg-attention-tint focus-visible:outline-3"
+                      >
+                        Share
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </>
+        )}
+
+        <GuestGrid>
+          {cards}
+          {draft.kind === "amount" ? (
+            draft.amounts.length === 0 && <p className="text-base text-fg-muted">Key what the first guest pays, then add them.</p>
+          ) : (
+            <button
+              type="button"
+              disabled={draft.ways >= most}
+              onClick={() => {
+                set({ ways: draft.ways + 1 });
+                setPicked(draft.ways);
+              }}
+              className="flex min-h-40 flex-col items-center justify-center gap-2.5 rounded-card border border-dashed border-line-strong p-4 text-base font-semibold text-fg-muted outline-offset-2 outline-attention hover:bg-raised-high focus-visible:outline-3 disabled:opacity-40"
+            >
+              <UserPlusIcon aria-hidden="true" size={26} strokeWidth={1.75} />
+              Add another guest
+            </button>
+          )}
+        </GuestGrid>
+      </div>
     </SplitFrame>
   );
 }
@@ -284,7 +329,7 @@ interface AmountChooserProps {
 
 function AmountChooser({ guest, keyed, full, onKey, onAdd }: AmountChooserProps) {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 short:gap-2">
       <ColumnHeading>Guest {guest} pays</ColumnHeading>
       <div className="-mt-1 flex min-h-charge items-center justify-end rounded border border-accent bg-raised px-4 outline-3 outline-accent-tint">
         <Money amount={keyed} className="text-xl font-bold" />

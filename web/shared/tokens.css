@@ -107,8 +107,11 @@
   --text-lg: 17px;
   --text-xl: 22px;
   --text-total: 32px;
-  --text-kitchen: 26px; /* the kitchen display's lines, read from three metres */
-  --text-display: 44px; /* the kitchen display's table and timer */
+  /* The kitchen's two sizes grow with the screen's shorter side (ADR-381):
+     26px and 44px on a 768 screen, about 34px and 56px on a 1080 one, so a
+     big screen at the pass reads from two metres. Neither ever shrinks. */
+  --text-kitchen: clamp(26px, 0.5rem + 2.4vmin, 36px); /* the kitchen display's lines */
+  --text-display: clamp(44px, 1rem + 3.7vmin, 56px); /* the kitchen's table and timer; the login title */
   --text-hero: 66px; /* the login screen's headline, on a wide screen (D01) */
   --tracking-meta: 0.16em;
   --tracking-serif: -0.02em;
@@ -126,6 +129,7 @@
   --side: clamp(11.5rem, 14vw, 15rem); /* a sidebar of categories or views: 240px drawn */
   --rail: clamp(20rem, 26vw, 25rem); /* the order, table and payment rails: 400px drawn */
   --panel: clamp(17rem, 23vw, 27.5rem); /* the orders screen's panel: 384px, 440px wide */
+  --aside: clamp(18rem, 24vw, 23.75rem); /* a back-office screen's side column: 380px drawn */
 
   /* Behind a modal or sheet */
   --scrim: rgba(58, 46, 42, 0.44);

@@ -1,8 +1,12 @@
 // The categories card of the menu editor (D18): All items, Popular, then each
-// category in register order with how many items it has, and "+" to add one.
+// category in register order with how many items it has, and Add a category.
 // What can be done to the chosen category (rename, move, retire) sits under
 // the list: the design draws no place for it, and the back office has it
 // (rebuild.md, rule 4).
+//
+// The card is the sidebar width (`w-side`), 184px at its floor. The design's
+// round "+" beside the title does not fit there, so adding is the list's last
+// row, and a long name wraps rather than losing its end (TECH-17).
 
 import { LayoutGridIcon, PlusIcon, StarIcon, UtensilsIcon, type LucideIcon } from "lucide-react";
 import { useState } from "react";
@@ -27,6 +31,9 @@ interface CategoryRailProps {
 
 const icon = (scope: Scope): LucideIcon => (scope === "all" ? LayoutGridIcon : scope === "popular" ? StarIcon : UtensilsIcon);
 
+// A category's row, and Add a category under them.
+const row = "flex min-h-tap w-full items-center gap-2.5 rounded px-3 py-1.5 text-left text-base outline-offset-2 outline-line-focus focus-visible:outline-2";
+
 export function CategoryRail({ menu, scope, onScope, api, onAdd, onRename, onProblem }: CategoryRailProps) {
   const [confirmRetire, setConfirmRetire] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -50,20 +57,8 @@ export function CategoryRail({ menu, scope, onScope, api, onAdd, onRename, onPro
   };
 
   return (
-    <Card className="flex min-w-0 flex-col p-4">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="font-serif text-xl">Categories</h2>
-        {!mirror && (
-          <button
-            type="button"
-            aria-label="Add a category"
-            onClick={onAdd}
-            className="flex size-12 items-center justify-center rounded-round border border-line-strong outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
-          >
-            <PlusIcon aria-hidden="true" size={18} />
-          </button>
-        )}
-      </div>
+    <Card className="flex min-w-0 flex-col p-3 2xl:p-4">
+      <h2 className="font-serif text-xl">Categories</h2>
       <ul aria-label="Categories" className="mt-3 grid gap-0.5">
         {rows.map((r) => {
           const Icon = icon(r.scope);
@@ -74,13 +69,10 @@ export function CategoryRail({ menu, scope, onScope, api, onAdd, onRename, onPro
                 type="button"
                 aria-current={on ? "true" : undefined}
                 onClick={() => onScope(r.scope)}
-                className={cx(
-                  "flex min-h-tap w-full items-center gap-2.5 rounded px-3 text-left text-base outline-offset-2 outline-line-focus focus-visible:outline-2",
-                  on ? "bg-attention-tint font-bold text-attention-text" : "hover:bg-raised-high",
-                )}
+                className={cx(row, on ? "bg-attention-tint font-bold text-attention-text" : "hover:bg-raised-high")}
               >
                 <Icon aria-hidden="true" size={18} className="shrink-0" />
-                <span className={cx("min-w-0 flex-1 truncate", r.retired && !on && "text-fg-muted line-through")}>{r.name}</span>
+                <span className={cx("min-w-0 flex-1 break-words", r.retired && !on && "text-fg-muted line-through")}>{r.name}</span>
                 {r.retired && <span className="text-meta font-semibold uppercase text-fg-faint">Retired</span>}
                 <span className={cx("font-mono tabular-nums", !on && "text-fg-muted")}>{r.count}</span>
               </button>
@@ -88,6 +80,12 @@ export function CategoryRail({ menu, scope, onScope, api, onAdd, onRename, onPro
           );
         })}
       </ul>
+      {!mirror && (
+        <button type="button" onClick={onAdd} className={cx(row, "mt-0.5 font-semibold text-attention-text hover:bg-raised-high")}>
+          <PlusIcon aria-hidden="true" size={18} className="shrink-0" />
+          Add a category
+        </button>
+      )}
 
       {chosen && !mirror && (
         <div role="group" aria-label={`${chosen.name}: actions`} className="mt-4 flex flex-wrap gap-tap-gap border-t border-line-soft pt-4">

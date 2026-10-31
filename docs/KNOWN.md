@@ -10,6 +10,35 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Phase 17's device-fit pass** (Tasks 4 to 12, ADR-381, ADR-382;
+  2026-10-31). Seen in a scripted Chromium at 1024x768, 1366x768 and
+  1920x1080: the lock, open shift, register and its rail, the item modal,
+  tender (cash and change in the foot), split by item, the paid step,
+  Orders and the order panel, refund, Tables, the waiter's home and order,
+  close of day, the kitchen board, the back office's menu, item editor
+  (sticky save), floor (chosen table beside the grid) and the setup
+  wizard. **Not seen:** the kitchen board with many tickets, a late one,
+  notes (the new "Note:" box), courses, a void and the "+N more" All day
+  strip; the waiter's Confirm and send through to the bill; a guest's
+  table request with the new top toasts; the lock's session-ended notice
+  at 1024 (it adds about 50px and pushes the footer below the fold, the pad
+  stays); paging of profiles (needs 6 staff at 1366, 9 at 1024); touch on
+  a real tablet; a real kitchen screen at two metres. Left over:
+  - The waiter's order bar at 1024 can overflow by about 70px when a
+    table-requests pill also shows in the header; the guests pill could
+    become an icon below xl.
+  - `sales/SalesScreen.tsx` keeps a `minmax(0,29rem)` column: no width
+    token holds the category ring's legend at 1366. Needs a token or a
+    decision.
+  - The order panel's title breaks an invoice number across two lines at
+    1024 ("INV/26-" / "27/000001"); Orders' search placeholder is cut.
+  - The register's sidebar still truncates "Tea and co..." at 1024.
+  - The kitchen board's ink is now the default; `index.html` still says
+    `data-surface="paper"`, so a parchment frame can show for an instant
+    before the script runs.
+  - The paid order still reads "Open" (TBS-1, Phase 17 Task 2) and Pay
+    still does not send (TILL-1, Task 3).
+
 - **The 2026-10-24 stability audit and the venue PC's three complaints**
   (ADR-366 to ADR-370). Built, tested in Go and vitest, **not yet seen on a
   venue PC or in a browser**: the human walks, on the installed PC, a

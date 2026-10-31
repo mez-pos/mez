@@ -138,9 +138,8 @@ export function ApprovalSheet({ title, action, children, ready, problem, onSubmi
 
   if (modal) {
     return (
-      <Modal open onClose={onClose} title={title} size="lg" icon={modal.icon}>
+      <Modal open onClose={onClose} title={title} size="lg" icon={modal.icon} footer={<div className="w-full">{footer}</div>}>
         {body}
-        <div className="mt-5">{footer}</div>
       </Modal>
     );
   }

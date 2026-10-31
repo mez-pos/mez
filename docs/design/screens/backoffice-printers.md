@@ -31,7 +31,9 @@ Inside the frame (`backoffice-shell.md`).
   | Last print | the newest job's state as a chip, with when ("12 min ago"); or "Nothing printed yet" |
   | | **...**: Test page, Edit, and Retire or Bring back |
 
-- **Where things print**, a card beside it: **Receipts**, then a row per
+- **Where things print**, a card beside it from 1280px, at the back
+  office's side width (`w-aside`, 307 to 380px; TECH-17), and under the
+  table below that: **Receipts**, then a row per
   station ("Kitchen tickets"), each a select of the printers in service and
   **None**. A change saves at once and says "Saved". With no stations: "No
   stations yet. They are added in the menu, with the items made at each."

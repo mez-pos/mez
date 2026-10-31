@@ -102,11 +102,7 @@ export function StockScreen() {
         <EmptyState icon={<InboxIcon />} line={problemOf(api.items.error).message} action={{ label: "Try again", onClick: () => void api.items.refetch() }} />
       )}
       {items && view === "levels" && (
-        <div
-          className={
-            canReport ? "grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] min-[1700px]:grid-cols-[minmax(0,1fr)_400px]" : ""
-          }
-        >
+        <div className={canReport ? "grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_var(--aside)]" : ""}>
           <div className="flex min-w-0 flex-col gap-3">
             <StockLevels
               rows={tableRows(items, showRetired)}

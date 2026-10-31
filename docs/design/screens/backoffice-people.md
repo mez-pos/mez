@@ -14,7 +14,9 @@ someone leaves, and see in one place what each role is trusted with.
 ## Layout
 
 Inside the frame (`backoffice-shell.md`). The staff table in a card, and
-beside it the roles.
+beside it the roles: from 1280px a column at the back office's side width
+(`w-aside`, 307px at 1280, 328px at 1366, 380px from 1584; TECH-17), the
+table the rest; under 1280px the roles sit under the table.
 
 - **The head:** "Staff & roles" in the serif, and "9 people · 2
   deactivated". At the right, **Add a role** and **Add staff**

@@ -65,7 +65,7 @@ export function DevicesScreen() {
       )}
 
       {data && (
-        <div className={waiting.length > 0 ? "grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_380px]" : "flex flex-col"}>
+        <div className={waiting.length > 0 ? "grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_var(--aside)]" : "flex flex-col"}>
           <div className="flex min-w-0 flex-col gap-3">
             <DeviceTable
               devices={listed(data.devices)}

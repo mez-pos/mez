@@ -3,6 +3,11 @@
 // design draws nine entries in one run; the back office has eleven, so they
 // keep their groups, each under its label (rebuild.md, rule 4).
 //
+// Its widths are the frame's own, not `w-side` (TECH-17): an entry is a fixed
+// run of icon, name and chord ("Sales reports  g s" needs about 200px), and
+// w-side is 184 to 191px from 1024 to 1366 wide, where it would cut it. The
+// screens beside it are what take the token widths.
+//
 // Under 768px there is no room for a sidebar beside a screen, and laid across
 // the top it took half of a phone. There it is a drawer: closed until the
 // bar's menu button opens it, over the screen, from the left, and closed

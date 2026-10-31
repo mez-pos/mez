@@ -122,6 +122,15 @@ function Questions({ token, onBegin }: { token: string | null; onBegin: () => vo
   const [busy, setBusy] = useState(false);
   // The other way through: a venue this owner had before, brought back (RecoverFlow).
   const [recovering, setRecovering] = useState<RecoverStepKey | null>(null);
+  // Continue refused a field: it takes the focus, so what is wrong is in view
+  // and not under the foot that holds Continue (SetupFrame).
+  const form = useRef<HTMLFormElement>(null);
+  const showProblem = useRef(false);
+  useEffect(() => {
+    if (!showProblem.current) return;
+    showProblem.current = false;
+    form.current?.querySelector<HTMLElement>("[aria-invalid='true']")?.focus();
+  }, [problems]);
 
   const current = steps[step] ?? steps[0];
   const last = step === steps.length - 1;
@@ -160,6 +169,7 @@ function Questions({ token, onBegin }: { token: string | null; onBegin: () => vo
       // A refused answer: back to its step, with the server's words under it.
       const at = steps.findIndex((s) => s.key === stepOf(failed.field ?? ""));
       if (at >= 0) setStep(at);
+      showProblem.current = true;
       setProblems({ [failed.field]: failed.message });
       return;
     }
@@ -171,6 +181,7 @@ function Questions({ token, onBegin }: { token: string | null; onBegin: () => vo
     if (busy) return;
     const found = checkStep(current.key, answers, timezones);
     if (Object.keys(found).length > 0) {
+      showProblem.current = true;
       setProblems(found);
       return;
     }
@@ -189,7 +200,12 @@ function Questions({ token, onBegin }: { token: string | null; onBegin: () => vo
       else setAfter(next);
     };
     return (
-      <SetupFrame lead="Your venue is ready. Three things more, if you have them to hand." steps={allSteps} current={indexOfAfter(after)}>
+      <SetupFrame
+        lead="Your venue is ready. Three things more, if you have them to hand."
+        leadWhenShort={after === "printer"}
+        steps={allSteps}
+        current={indexOfAfter(after)}
+      >
         {after === "printer" && <PrinterStep api={store.api} onDone={onward} />}
         {after === "cloud" && <CloudStep api={store.api} onDone={onward} />}
         {after === "ready" && <ReadyStep api={store.api} onDone={onward} />}
@@ -201,6 +217,7 @@ function Questions({ token, onBegin }: { token: string | null; onBegin: () => vo
     return (
       <SetupFrame
         lead="Bring your venue back from mez Cloud, onto this computer. Four steps, and nothing here is changed until its backup is down and checked."
+        leadWhenShort={recovering === "phone"}
         steps={recoverSteps}
         current={recoverStepIndex(recovering)}
       >
@@ -224,7 +241,7 @@ function Questions({ token, onBegin }: { token: string | null; onBegin: () => vo
 
   if (busy || created || failure) {
     return (
-      <SetupFrame lead={lead} steps={allSteps} current={steps.length - 1}>
+      <SetupFrame lead={lead} leadWhenShort={false} steps={allSteps} current={steps.length - 1}>
         <Creating progress={progress} failure={failure} busy={busy} onRetry={() => void create()} onLeave={leave} onEdit={() => setFailure(null)} />
       </SetupFrame>
     );
@@ -232,9 +249,12 @@ function Questions({ token, onBegin }: { token: string | null; onBegin: () => vo
 
   const stepProps = { answers, problems, onChange: change };
   return (
-    <SetupFrame lead={lead} steps={allSteps} current={step} onStep={setStep}>
-      <form onSubmit={submit} noValidate className="flex flex-1 flex-col">
-        <h2 className="font-serif text-xl">{current.name}</h2>
+    <SetupFrame lead={lead} leadWhenShort={step === 0} steps={allSteps} current={step} onStep={setStep}>
+      <form ref={form} onSubmit={submit} noValidate className="flex flex-1 flex-col">
+        {/* Focused as the step arrives (use-step-arrival.ts). */}
+        <h2 tabIndex={-1} className="font-serif text-xl">
+          {current.name}
+        </h2>
         <p className="mt-1 text-sm text-fg-muted">{blurbs[current.key]}</p>
         {step === 0 && (
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-card bg-sunken px-4 py-3">

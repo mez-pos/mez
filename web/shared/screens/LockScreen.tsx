@@ -19,7 +19,6 @@ import { clockText } from "../venue-text";
 import { BrandPanel } from "./login/BrandPanel";
 import { LoginPad } from "./login/LoginPad";
 import { ProfileTiles } from "./login/ProfileTiles";
-import { pageOf } from "./login/login-logic";
 import { minPin } from "./PinDots";
 
 const maxPin = 8;
@@ -122,7 +121,6 @@ export function LockScreen() {
     // signs in.
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     setSelectedId(member.id);
-    setPage(pageOf(people ?? [], member.id));
     setPin("");
     if (!locked) setError(null);
   };
@@ -136,22 +134,27 @@ export function LockScreen() {
     <main className="flex min-h-screen bg-canvas text-fg">
       <BrandPanel version={version} />
 
-      <section aria-labelledby="lock-title" className="relative flex min-w-0 flex-1 flex-col p-10 2xl:px-18 2xl:py-14 [@media(max-height:800px)]:py-6">
-        <p
-          aria-hidden="true"
-          className="absolute right-10 top-10 hidden text-right font-script text-total leading-tight text-fg-2 md:block 2xl:right-14 2xl:top-14"
-        >
-          Good Teams,
-          <br />
-          Great Service ♡
-        </p>
-        <Logo className="mb-6 h-10 lg:hidden" />
-        <h1 id="lock-title" className="font-serif text-display">
-          Staff Login
-        </h1>
-        <p className="mt-2 text-lg text-fg-muted">Select your profile and enter your PIN</p>
+      <section aria-labelledby="lock-title" className="relative flex min-w-0 flex-1 flex-col p-10 short:py-5 2xl:px-18 2xl:py-14">
+        {/* The script line sits beside the title, not over it: placed on top, it ran into the subtitle on a narrow column. */}
+        <div className="flex items-start justify-between gap-6">
+          <div className="min-w-0">
+            <Logo className="mb-6 h-10 short:mb-3 xl:hidden" />
+            <h1 id="lock-title" className="font-serif text-display leading-tight">
+              Staff Login
+            </h1>
+            <p className="mt-2 text-lg text-fg-muted">Select your profile and enter your PIN</p>
+          </div>
+          <p aria-hidden="true" className="hidden shrink-0 text-right font-script text-total leading-tight text-fg-2 md:block">
+            Good Teams,
+            <br />
+            Great Service ♡
+          </p>
+        </div>
         {notice && (
-          <p role="status" className="mt-4 max-w-md rounded border border-chip-warning-border bg-chip-warning-bg px-4 py-3 text-base text-chip-warning-fg">
+          <p
+            role="status"
+            className="mt-4 max-w-md rounded border border-chip-warning-border bg-chip-warning-bg px-4 py-3 text-base text-chip-warning-fg short:mt-3 short:py-2"
+          >
             {notice}
           </p>
         )}
@@ -169,7 +172,7 @@ export function LockScreen() {
           onKey={key}
           onSubmit={() => void submit()}
         />
-        <p role="alert" className="mt-2 min-h-6 text-base text-danger">
+        <p role="alert" className="mt-2 min-h-6 text-base text-danger short:mt-1">
           {error}
           {locked && lockedUntil !== null && ` Try again in ${formatWait(lockedUntil - now)}.`}
         </p>
@@ -178,7 +181,7 @@ export function LockScreen() {
           Forgot your PIN? Ask a manager to reset it.
         </p>
 
-        <footer className="mt-auto flex flex-wrap items-center justify-between gap-x-6 gap-y-2 pt-6 text-sm text-fg-muted">
+        <footer className="mt-auto flex flex-wrap items-center justify-between gap-x-6 gap-y-2 pt-6 text-sm text-fg-muted short:pt-3">
           <span>{venue?.name ?? ""}</span>
           <ConnectionIndicator />
           <span className="font-mono tabular-nums">{clockText(new Date(clock), venue?.timezone ?? null)}</span>

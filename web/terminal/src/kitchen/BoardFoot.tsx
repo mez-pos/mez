@@ -1,12 +1,14 @@
 // The foot of the kitchen's board (D10, D11): what this display is set to.
 // Change station, the chime for a new ticket, a table's tickets kept together,
-// and espresso night. Each is the device's own choice (board-prefs.ts).
+// and espresso night, which is on until a bright kitchen turns it off. Each is
+// the device's own choice (board-prefs.ts, ADR-381).
 //
 // Left out, and why. Settings: a display has one setting besides these, its
 // station, so the button says that. Auto advance: nothing here moves a ticket
 // on its own, and a ticket that left the board unmade would be a lost dish.
 // Mark all complete: no ticket is "complete" on this board (a ready one waits
-// to be collected, ADR-090), and one tap that clears a pass has no undo.
+// to be collected, ADR-090), and one tap that clears a pass has no undo. D10's
+// script line: a working screen carries none (ADR-381).
 
 import { LockIcon, Settings2Icon, Volume2Icon, VolumeXIcon } from "lucide-react";
 import { cx } from "../../../shared/ui/cx";
@@ -35,7 +37,7 @@ const plain =
 export function BoardFoot({ prefs, onPrefs, onChangeStation, signedIn }: BoardFootProps) {
   const Sound = prefs.sound ? Volume2Icon : VolumeXIcon;
   return (
-    <footer className="flex min-h-19 shrink-0 flex-wrap items-center gap-x-5 gap-y-1 border-t border-line bg-chrome px-7 py-2">
+    <footer className="flex min-h-19 shrink-0 flex-wrap items-center gap-x-5 gap-y-1 border-t border-line bg-chrome px-7 py-2 short:min-h-14 short:gap-x-4 short:px-5 short:py-1">
       <button type="button" onClick={onChangeStation} className={plain}>
         <Settings2Icon aria-hidden="true" size={19} strokeWidth={1.85} />
         Change station
@@ -46,15 +48,11 @@ export function BoardFoot({ prefs, onPrefs, onChangeStation, signedIn }: BoardFo
       </button>
       <Switch label="Group by table" on={prefs.groupByTable} onChange={(groupByTable) => onPrefs({ ...prefs, groupByTable })} />
       <Switch label="Night mode" on={prefs.night} onChange={(night) => onPrefs({ ...prefs, night })} />
-      {signedIn ? (
+      {signedIn && (
         <button type="button" onClick={signedIn.onLock} className={cx(plain, "ml-auto border border-line-strong")}>
           <LockIcon aria-hidden="true" size={19} strokeWidth={1.85} />
           Lock · {signedIn.name}
         </button>
-      ) : (
-        <p aria-hidden="true" className="ml-auto hidden font-script text-xl text-fg-2 xl:block">
-          Great Food, Happier People ♡
-        </p>
       )}
     </footer>
   );

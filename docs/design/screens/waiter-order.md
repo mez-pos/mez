@@ -20,11 +20,28 @@ and send it.
 - **The top bar is the order's** (`WaiterOrderBar`), in place of the
   navigation: a round back arrow; the table as a terracotta pill ("Table T4",
   or **Pick a table**), which opens Tables; the guests as a pill; and how it
-  is served, Dine-in, Takeaway, Delivery, as wide buttons. The rail has no
-  service control of its own; it shows the service as a chip.
-- **Categories, 224px:** the search is on top of them, "Search menu"; the
-  chosen one is green, not terracotta; a script line at the foot. The menu's
-  head has the title and the filters only.
+  is served. Before the order opens that is a choice, Dine-in, Takeaway,
+  Delivery: wide buttons from 1280px, narrow ones below. Once it is open the
+  service cannot change (ADR-146), so it is a pill with one word and its
+  icon ("Dine-in"), not three buttons (TBS-3). The table's pill is the one
+  that gives way: its name is cut short with an ellipsis before anything in
+  the bar runs under the connection, Not printed or the profile at the
+  header's right. At 1024x768 an open order's bar reads: back, "Table T5",
+  "4 guests", "Dine-in", and none of it overlaps.
+- **The rail has no service control of its own**, and in the waiter's frame
+  its head drops the guests chip, the service chip and the order's id: the
+  bar above says the first two, and the room goes to the table's name
+  (TBS-13).
+- **Categories, `w-side`:** the search is on top of them, "Search" (the
+  cashier's register has it there too since ADR-381); the chosen one is
+  green, not terracotta; a script line at the foot. The menu's head has the
+  title and the diet filters only: beside the title from 1280px, behind one
+  **Diet** button below it ("Diet", "Diet: Veg", "Diet: 2 on").
+- **Cards keep the crown beside the price.** A card with no photo has no top
+  band on a screen 820px tall or less; a photo keeps a 64px band.
+- **At 768 tall the rail folds its totals** into Subtotal and one "incl.
+  GST" row that opens on a tap, and each line puts its stepper and bin side
+  by side under the name.
 - **Popular is where it starts**, on a menu that marks anything popular.
 - **Cards are narrower**, `minmax(13rem, 1fr)`, so three fit beside the rail
   at 1366 wide.
@@ -33,7 +50,8 @@ and send it.
 - **Clear**, a danger pill under the lines, when the kitchen has not seen
   something.
 - **The foot is Save and Send to Kitchen.** Sending is the one green here;
-  there is no Pay button.
+  there is no Pay button. Below 1280px Send to Kitchen drops its icon so the
+  words fit, and the two sit 8px apart.
 - **The "..." menu** leads with **Bill and pay**, and has no Fire course: a
   waiter fires from Course View, where the course is named (ADR-168).
 

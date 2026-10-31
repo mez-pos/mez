@@ -3,6 +3,9 @@
 // to another. The drag is pointer events, so it works with a finger, a pen
 // and a mouse, and it is only a shortcut: every move it makes can be made
 // by tapping or by typing the column and row.
+//
+// A cell is never under 48px, the touch floor: so twelve columns still fit
+// beside the chosen table's card at 1280px. Past that the grid scrolls sideways.
 
 import { useRef, useState, type PointerEvent } from "react";
 import type { TableResponse } from "../../../shared/api-types";
@@ -68,14 +71,14 @@ export function FloorGrid({ cells, chosen, moving, readOnly = false, onCell, onT
 
   return (
     <div className="relative overflow-x-auto rounded border border-line bg-sunken p-2">
-      <div role="grid" aria-label="Floor plan" className="grid gap-1" style={{ gridTemplateColumns: `repeat(${columns}, minmax(3.5rem, 1fr))` }}>
+      <div role="grid" aria-label="Floor plan" className="grid gap-1" style={{ gridTemplateColumns: `repeat(${columns}, minmax(3rem, 1fr))` }}>
         {cells.map((row, y) => (
           <div role="row" key={y} className="contents">
             {row.map((cell) => {
               const t = cell.table;
               const dragged = drag?.dragging && t !== null && drag.table.id === t.id;
               return (
-                <div role="gridcell" key={cell.x} data-cell={`${cell.x},${cell.y}`} className="relative aspect-square min-h-14">
+                <div role="gridcell" key={cell.x} data-cell={`${cell.x},${cell.y}`} className="relative aspect-square min-h-12">
                   {t === null && readOnly ? (
                     <span aria-hidden="true" className="absolute inset-0 rounded border border-dashed border-line-soft" />
                   ) : t === null ? (
@@ -132,7 +135,8 @@ function TableShapeTile({ table: t }: { table: TableResponse }) {
         "flex flex-col items-center justify-center border border-line-strong bg-raised text-fg shadow-rest",
         t.shape === "round" && "aspect-square h-[88%] rounded-round",
         t.shape === "square" && "h-[88%] w-[88%] rounded",
-        t.shape === "long" && "h-[60%] w-full rounded",
+        // Its name and seats need 40px: a 56px cell's 60% would cut them.
+        t.shape === "long" && "h-[60%] min-h-11 w-full rounded",
       )}
     >
       <span className="max-w-full truncate px-1 font-serif text-lg leading-tight">{t.name}</span>

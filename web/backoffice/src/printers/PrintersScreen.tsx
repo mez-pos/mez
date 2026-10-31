@@ -63,7 +63,7 @@ export function PrintersScreen() {
         </Card>
       )}
       {data && data.printers.length > 0 && (
-        <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_var(--aside)]">
           <PrinterTable
             printers={data.printers}
             stations={data.stations}

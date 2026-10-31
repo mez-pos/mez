@@ -2,7 +2,18 @@
 // server's: the day's list, the collected total, an order's own totals. These
 // only count rows, filter them, and word them.
 
-import type { DayOrderItem, DayOrderResponse, DayStatus, GuestRoundProgress, OrderResponse, PastBillResponse, TenderResponse } from "../../../shared/api-types";
+import type {
+  DayOrderItem,
+  DayOrderResponse,
+  DayStatus,
+  GuestRoundProgress,
+  Money,
+  OrderResponse,
+  OrderStatus,
+  PastBillResponse,
+  TenderResponse,
+  TotalsResponse,
+} from "../../../shared/api-types";
 import { serviceLabels } from "../register/rail-logic";
 import { methodNames } from "../tender/tender-logic";
 import { voidable } from "./bills-logic";
@@ -153,4 +164,70 @@ export function paymentText(tenders: readonly TenderResponse[]): string | null {
 /** The payments Void can act on. */
 export function voidableTenders(tenders: readonly TenderResponse[]): TenderResponse[] {
   return tenders.filter(voidable);
+}
+
+/** Where the money on an order stands, for the panel's head: what is due, or what was paid. */
+export interface Standing {
+  readonly word: "Amount due" | "Paid";
+  readonly amount: Money;
+  readonly tone: "warning" | "success";
+}
+
+/**
+ * What is due while anything is, else what was paid while anything stands
+ * paid; null for an order with neither, which its chip says enough about. The
+ * head shows it beside the status, so a paid order still open reads as paid
+ * without scrolling to its totals (TBS-16).
+ */
+export function standing(totals: Pick<TotalsResponse, "balance_due" | "net_paid">): Standing | null {
+  if (totals.balance_due.minor > 0) return { word: "Amount due", amount: totals.balance_due, tone: "warning" };
+  if (totals.net_paid.minor > 0) return { word: "Paid", amount: totals.net_paid, tone: "success" };
+  return null;
+}
+
+/** What the panel needs to know of an order to choose its buttons. */
+export interface BillFacts {
+  readonly status: OrderStatus;
+  /** Money is still due on it. */
+  readonly owed: boolean;
+  /** It has an invoice. */
+  readonly invoiced: boolean;
+  /** Something on it can still be credited. */
+  readonly creditable: boolean;
+  /** How many of its payments Void can act on. */
+  readonly voidable: number;
+  /** An order to collect that has not been handed over. */
+  readonly collecting: boolean;
+}
+
+/** The panel's buttons, each drawn only when it does something. More holds Invoice, History and Void. */
+export interface BillActions {
+  readonly takeBalance: boolean;
+  readonly handOver: boolean;
+  readonly openOrder: boolean;
+  readonly pay: boolean;
+  readonly reprint: boolean;
+  readonly refund: boolean;
+  readonly invoice: boolean;
+  readonly voidPayment: boolean;
+}
+
+/**
+ * Which of the panel's actions apply. A button that could only be drawn shut
+ * is left out (TBS-16): Pay on a bill that owes nothing or is saved, Refund
+ * on one that owes or has nothing left to credit, the invoice's three before
+ * there is an invoice. History is always under More.
+ */
+export function billActions(o: BillFacts): BillActions {
+  const stillOpen = o.status !== "closed" && o.status !== "reopened";
+  return {
+    takeBalance: o.owed && o.status === "reopened",
+    handOver: o.collecting,
+    openOrder: stillOpen,
+    pay: stillOpen && o.owed && o.status !== "held",
+    reprint: o.invoiced,
+    refund: o.invoiced && o.creditable && !o.owed,
+    invoice: o.invoiced,
+    voidPayment: o.voidable > 0,
+  };
 }

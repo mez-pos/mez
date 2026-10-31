@@ -14646,3 +14646,23 @@ kept to match it.
 Cost: thirty-odd sessions of work, each a task in Phase 17. A change to `web/shared` (tokens,
 Button, Modal, Toast, DietMark) changes mez-cloud's account area too, which is rebuilt against
 it.
+
+## ADR-382 - A pixel breakpoint never shares a property with a named one
+2026-10 · Status: accepted, 2026-10-31, found in Phase 17's device-fit pass (ADR-381).
+Context: Tailwind v4 sorts variants into the built CSS in its own order, not the order of the
+class list. Two cases were found where that order silently undid a layout. Arbitrary width
+breakpoints (`min-[1700px]:`, `min-[1800px]:`) are written *before* the named ones (`xl:`,
+`2xl:`), so a `min-[1700px]:grid-cols-...` on an element that also had an `xl:grid-cols-...`
+never took effect at any width: the back office's dashboard, sales, menu and stock columns had
+four such dead rules. Arbitrary height media (`[@media(max-height:900px)]:`) are written
+*after* `short:` (`max-height: 820px`), so a 900px trim beat the 820px one on a 768 screen: the
+lock pad's `[@media(max-height:800px)]:mt-4` never applied.
+Decision: a pixel breakpoint, or an arbitrary media variant, is used only against an
+unprefixed class, never on a property that a named breakpoint or `short:` on the same element
+also sets. Where a band between two heights is wanted beside `short:`, it is written closed at
+both ends (`[@media(min-height:821px)_and_(max-height:900px)]:`). Widths come from `lg`, `xl`
+and `2xl`; heights from `short:`.
+Because: neither failure shows in a test or a type check; only the built CSS or a screenshot
+at the size shows it, and the audit's screenshots are how these were found.
+Cost: none. The four remaining `min-[1700px]`/`min-[1800px]` classes (ItemEditor, CategoryRail,
+DashLists) each sit against an unprefixed class and work.

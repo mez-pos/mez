@@ -23,7 +23,8 @@ on.
 Inside the frame (`backoffice-shell.md`). "Settings" in the serif, then a rail
 beside the section open; under 1024px the rail sits above it.
 
-- **The rail, 290px, a card:**
+- **The rail, a card at the back office's side width** (`w-aside`: 288px at
+  1024, 328px at 1366, 380px from 1584; TECH-17):
   - The sections, an icon and a name each, 48px, the current one the
     terracotta fill. One not built is muted with a faint **SOON** and is not
     a link.

@@ -6,9 +6,8 @@
 import { UsersIcon } from "lucide-react";
 import type { Money as Amount, OrderResponse, SplitResponse } from "../../../shared/api-types";
 import { Button, Money } from "../../../shared/ui";
-import { cx } from "../../../shared/ui/cx";
 import { payerLabel, splitNames } from "./split-logic";
-import { ColumnHeading, GuestCard, SplitFrame, modeTile, modeTileOn, type ShareLine } from "./SplitParts";
+import { ColumnHeading, GuestCard, GuestGrid, SplitFrame, type ShareLine } from "./SplitParts";
 
 const staleText = "The bill changed after it was split. Change the split and make it again.";
 
@@ -42,11 +41,11 @@ export function SplitShares({ order, title, split, amountsKeyed, paid, current, 
       return [{ id, label: `${line.qty} × ${line.name}`, amount: by === 1 ? line.due : null, sharedBy: by }];
     });
 
+  // The mode is fixed once the split is in use: named in the title bar, not chosen.
+  const mode = <p className="inline-flex min-h-8 shrink-0 items-center rounded-pill bg-sunken px-3 text-sm font-semibold">{splitNames[split.kind]}</p>;
+
   const aside = (
     <>
-      <ColumnHeading>Split mode</ColumnHeading>
-      <p className={cx(modeTile, modeTileOn)}>{splitNames[split.kind]}</p>
-      <div aria-hidden="true" className="my-5 h-px bg-line" />
       <ColumnHeading>Shares</ColumnHeading>
       <p className="text-base text-fg">
         {paid.size} of {split.shares.length} paid
@@ -68,28 +67,30 @@ export function SplitShares({ order, title, split, amountsKeyed, paid, current, 
       <p className="min-w-0 flex-1 text-base text-fg-muted" aria-live="polite">
         Paid <Money amount={money(taken)} className="font-bold text-fg" /> of <Money amount={split.total} />
       </p>
-      <Button onClick={onBack} disabled={disabled} size="charge" className="w-40">
+      <Button onClick={onBack} disabled={disabled} size="charge" className="xl:w-40">
         Back
       </Button>
     </>
   );
 
   return (
-    <SplitFrame heading={`Split bill · ${title}`} totalLabel="Still owed" total={order.totals.balance_due} aside={aside} footer={footer}>
-      {split.shares.map((s) => {
-        const done = paid.has(s.payer);
-        const name = payerLabel(split.kind, s.payer, amountsKeyed);
-        return (
-          <GuestCard key={s.payer} seat={s.payer + 1} name={name} paid={done} lines={linesOf(s.line_ids)} due={s.amount}>
-            {!done && (
-              // One green button: the share that is next. The others can still be taken first.
-              <Button variant={s.payer === current ? "primary" : "secondary"} disabled={disabled || stale} onClick={() => onCollect(s.payer)}>
-                Collect <Money amount={s.amount} />
-              </Button>
-            )}
-          </GuestCard>
-        );
-      })}
+    <SplitFrame title={title} totalLabel="Still owed" total={order.totals.balance_due} mode={mode} aside={aside} footer={footer}>
+      <GuestGrid>
+        {split.shares.map((s) => {
+          const done = paid.has(s.payer);
+          const name = payerLabel(split.kind, s.payer, amountsKeyed);
+          return (
+            <GuestCard key={s.payer} seat={s.payer + 1} name={name} paid={done} lines={linesOf(s.line_ids)} due={s.amount}>
+              {!done && (
+                // One green button: the share that is next. The others can still be taken first.
+                <Button variant={s.payer === current ? "primary" : "secondary"} disabled={disabled || stale} onClick={() => onCollect(s.payer)}>
+                  Collect <Money amount={s.amount} />
+                </Button>
+              )}
+            </GuestCard>
+          );
+        })}
+      </GuestGrid>
     </SplitFrame>
   );
 }

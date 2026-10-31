@@ -36,13 +36,23 @@ Inside the frame (`backoffice-shell.md`).
 
 ### Items (D18)
 
-Three cards side by side from 1280px (220px, 300px, the rest); under that
-the editor drops below the other two.
+Three cards side by side from 1280px: the categories at the sidebar width
+(`w-side`, 184 to 240px), the items at the back office's side width
+(`w-aside`, 288 to 380px), and the editor the rest, so the editor is what
+gives as the screen narrows (TECH-17). From 1024px the categories and the
+items sit side by side and the editor drops below them; under 1024px all
+three stack. At 1366x768 that is 191px, 328px and about 527px for the
+editor; at 1024x768, 184px beside the items, and the editor the full width
+below.
 
-- **Categories:** "Categories" in the serif with a round **+**. Then **All
-  items**, **Popular**, and each category in order, with its count; a
-  retired one says "Retired". Under the list, for the category chosen:
-  **Rename**, **Move up**, **Move down**, and **Retire** or **Bring back**.
+- **Categories:** "Categories" in the serif. Then **All items**,
+  **Popular**, and each category in order, with its count; a retired one
+  says "Retired". A long name wraps to a second line rather than losing its
+  end. The list's last row is **+ Add a category** in terracotta: at the
+  sidebar's 184px the design's round **+** beside the title does not fit.
+  Under the list, for the category chosen: **Rename**, **Move up**, **Move
+  down**, and **Retire** or **Bring back**. The card's padding is 12px under
+  1536px, 16px from there.
 - **Menu items (68):** the title with its count, and a select for the
   order: **Menu order**, **A–Z**, **Price**. Each row is one button: the
   photo or a plain tile, the name, the price and a chip (**Active**, **Sold
@@ -59,10 +69,20 @@ the editor drops below the other two.
   - Two toggles: **Choices** (the groups the item offers, in order, with
     arrows and Remove, and **Offer another**) and **Kitchen and tax**
     (**Made at**, a station; **Course**).
-  - Beside the fields, or under them: the **photo** (a preview, **Choose a
-    photo**, **Remove**); **Tags** (the diet mark on the card, **Gluten
-    free**, **Popular**); and **Save changes** or **Add item** (the
-    primary).
+  - Beside the fields from 1700px wide, in a column the sidebar width
+    (`w-side`), or under them below that: the **photo** (a preview,
+    **Choose a photo**, **Remove**) and **Tags** (the diet mark on the card,
+    **Gluten free**, **Popular**).
+  - **The save bar**, at the editor's foot at every width (ADR-381): a
+    card holding "Unsaved changes" (or "Saving") at the left, a live
+    region, while the form differs from what is saved, then **Cancel** and
+    **Save changes** or **Add item** (the primary). It sticks to the bottom
+    of the screen while the editor runs on below it and rests under the
+    editor once its end is in view, so at 1366x768 Save is in sight
+    whichever field is being typed in, the tags included. "Unsaved changes"
+    reads the form as the server would keep it: "180" for "180.00" and
+    spaces at either end are no change. On a screen 820px tall or less the
+    editor card's padding is 16px and the bar's 8px top and bottom.
 - **The price notice.** Typing a different price on an item shows, under
   the price, before Save: "Orders already open keep ₹180.00. Lines rung up
   after you save are ₹200.00."
@@ -302,9 +322,10 @@ the tax settings link items still without an HSN code this way.
   in one click.
 - Every number tabular and right-aligned: prices, counts, HSN.
 - No drag: the arrows are the way to reorder.
-- Opening another item or leaving the screen drops an unsaved edit without
-  asking, and an item changed on another screen while it is open is saved
-  over.
+- Opening another item or leaving the screen still drops an unsaved edit
+  without asking (ADR-381 reverses this; Phase 17, Task 16), though the save
+  bar now says "Unsaved changes" while there is one. An item changed on
+  another screen while it is open is saved over.
 - The list no longer shows an item's tax class, station, course or HSN:
   they are in the editor.
 
@@ -316,12 +337,12 @@ is a copy to read. Changes are made at the venue." is over the three views.
 
 - **Items:** search, Show and Order stay: they change nothing. There is no
   Add New Item. The Spreadsheet pill offers Export the menu alone. The
-  categories card has no "+" and the chosen category no Rename, arrows or
-  Retire. An item's row opens it and has no "...". The form's title is
-  "Menu item"; every field, the photo and the tags are disabled; Choices
-  and Kitchen and tax still switch, since each shows half the item; and
-  the sentence is where Cancel and Save were. With nothing open: "Pick an
-  item to read it."
+  categories card has no Add a category and the chosen category no Rename,
+  arrows or Retire. An item's row opens it and has no "...". The form's
+  title is "Menu item"; every field, the photo and the tags are disabled;
+  Choices and Kitchen and tax still switch, since each shows half the item;
+  the sentence is under the tags; and there is no save bar. With nothing
+  open: "Pick an item to read it."
 - **Choices:** the table without its last column.
 - **Stations and courses:** each card without Add, and each row without
   its buttons.

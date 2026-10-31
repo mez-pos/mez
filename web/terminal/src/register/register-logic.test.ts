@@ -6,6 +6,7 @@ import {
   choiceCount,
   defaultModifiers,
   dietFilterActive,
+  dietSummary,
   filterItems,
   fold,
   itemsForView,
@@ -169,6 +170,19 @@ describe("filterItems", () => {
   it("leaves an item with no diet out of any diet filter, but not out of none", () => {
     expect(names({ veg: true, nonVeg: true, vegan: true })).not.toContain("Plain toast");
     expect(dietFilterActive({ ...noDietFilter, glutenFree: true })).toBe(true);
+  });
+});
+
+describe("dietSummary", () => {
+  const cases: [string, Partial<typeof noDietFilter>, string][] = [
+    ["nothing on", {}, "Diet"],
+    ["one diet", { veg: true }, "Diet: Veg"],
+    ["gluten free alone", { glutenFree: true }, "Diet: Gluten Free"],
+    ["two on", { veg: true, vegan: true }, "Diet: 2 on"],
+    ["all four", { veg: true, nonVeg: true, vegan: true, glutenFree: true }, "Diet: 4 on"],
+  ];
+  it.each(cases)("%s", (_name, f, want) => {
+    expect(dietSummary({ ...noDietFilter, ...f })).toBe(want);
   });
 });
 

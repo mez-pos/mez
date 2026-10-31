@@ -1,7 +1,9 @@
 // The three steps along the top of the payment screen (D07): Payment, Split
 // Bill, Complete. The first two are how to get between paying and splitting;
-// Complete is where a paid bill arrives, never a button. And under them, on the
-// payment step, the method tiles.
+// Complete is where a paid bill arrives, never a button, so it is drawn as a
+// plain label with no pill to tap. A paid bill shows no strip at all: the
+// invoice is headed "Paid in full" (ADR-381). And under them, on the payment
+// step, the method tiles.
 
 import { BanknoteIcon, CreditCardIcon, QrCodeIcon, type LucideIcon } from "lucide-react";
 import type { PaymentMethod } from "../../../shared/api-types";
@@ -28,8 +30,8 @@ export function PaySteps({ step, disabled, onPayment, onSplit }: PayStepsProps) 
       {steps.map((s, i) => {
         const on = s.id === step;
         const shape = cx(
-          "flex min-h-14 w-full items-center justify-center gap-3 rounded-card px-3 text-lg font-semibold 2xl:min-h-15",
-          on ? "bg-accent text-accent-fg" : "bg-sunken text-fg-muted",
+          "flex min-h-14 w-full items-center justify-center gap-3 rounded-card px-3 text-lg font-semibold short:min-h-12 2xl:min-h-15",
+          on ? "bg-accent text-accent-fg" : s.id === "complete" ? "text-fg-muted" : "bg-sunken text-fg-muted",
         );
         const body = (
           <>
@@ -93,7 +95,8 @@ export function MethodTiles({ method, disabled, onChoose }: MethodTilesProps) {
             disabled={disabled}
             onClick={() => onChoose(m)}
             className={cx(
-              "flex h-20 flex-col items-center justify-center gap-2 rounded-card border text-lg 2xl:h-29 2xl:gap-3",
+              // On a short screen the icon sits beside the word, and the row is a key's height.
+              "flex h-20 flex-col items-center justify-center gap-2 rounded-card border text-lg short:h-14 short:flex-row short:gap-3 2xl:h-29 2xl:gap-3",
               "outline-offset-2 outline-attention focus-visible:outline-3 disabled:opacity-40",
               on ? "border-accent bg-accent-tint font-bold text-accent-text" : "border-line-strong bg-raised font-semibold text-fg hover:bg-raised-high",
             )}

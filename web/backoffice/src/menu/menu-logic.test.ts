@@ -4,6 +4,7 @@ import type { EditorItem, MenuEditor } from "../../../shared/api-types";
 import {
   choices,
   dietOptions,
+  formChanged,
   itemFormFrom,
   itemFromSearch,
   itemsOf,
@@ -219,6 +220,44 @@ describe("priceChange", () => {
   });
   it("counts going down to free as a change", () => {
     expect(priceChange(latte, "0")).toEqual({ was: inr(18000), now: inr(0) });
+  });
+});
+
+describe("formChanged", () => {
+  const saved = itemFormFrom(item(5, 10, "Masala dosa", 14000, { hsn: "996331", description: "A crisp rice crepe.", diet: "veg" }));
+  const blank = newItemForm(menu, 10);
+
+  it.each([
+    ["nothing typed", {}],
+    ["the same price written another way", { price: "140" }],
+    ["the price with spaces round it", { price: " 140.00 " }],
+    ["spaces round the name, the HSN and the description", { name: " Masala dosa ", hsn: "996331 ", description: " A crisp rice crepe." }],
+  ])("is no change for %s", (_, patch) => {
+    expect(formChanged(saved, { ...saved, ...patch }, "INR")).toBe(false);
+  });
+
+  it.each([
+    ["a new name", { name: "Plain dosa" }],
+    ["a new price", { price: "150" }],
+    ["a price that cannot be read yet", { price: "14o" }],
+    ["an emptied price", { price: "" }],
+    ["another category", { categoryId: 11 }],
+    ["another tax class", { taxClassId: 2 }],
+    ["another station", { stationId: 1 }],
+    ["an emptied HSN", { hsn: "" }],
+    ["a new description", { description: "Crisp." }],
+    ["another mark", { diet: "vegan" as const }],
+    ["gluten free ticked", { glutenFree: true }],
+    ["popular ticked", { popular: true }],
+  ])("is a change for %s", (_, patch) => {
+    expect(formChanged(saved, { ...saved, ...patch }, "INR")).toBe(true);
+  });
+
+  it("holds a new item's blank form as saved until something is typed", () => {
+    expect(formChanged(blank, blank, "INR")).toBe(false);
+    expect(formChanged(blank, { ...blank, name: "   " }, "INR")).toBe(false);
+    expect(formChanged(blank, { ...blank, name: "Chai" }, "INR")).toBe(true);
+    expect(formChanged(blank, { ...blank, price: "60" }, "INR")).toBe(true);
   });
 });
 

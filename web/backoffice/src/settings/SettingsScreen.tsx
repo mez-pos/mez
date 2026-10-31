@@ -83,7 +83,7 @@ function Frame({ section }: { section: SettingsSection }) {
   return (
     <div className="flex flex-col gap-4">
       <h1 className="font-serif text-total">Settings</h1>
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[290px_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[var(--aside)_minmax(0,1fr)]">
         <Rail current={section} onGo={goTo} />
         <div className="flex min-w-0 flex-col gap-4">
           {section.id === "venue" && (

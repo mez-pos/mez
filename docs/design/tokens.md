@@ -142,8 +142,14 @@ script line per screen region at most.
 | `--text-lg` | `17px` | Sub-headings, emphasised rows |
 | `--text-xl` | `22px` | Section titles (serif) |
 | `--text-total` | `32px` | Page titles, the one total on a screen (serif) |
-| `--text-kitchen` | `26px` | The kitchen display's lines (ADR-091) |
-| `--text-display` | `44px` | The kitchen display's table and timer; the login title |
+| `--text-kitchen` | `26px` to `36px` | The kitchen display's lines (ADR-091) |
+| `--text-display` | `44px` to `56px` | The kitchen display's table and timer; the login title |
+
+The kitchen's two sizes grow with the screen's shorter side (ADR-381):
+`clamp(26px, 0.5rem + 2.4vmin, 36px)` and `clamp(44px, 1rem + 3.7vmin,
+56px)`. A 768-tall screen gets the floor, a 1080 one about 34px and
+56px, so a big screen at the pass reads from two metres. They never
+shrink below the floor.
 | `--text-hero` | `66px` | The login screen's headline, from 1536px wide (D01) |
 
 Kept from before, because the reasons have not changed (ADR-014):
@@ -162,7 +168,8 @@ must work at all of them without a fixed count of anything (ADR-255).
 |---|---|---|---|---|
 | `--side` | `clamp(11.5rem, 14vw, 15rem)` | `w-side` | 240px | A sidebar of categories or views |
 | `--rail` | `clamp(20rem, 26vw, 25rem)` | `w-rail` | 400px | The order, table and payment rails |
-| `--panel` | `clamp(17rem, 23vw, 27.5rem)` | `w-panel` | 384 to 440px | The Orders screen's panel |
+| `--panel` | `clamp(17rem, 23vw, 27.5rem)` | `w-panel` | 384 to 440px | The Orders screen's panel; the tender's keypad below 2xl and the split's column (ADR-381) |
+| `--aside` | `clamp(18rem, 24vw, 23.75rem)` | `w-aside` | 380px | A back-office screen's side column; the kitchen board's side column from 2xl (ADR-381) |
 
 Each is a share of the viewport, held between a floor at which its content
 still fits and the drawn width. The middle of a screen is what gives.
@@ -170,7 +177,7 @@ still fits and the drawn width. The middle of a screen is what gives.
 **Rules:**
 
 - **No fixed-width rail or sidebar in a `.tsx` file.** A column beside the
-  screen's content takes one of the three widths above. A new kind of
+  screen's content takes one of the four widths above. A new kind of
   column adds a token here first.
 - **Grids of cards are `auto-fill`**, never a fixed column count: as many
   as the width holds, with a `minmax` floor the card still reads at.

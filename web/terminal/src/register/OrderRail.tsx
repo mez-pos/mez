@@ -5,9 +5,15 @@
 // screen, a share of the width on a smaller one, never less than the totals
 // and the two buttons need.
 //
-// A waiter's rail (T02): how it is served is chosen in the top bar and shown
-// here as a chip, each line says its course, Clear takes off what the kitchen
-// has not seen, and the foot is Save and Send to Kitchen.
+// On a short screen (TILL-2) the order's lines get the room: once the order is
+// open its service row gives way, since the title already says how it is
+// served (an order at a table is always dine-in, and takeaway and delivery
+// have no table); the lines and the foot close up.
+//
+// A waiter's rail (T02): how it is served, and how many guests, are in the top
+// bar, so the head is the table's name and the "..." alone and the name is
+// never cut short (TBS-13). Each line says its course, Clear takes off what
+// the kitchen has not seen, and the foot is Save and Send to Kitchen.
 
 import { ArmchairIcon, ChevronDownIcon, UsersIcon } from "lucide-react";
 import { useState } from "react";
@@ -73,6 +79,7 @@ export function OrderRail(props: OrderRailProps) {
   const chargeBlock = blockFor(order, ticket.pending.length);
   const chargeLabel = labelFor(order);
   const clearable = clearableLines(order);
+  const locked = serviceLocked(orderId);
 
   /** Clear: each line the kitchen has not seen, taken off in turn as its own bin would. */
   const clear = async () => {
@@ -90,7 +97,7 @@ export function OrderRail(props: OrderRailProps) {
 
   return (
     <aside aria-label="Order" className="flex w-rail shrink-0 flex-col border-l border-line bg-chrome">
-      <header className="flex items-center gap-3 border-b border-line px-4 py-3 2xl:px-5 2xl:py-4">
+      <header className="flex items-center gap-3 border-b border-line px-4 py-3 short:py-2 2xl:px-5 2xl:py-4">
         <div className="min-w-0 flex-1">
           {pickTable ? (
             <button
@@ -105,17 +112,12 @@ export function OrderRail(props: OrderRailProps) {
           ) : (
             <h2 className="truncate font-serif text-xl">{title}</h2>
           )}
-          {orderId && <p className="mt-0.5 truncate font-mono text-sm text-fg-muted">{orderId}</p>}
+          {orderId && !waiter && <p className="mt-0.5 truncate font-mono text-sm text-fg-muted">{orderId}</p>}
         </div>
-        {guests && (
-          <span className="inline-flex min-h-8 items-center gap-2 rounded-pill bg-sunken px-3 text-sm font-semibold">
+        {guests && !waiter && (
+          <span className="inline-flex min-h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-pill bg-sunken px-3 text-sm font-semibold">
             <UsersIcon aria-hidden="true" size={15} />
             {guests}
-          </span>
-        )}
-        {waiter && (
-          <span className="inline-flex min-h-8 items-center rounded-pill bg-chip-success-bg px-3 text-sm font-bold text-chip-success-fg">
-            {serviceLabels[service]}
           </span>
         )}
         <MoreActions
@@ -136,13 +138,13 @@ export function OrderRail(props: OrderRailProps) {
       </header>
 
       {!waiter && (
-        <div className="border-b border-line px-4 py-3 2xl:px-5 2xl:py-3.5">
-          <ServiceControl value={service} locked={serviceLocked(orderId)} onChange={chooseService} />
+        <div className={cx("border-b border-line px-4 py-3 short:py-2 2xl:px-5 2xl:py-3.5", locked && "short:hidden")}>
+          <ServiceControl value={service} locked={locked} onChange={chooseService} />
         </div>
       )}
 
       {held && (
-        <div role="status" className="flex items-center justify-between gap-3 border-b border-line bg-raised px-5 py-3">
+        <div role="status" className="flex items-center justify-between gap-3 border-b border-line bg-raised px-5 py-3 short:py-2">
           <span className="flex items-center gap-2 text-sm text-fg-2">
             <StatusChip status={{ kind: "order", status: "held" }} /> Saved: nothing can be added.
           </span>

@@ -1,6 +1,8 @@
 // The payment screen's left panel (D07): the way back to the order, where it
 // is and how it is served, its lines, what it comes to, what has been paid, and
-// the two things that can still change the bill: a discount and a note.
+// the two things that can still change the bill: a discount and a note. The
+// totals and the payments are pinned at the foot, as the order rail's are, so
+// the balance never scrolls away; the lines scroll above them (ADR-381).
 
 import { ArrowLeftIcon, FileTextIcon, TagIcon, UsersIcon, UtensilsIcon } from "lucide-react";
 import type { OrderResponse, TenderResponse } from "../../../shared/api-types";
@@ -28,12 +30,12 @@ export function PaySummary({ order, title, busy, onDiscount, onNote, onBack }: P
 
   return (
     <aside aria-label="Order" className="flex w-rail shrink-0 flex-col border-r border-line bg-chrome">
-      <header className="px-5 pb-4 pt-5">
+      <header className="px-5 pb-4 pt-5 short:pb-3 short:pt-4">
         <Button disabled={busy} onClick={onBack} className="w-full justify-start">
           <ArrowLeftIcon aria-hidden="true" size={18} />
           Back to Order
         </Button>
-        <div className="mt-5 flex items-center gap-3">
+        <div className="mt-5 flex items-center gap-3 short:mt-3">
           <h1 className="min-w-0 truncate font-serif text-total leading-tight">{title}</h1>
           {/* An order with no table is headed by how it is served: no need to say it twice. */}
           {title !== serviceLabels[order.service] && (
@@ -43,7 +45,7 @@ export function PaySummary({ order, title, busy, onDiscount, onNote, onBack }: P
             </span>
           )}
         </div>
-        <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-fg-muted">
+        <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-fg-muted short:mt-1">
           {guests && (
             <span className="inline-flex items-center gap-1.5">
               <UsersIcon aria-hidden="true" size={15} />
@@ -54,7 +56,7 @@ export function PaySummary({ order, title, busy, onDiscount, onNote, onBack }: P
         </p>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4">
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4 short:pb-3">
         <ol aria-label="Items">
           {lines.map((line) => (
             <li key={line.id} className="flex items-start gap-3 border-b border-line-soft py-3">
@@ -71,20 +73,8 @@ export function PaySummary({ order, title, busy, onDiscount, onNote, onBack }: P
           ))}
         </ol>
 
-        <div className="mt-5">
-          <OrderTotals order={order} currency={order.currency} />
-        </div>
-
-        {payments.length > 0 && (
-          <ol aria-label="Payments taken" className="mt-4 border-t border-line pt-3">
-            {payments.map((t) => (
-              <PaymentRow key={t.id} tender={t} />
-            ))}
-          </ol>
-        )}
-
         {(onDiscount || onNote) && (
-          <div className="mt-5 grid gap-2.5">
+          <div className="mt-5 grid gap-2.5 short:mt-3">
             {onDiscount && (
               <Button disabled={busy} onClick={onDiscount} className="w-full justify-start">
                 <TagIcon aria-hidden="true" size={17} />
@@ -105,6 +95,18 @@ export function PaySummary({ order, title, busy, onDiscount, onNote, onBack }: P
           </div>
         )}
       </div>
+
+      <footer className="shrink-0 border-t border-line px-5 pb-4 pt-3 short:pb-3">
+        <OrderTotals order={order} currency={order.currency} />
+        {payments.length > 0 && (
+          // A bill split many ways scrolls its payments here rather than push the lines off.
+          <ol aria-label="Payments taken" className="mt-3 max-h-40 overflow-y-auto border-t border-line pt-2">
+            {payments.map((t) => (
+              <PaymentRow key={t.id} tender={t} />
+            ))}
+          </ol>
+        )}
+      </footer>
     </aside>
   );
 }

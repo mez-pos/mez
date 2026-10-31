@@ -135,12 +135,30 @@ export function statRows(stats: KitchenStatsResponse): StatRow[] {
   ];
 }
 
+type Where = Pick<KitchenTicketResponse, "table" | "table_id" | "order_id">;
+
+export interface WhereParts {
+  /** "Counter" for a counter order, said smaller; null for a table. */
+  lead: string | null;
+  /** What a runner reads first: "T4", "T4 + T7", "Table 4", or the order's short id. */
+  main: string;
+}
+
+/**
+ * Where a ticket goes, in the card's two sizes. A counter order's short id is
+ * what tells two of them apart, so it takes the big type and "Counter" the
+ * smaller: the pair then fits a 1024 display's column on one line (ADR-381).
+ */
+export function whereParts(t: Where): WhereParts {
+  if (t.table) return { lead: null, main: t.table };
+  if (t.table_id) return { lead: null, main: `Table ${t.table_id}` };
+  return { lead: "Counter", main: t.order_id.replace(/^ord_/, "").slice(0, 4) };
+}
+
 /** Where a ticket goes: "T4", "T4 + T7", or "Counter · NMRN" for a counter order. */
-export function whereText(t: Pick<KitchenTicketResponse, "table" | "table_id" | "order_id">): string {
-  if (t.table) return t.table;
-  if (t.table_id) return `Table ${t.table_id}`;
-  const short = t.order_id.replace(/^ord_/, "").slice(0, 4);
-  return `Counter · ${short}`;
+export function whereText(t: Where): string {
+  const { lead, main } = whereParts(t);
+  return lead ? `${lead} · ${main}` : main;
 }
 
 export interface AllDay {

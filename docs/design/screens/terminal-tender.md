@@ -22,37 +22,55 @@ Inside the frame (`terminal-shell.md`), from **Pay** on the order screen or
 **Settle Bill** on Tables. The order is down the left, the work in the
 middle, and once the bill is paid a panel on the right.
 
-- **The order, 400px, chrome:** **Back to Order**; where it is in the serif
-  ("Table T4") with how it is served as a pill; the guests and the order's
-  id; the lines that are not voided, each with its choices, "×2" and what it
-  comes to; the totals, tax by tax, as on the order screen; **Payments
+- **The order, `w-rail`, chrome:** **Back to Order**; where it is in the
+  serif ("Table T4") with how it is served as a pill; the guests and the
+  order's id; then, scrolling, the lines that are not voided, each with its
+  choices, "×2" and what it comes to, and **Add Discount** and **Add order
+  note** under them until the bill is paid or invoiced. **Pinned at the
+  foot**, as the order rail's are, so the Balance never scrolls away
+  (ADR-381): the totals, tax by tax, as on the order screen, and **Payments
   taken**, a row each ("Paid · Card · 4417", and "Tip, apart from the bill"
-  under it); then **Add Discount** and **Add order note**, until the bill is
-  paid or invoiced. A script line at the foot from 1536px.
+  under it), which scroll on their own past about five rows.
 - **The steps**, across the top of the middle: **1 Payment**, **2 Split
   Bill**, **3 Complete**. The one in hand is green. Payment and Split Bill
-  are buttons; Complete is where a paid bill arrives, never a button.
+  are buttons on the sunken fill; Complete is where a paid bill arrives,
+  never a button, so it is a plain label with no fill. A paid bill shows no
+  strip: "Paid in full" heads the invoice (ADR-381), so nothing wraps beside
+  the paid panel at 1024.
 
 **Step 1, Payment:**
 
 - **Select payment method:** three tiles, **Cash**, **Card**, **UPI**, the
   chosen one the green tint.
-- Under them, cards side by side, three across from 1536px, two with the pad
-  under them below that:
+- Under them, three cards. From 1536px they sit side by side: the amount,
+  the tip (`--rail`) and the pad (`--side`). Below 1536px (ADR-381) the pad
+  (`--panel`) sits beside the amount, so an odd sum is keyed with the amount
+  to collect in view, and the tip goes under both, as wide as the two, its
+  choices and its sums in two columns:
   - **Amount:** "Amount to collect" (or "This share") and the figure large;
     a field the pad types into, "Amount received" for cash, "Amount" for card
     and UPI. For cash, the quick amounts: the exact sum, then the next round
-    sums above it, and **Custom**; and **Change to return** in a green box.
-    For card and UPI, one line: "Collect, take it on the card machine, then
-    mark it paid."
+    sums above it, and **Custom**, as many to a row as the card holds; and,
+    from 1536px, **Change to return** in a green box. For card and UPI, one
+    line: "Collect, take it on the card machine, then mark it paid."
   - **Add a tip?:** 5%, 10% and 15%, each with what it comes to, the chosen
     one mustard; **Custom amount**, a field the pad types into; then Bill,
     Tip and **To collect**.
   - **The pad** (`NumPad`, amount layout), typing into whichever field was
     last tapped.
-- **The foot, kept in sight:** what is in the way, or "A part payment:
+- **The foot, kept in sight:** once the cash handed over covers what is
+  owed, **Change ₹40.00** in the total's serif and the success ink, at
+  every size (ADR-381); otherwise what is in the way, or "A part payment:
   ₹200.00 stays owed."; and the one primary, 56px: **Complete payment ·
   ₹1,158.00** for cash, **Collect by Card · ₹1,158.00** for card and UPI.
+
+**At 1024x768 and 1366x768** (`short:`): the step strip is 48px, the
+method tiles 56px with the icon beside the word, and the cards' padding
+and gaps step down. With cash and a quick amount chosen, the amount to
+collect, the quick amounts, the pad, the change in the foot and the paying
+button are all in view without a scroll; the tip card starts under them
+and is a scroll away. At 1024 the quick amounts take two rows (three,
+then two); at 1366 one row.
 
 **After Collect, for card and UPI** (D08b), one card in the middle:
 
@@ -71,25 +89,38 @@ middle, and once the bill is paid a panel on the right.
 
 **Step 2, Split Bill** (D08a), a card filling the middle:
 
-- **The head:** "Split bill · Table T4" and the total, or "Still owed" after
-  a payment.
-- **Left, the mode:** **By item**, **Equally**, **Custom amounts**.
-  - By item: **Guests** on a stepper (2 to 19), then **Unassigned items**, each a
-    button that gives it to the guest picked and a **Share** that gives it to
-    every guest.
+- **The head:** "Split bill · Table T4", the mode, and the total, or "Still
+  owed" after a payment. The mode is a segmented control (ADR-381): **By
+  item**, **Equally**, **Custom amounts**, the chosen one the green tint,
+  their icons from 1280px. Below 1280px "Split bill ·" gives way (it is
+  still read aloud) so the head stays one row: the step strip above says it.
+- **Left, a column (`w-panel`) for what the mode needs:**
+  - By item: **Guests** on a stepper (2 to 19), "Tap an item to give it to
+    Guest 1, or share it between everyone.", and "Assign every item before
+    completing the split." while any is left.
   - Equally: Guests on a stepper (2 to 20).
   - Custom amounts: "Guest 1 pays", the pad and **Add guest**; what is left
     is one more guest, "The rest".
-- **Right, a card for each guest:** their number and name, **Pending** or
-  **Paid**, their items (an item shared says between how many), and **Due**.
-  By item a card is tapped to pick that guest. **Add another guest** after
-  the last.
-- **The foot:** what is in the way ("Assign every item before completing the
-  split."), **Back**, and **Complete split**.
-- **A split in use:** the same cards, with **Collect ₹355.00** on each not
-  yet paid, the next one green; "1 of 3 paid"; and **Change the split**.
-  Collect goes to step 1 for that share alone, which carries a strip saying
-  whose share it is and **All shares**.
+  - Once anything is paid, "By item is for a bill with nothing paid yet."
+- **Right, the wide column.** By item it starts with the work (ADR-381): the
+  guests as a row of chips, "Guest 1 ₹190.00", the picked one the green
+  tint, then **Unassigned items**, each a button that gives it to the guest
+  picked and a **Share** that gives it to every guest. Under them, and in
+  every mode, **a card for each guest**, as many across as the column holds:
+  their number and name, **Pending** or **Paid**, their items (an item
+  shared says between how many), and **Due**. By item a card is tapped to
+  pick that guest too. **Add another guest** after the last.
+- **The foot:** what is in the way, **Back**, and **Complete split**.
+- **A split in use:** the mode named in the head as a plain pill; the same
+  cards, with **Collect ₹355.00** on each not yet paid, the next one green;
+  "1 of 3 paid" and **Change the split** in the left column. Collect goes to
+  step 1 for that share alone, which carries a strip saying whose share it
+  is and **All shares**.
+
+**At 1024x768 and 1366x768** the split card fills the middle under the
+step strip, its head, padding and foot trimmed (`short:`). By item, the
+chips and four or more unassigned items show without a scroll; the guests'
+cards are under them, one across at 1024 and two at 1366.
 
 **Step 3, Complete:**
 
@@ -100,10 +131,12 @@ middle, and once the bill is paid a panel on the right.
   been reprinted. Under it: "The receipt went to the print queue with the
   payment. Print receipt prints a copy marked DUPLICATE and keeps the
   number."
-- **Right, 400px, on the sunken ground:** **Payment successful** in the
-  serif, the amount paid large, "Paid for ord_..." with where, how served and
-  by what; tips, apart; **Change to return** when cash is owed back; a script
-  thank-you; **Print receipt**; and **New Order** (terracotta, 56px).
+- **Right, `w-rail`, on the sunken ground:** **Payment successful** in the
+  serif's heading ink (ADR-381: terracotta asks for attention a paid bill
+  does not need), the amount paid large, "Paid for ord_..." with where, how
+  served and by what; tips, apart; **Change to return** when cash is owed
+  back; a script thank-you; **Print receipt**; and **New Order**
+  (terracotta, 56px). Its gaps step down on a short screen.
 
 ## Data
 
@@ -156,7 +189,7 @@ middle, and once the bill is paid a panel on the right.
 | Tap a method | Chooses it; clears the tip and the reference | | Cash starts at nothing; card and UPI at the balance |
 | Tap a field | The pad types into it | | |
 | Pad keys | Digits shift in from the right | | Card and UPI cannot type past the balance; the first digit starts a following amount afresh |
-| A quick amount | Cash received becomes it | | The change shows at once. With a tip, the exact sum is the bill and the tip |
+| A quick amount | Cash received becomes it | | The change shows at once, in the foot. With a tip, the exact sum is the bill and the tip |
 | A tip percentage | Sets the tip; a second tap takes it off | | To collect moves |
 | Complete payment (cash) | Sends the payment | `payment.tendered` | Paid in full: step 3. Otherwise the Received card |
 | Collect by Card or UPI | Starts the wait; nothing is sent | | The Waiting card |
@@ -198,7 +231,12 @@ middle, and once the bill is paid a panel on the right.
 
 - The paying button is 56px. Every other target is 48px or more.
 - Every number is tabular and right-aligned, but the large figures: Amount to
-  collect, Change to return, and the amount paid.
+  collect, Change to return (in the foot and the cards), and the amount
+  paid.
+- No fixed-width column: the order and paid panels take `w-rail`, the pad
+  `--panel` (or `--side` from 1536px), the tip `--rail` from 1536px, the
+  split's left column `w-panel`; the quick amounts and the guests' cards are
+  `auto-fill` grids (tokens.md, ADR-381).
 - One green commit per view: the paying button, Mark as paid, Complete split,
   or the next share's Collect. New Order is terracotta: it starts something,
   it does not take money.
@@ -207,7 +245,11 @@ middle, and once the bill is paid a panel on the right.
   with, and the payment row shows the two apart.
 - **Nothing here needs the internet.** The card machine and the UPI code are
   the venue's own; the screen waits to be told the money came.
-- At 1366x768 the payment step scrolls to reach the pad; the foot does not.
+- At 1024x768 and 1366x768 the amount to collect, the pad, the change due
+  and the paying button are in view together, and the order's Balance is
+  pinned in the summary. ADR-381 reverses what this spec accepted before
+  (the payment step scrolling to reach the pad at 1366, the change in the
+  card alone): the change is in the foot at every size.
 - A split and which shares are paid live on this screen only: a reload loses
   them, and the balance is still right.
 

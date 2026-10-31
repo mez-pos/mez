@@ -27,7 +27,10 @@ Inside the frame (`backoffice-shell.md`).
 
 ### Stock levels (D19)
 
-The table in a card, and beside it the week's wastage.
+The table in a card, and beside it the week's wastage: from 1280px a
+column at the back office's side width (`w-aside`, 307px at 1280, 328px at
+1366, 380px from 1584; TECH-17), the table the rest; under 1280px the
+wastage card sits under the table.
 
 | Column | Shows |
 |---|---|

@@ -27,12 +27,21 @@ it, the right column dropping below.
     issued. It is printing.", with **View the report**.
   - **Denomination count:** a card for each note and coin of the venue's
     currency, largest first (₹500 down to ₹1 for INR), four across from 1280px:
-    the face, a box for how many, and that row's value beside it.
-  - **Counted opening float:** the total, as the one total on the screen, in a
-    green panel.
-  - The error line, when the server refuses.
-  - **Cancel**, and **Open shift & start selling** with an open padlock (the
-    one primary, 56px).
+    the face as staff name it ("₹500", not "₹500.00"; a coin worth less than
+    the unit keeps its fraction, "$0.25"), a box for how many, and that row's
+    value beside it, in full.
+  - **The foot**, sticky (ADR-381): the card's last band stays at the bottom
+    of the screen while the denominations scroll under it, with a hairline
+    above it, and comes to rest at the card's foot. In it:
+    - the error line, when the server refuses;
+    - **Counted opening float:** the total, as the one total on the screen, in
+      a green panel;
+    - **Lock**, and **Open shift & start selling** with an open padlock (the
+      one primary, 56px).
+
+    The total and the two buttons share one row where they fit (1024 and 1366
+    wide); otherwise the buttons wrap under the total, and on a phone each
+    takes the full width.
 - **Right, 26.25rem:**
   - **Tonight's shift:** Outlet (the venue), Terminal (this device's name),
     and the person signed in against their role.
@@ -100,8 +109,12 @@ A float of nothing is allowed: some venues start an empty drawer.
 - One primary: Open shift & start selling.
 - Every number is tabular and right-aligned; every box and button 48px or
   taller.
-- At 768px high the float panel and the buttons are below the fold; the card
-  scrolls.
+- At 768px high the counted float and Open shift stay in view in the sticky
+  foot and the denominations scroll under it (ADR-381, which reverses the
+  scroll this line accepted, TILL-24). At 1024x768 the card is the screen's
+  width and the foot one row; at 1366x768 the card sits beside Tonight's
+  shift and the foot is still one row. Under 820px high (`short:`) the
+  foot's padding and the green panel's step down; no text changes size.
 
 ## Reference
 

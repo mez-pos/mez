@@ -1,8 +1,9 @@
 // The venue's floor plan (docs/design/screens/backoffice-floor.md): its
-// areas as tabs, each area's grid of tables, the chosen table's settings,
-// and the retired tables waiting to come back.
+// areas as tabs, each area's grid of tables, the chosen table's settings
+// beside the grid from 1280px (under it below that), and the retired tables
+// waiting to come back.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { AreaResponse, FloorResponse, TableResponse } from "../../../shared/api-types";
 import { OnAMirror } from "../../../shared/shell/OnAMirror";
 import { Button, Card, EmptyState, InboxIcon } from "../../../shared/ui";
@@ -46,7 +47,8 @@ export function FloorScreen() {
   const areaId = data ? areaToShow(data, areaChoice) : null;
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6">
+    // Wider from 1280px, where the chosen table's card takes a column beside the grid.
+    <div className="mx-auto flex max-w-5xl flex-col gap-6 short:gap-4 xl:max-w-7xl">
       <div className="flex flex-wrap items-baseline justify-between gap-4">
         <h1 className="font-serif text-total">Floor plan</h1>
         {mirror ? (
@@ -130,6 +132,17 @@ function AreaView({ data, areaId, api, readOnly, onChooseArea, onEdit }: AreaVie
   const cells = cellsOf(data, areaId);
   const chosen = data.tables.find((t) => t.id === chosenId && t.active && t.area_id === areaId) ?? null;
   const retired = retiredIn(data, areaId);
+  const empty = cells.every((row) => row.every((c) => c.table === null));
+  const card = useRef<HTMLDivElement>(null);
+  const shownId = chosen?.id ?? null;
+
+  // Under 1280px the card is under the grid, below the fold of a 768 screen:
+  // picking a table brings it up. Beside the grid it is in sight and nothing moves.
+  useEffect(() => {
+    if (shownId === null) return;
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    card.current?.scrollIntoView({ block: "nearest", behavior: still ? "auto" : "smooth" });
+  }, [shownId]);
 
   const run = (fn: () => Promise<void>, done: string) => {
     setBusy(true);
@@ -190,49 +203,63 @@ function AreaView({ data, areaId, api, readOnly, onChooseArea, onEdit }: AreaVie
           </Button>
         </div>
       )}
-      {cells.every((row) => row.every((c) => c.table === null)) && area.active && !readOnly && (
-        <p className="text-base text-fg-muted">Tap a cell to place a table.</p>
-      )}
-      <FloorGrid
-        cells={cells}
-        chosen={chosen?.id ?? null}
-        moving={moving}
-        readOnly={readOnly}
-        onCell={onCell}
-        onTable={(t) => {
-          setMoving(false);
-          setMessage(null);
-          setChosenId(t.id);
-        }}
-        onDrop={moveTable}
-      />
-      {message && (
-        <p role={message.error ? "alert" : "status"} className={message.error ? "text-base text-danger" : "text-base text-fg-2"}>
-          {message.text}
-        </p>
-      )}
+      {empty && area.active && !readOnly && <p className="text-base text-fg-muted">Tap a cell to place a table.</p>}
 
-      {chosen && (
-        <Card padding="lg" className="flex flex-col gap-3">
-          <h2 className="text-lg font-semibold">Table {chosen.name}</h2>
-          <p className="flex flex-wrap gap-x-4 text-base text-fg-2">
-            <span>{seatsText(chosen.seats)}</span>
-            <span className="capitalize">{chosen.shape}</span>
-            <span>{placeText(data, chosen)}</span>
-          </p>
-          <div hidden={readOnly} className="flex flex-wrap gap-tap-gap">
-            <Button disabled={busy} onClick={() => onEdit({ kind: "edit-table", table: chosen })}>
-              Edit
-            </Button>
-            <Button disabled={busy} onClick={() => setMoving(true)}>
-              Move
-            </Button>
-            <Button variant="danger" disabled={busy} onClick={() => run(() => api.retireTable(chosen.id), `Retired ${chosen.name}.`)}>
-              Retire
-            </Button>
+      {/* From 1280px the chosen table's card is a column beside the grid, and stays in
+          sight as the page scrolls; under that it follows the grid (BO-7). */}
+      <div className={cx("grid grid-cols-1 items-start gap-4", !empty && "xl:grid-cols-[minmax(0,1fr)_var(--aside)]")}>
+        <div className="flex min-w-0 flex-col gap-3">
+          <FloorGrid
+            cells={cells}
+            chosen={chosen?.id ?? null}
+            moving={moving}
+            readOnly={readOnly}
+            onCell={onCell}
+            onTable={(t) => {
+              setMoving(false);
+              setMessage(null);
+              setChosenId(t.id);
+            }}
+            onDrop={moveTable}
+          />
+          {message && (
+            <p role={message.error ? "alert" : "status"} className={message.error ? "text-base text-danger" : "text-base text-fg-2"}>
+              {message.text}
+            </p>
+          )}
+        </div>
+
+        {!empty && (
+          // With no table picked, only beside the grid: under it an empty column is a gap before the codes.
+          <div ref={card} className={cx("min-w-0 scroll-my-4 xl:sticky xl:top-0", !chosen && "hidden xl:block")}>
+            {chosen ? (
+              <Card padding="lg" className="flex flex-col gap-3 short:p-4">
+                <h2 className="text-lg font-semibold">Table {chosen.name}</h2>
+                <p className="flex flex-wrap gap-x-4 text-base text-fg-2">
+                  <span>{seatsText(chosen.seats)}</span>
+                  <span className="capitalize">{chosen.shape}</span>
+                  <span>{placeText(data, chosen)}</span>
+                </p>
+                <div hidden={readOnly} className="flex flex-wrap gap-tap-gap">
+                  <Button disabled={busy} onClick={() => onEdit({ kind: "edit-table", table: chosen })}>
+                    Edit
+                  </Button>
+                  <Button disabled={busy} onClick={() => setMoving(true)}>
+                    Move
+                  </Button>
+                  <Button variant="danger" disabled={busy} onClick={() => run(() => api.retireTable(chosen.id), `Retired ${chosen.name}.`)}>
+                    Retire
+                  </Button>
+                </div>
+              </Card>
+            ) : (
+              <Card className="text-base text-fg-muted">
+                {readOnly ? "Pick a table to see its seats and where it is." : "Pick a table to edit, move or retire it."}
+              </Card>
+            )}
           </div>
-        </Card>
-      )}
+        )}
+      </div>
 
       {retired.length > 0 && (
         <section aria-labelledby="retired-tables" className="flex flex-col gap-3">

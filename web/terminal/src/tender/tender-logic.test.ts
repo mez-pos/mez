@@ -167,12 +167,28 @@ describe("chargeBlock", () => {
 });
 
 describe("chargeLabel", () => {
-  const order = (balance: number, invoiced = false) => ({ status: "settling", invoiced, totals: { balance_due: inr(balance) } }) as OrderResponse;
-  it("charges while money is owed, finishes once paid", () => {
-    expect(chargeLabel(order(100))).toBe("Pay");
-    expect(chargeLabel(order(0))).toBe("Invoice and close");
-    expect(chargeLabel(order(0, true))).toBe("Close order");
-    expect(chargeLabel(undefined)).toBe("Pay");
+  const order = (balance: number, extra: Partial<OrderResponse> = {}): OrderResponse =>
+    ({
+      status: "settling",
+      invoiced: false,
+      lines: [{ status: "active" }],
+      totals: { balance_due: inr(balance) },
+      ...extra,
+    }) as OrderResponse;
+  const nothing = [] as unknown as OrderResponse["lines"];
+  const voidedOnly = [{ status: "voided" }] as OrderResponse["lines"];
+
+  const cases: [string, OrderResponse | undefined, string][] = [
+    ["money owed", order(100), "Pay"],
+    ["paid in full, no invoice yet", order(0), "Invoice and close"],
+    ["paid in full and invoiced", order(0, { invoiced: true }), "Close order"],
+    ["no order yet", undefined, "Pay"],
+    ["an empty table owes nothing but is not paid", order(0, { status: "open", lines: nothing }), "Pay"],
+    ["every line voided", order(0, { status: "open", lines: voidedOnly }), "Pay"],
+    ["closed", order(0, { status: "closed" }), "Pay"],
+  ];
+  it.each(cases)("%s", (_name, o, want) => {
+    expect(chargeLabel(o)).toBe(want);
   });
 });
 

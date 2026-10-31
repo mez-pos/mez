@@ -60,6 +60,14 @@ figures stay, dimmed.
   52% (223)".
 - **Sales by payment method**: a bar for each method with its share and what
   it took.
+- **The rows' widths:** Sales trend beside Sales by category from 1280px,
+  the ring's card up to 464px, so its legend stays beside the ring; under
+  1280px one over the other. Top selling items, Order type breakdown and
+  Sales by payment method are three across from 1280px, three sevenths and
+  two and two (about 448px, 299px and 299px at 1366x768), and from 1536px
+  the two take the back office's side width (`w-aside`, 369 to 380px; the
+  design draws 420px) with Top selling the rest (TECH-17). From 1024px they
+  are two across, Top selling over both.
 
 **In detail**, under a small-caps heading, the reports the design does not
 draw. Each card has its own **Download CSV**:
@@ -102,7 +110,10 @@ draw. Each card has its own **Download CSV**:
   ₹2,800.00 over 4 write-offs."; and which reason cost the most.
 - **Stock health** (`stock.manage`): three rows with an icon each: "48 items
   healthy · Above their low level", "6 items low · At or under their low
-  level", "1 item out" and its name. A link to Inventory under them.
+  level", "1 item out" and its name. A link to Inventory under them. From
+  1024px it sits beside Wastage at the back office's side width
+  (`w-aside`, 288px at 1024, 328px at 1366), Wastage the rest; under that,
+  under it.
 
 **In detail:**
 

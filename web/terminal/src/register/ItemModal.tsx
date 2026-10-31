@@ -1,10 +1,12 @@
 // The item modal (D04): what was tapped, across the middle of the order screen.
-// On the left its photo, or its category's icon where there is none. On the
-// right its name and price, each group of choices saying what it asks for,
-// the course and a note for the kitchen, and along the bottom how many, Cancel
-// and "Add to Order" with what the line will cost. Its defaults are chosen for a
-// new line; a line being changed shows its own choices and quantity. The button
-// stays shut until every required group is met, and says which is not (ADR-153).
+// On the left its photo, from 1024 wide, when it has one: with none there is
+// no left pane at all (TILL-13), so the choices, the course and the note get
+// the room and the dialog is only as wide as they need. On the right its name
+// and price, each group of choices saying what it asks for, the course and a
+// note for the kitchen, and along the bottom how many, Cancel and "Add to
+// Order" with what the line will cost. Its defaults are chosen for a new line;
+// a line being changed shows its own choices and quantity. The button stays
+// shut until every required group is met, and says which is not (ADR-153).
 
 import { CheckIcon, CrownIcon, PlusIcon } from "lucide-react";
 import { useId, useState } from "react";
@@ -13,10 +15,8 @@ import { photoUrl } from "../../../shared/menu";
 import { Button, CloseIcon, Money, Qty } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { useDialog } from "../../../shared/ui/use-dialog";
-import { CategoryIcon } from "./CategoryIcon";
 import { DietMark } from "../../../shared/ui/DietMark";
 import { firstUnmet, groupHint, groupState, initialSelection, lineTotal, toggle, toModifiers, type GroupState } from "../../../shared/modifier-selection";
-import type { CategoryIconKey } from "./register-logic";
 
 /** What the modal hands back: the line as the person wants it. */
 export interface ItemChoice {
@@ -32,7 +32,6 @@ interface ItemModalProps {
   groups: readonly ModifierGroupResponse[];
   /** The venue's courses. The course is chosen only for a new line, and only when there is more than one. */
   courses: readonly CourseResponse[];
-  icon: CategoryIconKey;
   /** The line being changed; absent for a new one. */
   line?: LineResponse | undefined;
   /** Why the last attempt was refused, from the server. */
@@ -50,7 +49,7 @@ const noteLength = 200;
 
 const field = "rounded border border-line-strong bg-raised text-fg outline-accent-tint focus-visible:border-accent focus-visible:outline-3";
 
-export function ItemModal({ item, groups, courses, icon, line, error, blocked, busy = false, onConfirm, onClose }: ItemModalProps) {
+export function ItemModal({ item, groups, courses, line, error, blocked, busy = false, onConfirm, onClose }: ItemModalProps) {
   const ref = useDialog(true, onClose);
   const titleId = useId();
   const editing = line !== undefined;
@@ -62,31 +61,29 @@ export function ItemModal({ item, groups, courses, icon, line, error, blocked, b
   const chosen = toModifiers(groups, selection);
   const unmet = firstUnmet(groups, selection);
   const shut = unmet !== null || busy || Boolean(blocked);
+  const photo = item.photo ? photoUrl(item.photo) : null;
 
   return (
     <dialog
       ref={ref}
       aria-labelledby={titleId}
-      className="m-auto max-h-[calc(100dvh-2rem)] w-full max-w-[min(63.75rem,calc(100vw-2rem))] overflow-hidden rounded-sheet bg-raised p-0 text-fg shadow-modal"
+      className={cx(
+        "m-auto max-h-[calc(100dvh-2rem)] w-full overflow-hidden rounded-sheet bg-raised p-0 text-fg shadow-modal",
+        photo ? "max-w-[min(63.75rem,calc(100vw-2rem))]" : "max-w-[min(42rem,calc(100vw-2rem))]",
+      )}
     >
       <div className="flex max-h-[calc(100dvh-2rem)]">
-        <div className="relative hidden w-[25rem] shrink-0 items-center justify-center bg-sunken text-fg-faint lg:flex">
-          {item.photo ? (
-            // The name is beside it, so the photo says nothing a reader needs.
-            <img src={photoUrl(item.photo)} alt="" decoding="async" className="absolute inset-0 size-full object-cover" />
-          ) : (
-            <CategoryIcon name={icon} size={112} />
-          )}
-          {item.popular && (
-            <span className="absolute left-4 top-4 flex h-8 items-center gap-1.5 rounded-pill bg-highlight px-3 text-sm font-bold text-fg-heading">
-              <CrownIcon aria-hidden="true" size={15} />
-              Popular
-            </span>
-          )}
-        </div>
+        {photo && (
+          // The rail's width: the drawing's 400px on a wide screen, less on a small one.
+          <div className="relative hidden w-rail shrink-0 bg-sunken lg:block">
+            {/* The name is beside it, so the photo says nothing a reader needs. */}
+            <img src={photo} alt="" decoding="async" className="absolute inset-0 size-full object-cover" />
+            {item.popular && <PopularPill className="absolute left-4 top-4" />}
+          </div>
+        )}
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex items-start justify-between gap-5 px-7 pt-6">
+          <div className="flex items-start justify-between gap-5 px-7 pt-6 short:pt-5">
             <div className="min-w-0">
               <div className="flex items-start gap-2.5">
                 <span className="pt-2.5">
@@ -97,7 +94,8 @@ export function ItemModal({ item, groups, courses, icon, line, error, blocked, b
                 </h2>
               </div>
               {item.description && <p className="mt-2 max-w-md text-base text-fg-muted">{item.description}</p>}
-              {item.popular && <p className="mt-2 text-sm font-semibold text-fg-2 lg:hidden">Popular</p>}
+              {/* On the photo when there is one to wear it; here otherwise. */}
+              {item.popular && <PopularPill className={cx("mt-3", photo && "lg:hidden")} />}
             </div>
             <div className="flex shrink-0 items-start gap-4">
               <Money amount={item.price} variant="total" className="leading-tight" />
@@ -112,7 +110,7 @@ export function ItemModal({ item, groups, courses, icon, line, error, blocked, b
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-7 py-6">
+          <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-7 py-6 short:gap-5 short:py-4">
             {groups.map((group) => (
               <GroupPicker
                 key={group.id}
@@ -150,7 +148,7 @@ export function ItemModal({ item, groups, courses, icon, line, error, blocked, b
             </label>
           </div>
 
-          <div className="border-t border-line px-7 py-5">
+          <div className="border-t border-line px-7 py-5 short:py-4">
             <p className="min-h-6 pb-2 text-sm" role="status">
               {blocked ? (
                 <span className="text-danger">{blocked}</span>
@@ -182,6 +180,15 @@ export function ItemModal({ item, groups, courses, icon, line, error, blocked, b
         </div>
       </div>
     </dialog>
+  );
+}
+
+function PopularPill({ className }: { className?: string | undefined }) {
+  return (
+    <span className={cx("inline-flex h-8 items-center gap-1.5 rounded-pill bg-highlight px-3 text-sm font-bold text-fg-heading", className)}>
+      <CrownIcon aria-hidden="true" size={15} />
+      Popular
+    </span>
   );
 }
 

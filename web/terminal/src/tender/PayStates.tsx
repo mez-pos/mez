@@ -16,7 +16,7 @@ import { cx } from "../../../shared/ui/cx";
 import { useClock } from "../../../shared/use-clock";
 import { elapsedClock, methodNames } from "./tender-logic";
 
-const card = "mx-auto w-full max-w-120 rounded-card border p-6";
+const card = "mx-auto w-full max-w-120 rounded-card border p-6 short:p-5";
 const eyebrow = "text-meta font-bold uppercase";
 
 interface WaitingCardProps {
@@ -45,7 +45,7 @@ export function WaitingCard({ method, charge, tip, reference, since, busy, onRef
       <h2 className="mt-2.5 font-serif text-xl">{byCard ? "Insert or tap card" : "Scan to pay"}</h2>
       <span
         aria-hidden="true"
-        className="mx-auto my-5 flex size-32 items-center justify-center rounded-round border-8 border-chip-success-bg bg-accent-tint text-accent-text"
+        className="mx-auto my-5 flex size-32 items-center justify-center rounded-round border-8 border-chip-success-bg bg-accent-tint text-accent-text short:my-3 short:size-24"
       >
         <Icon size={52} strokeWidth={1.5} />
       </span>

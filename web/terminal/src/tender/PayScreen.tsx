@@ -344,6 +344,9 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
   const message = error ? { text: error, tone: "error" as const } : !paid && plan.problem ? { text: plan.problem, tone: "hint" as const } : null;
   // A payment that leaves some of the bill owed says so before it is taken.
   const short = !paid && plan.problem === null && !error ? target - plan.amount : 0;
+  // Cash that covers what is owed: the change is said in the foot at every
+  // size, beside the button, so it is never a scroll away (ADR-381).
+  const changeDue = typing && !error && plan.problem === null && short === 0 ? money(plan.change) : null;
   // A discount or a note changes the bill: not once it is paid or invoiced.
   const open = !paid && !order.invoiced;
 
@@ -361,19 +364,22 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
       />
 
       <section aria-label="Payment" className="flex min-w-0 flex-1 flex-col">
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4 pt-4 xl:px-6 xl:pb-5 xl:pt-5 2xl:px-7 2xl:pt-6">
-          <PaySteps
-            step={step}
-            disabled={busy || view !== "entry"}
-            onPayment={() => setSplitting(false)}
-            onSplit={() => {
-              setSplitting(true);
-              setError(null);
-            }}
-          />
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4 pt-4 short:pb-3 short:pt-3 xl:px-6 xl:pb-5 xl:pt-5 2xl:px-7 2xl:pt-6">
+          {/* A paid bill has no step left to take: "Paid in full" heads the invoice instead, and nothing wraps beside the paid panel. */}
+          {step !== "complete" && (
+            <PaySteps
+              step={step}
+              disabled={busy || view !== "entry"}
+              onPayment={() => setSplitting(false)}
+              onSplit={() => {
+                setSplitting(true);
+                setError(null);
+              }}
+            />
+          )}
 
           {step === "split" && (
-            <div className="mt-5 flex min-h-0 flex-1 flex-col">
+            <div className="mt-5 flex min-h-0 flex-1 flex-col short:mt-3">
               {inUse ? (
                 <SplitShares
                   order={order}
@@ -409,13 +415,13 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
           )}
 
           {step === "complete" && (
-            <div className="mt-6 flex min-h-0 flex-1 flex-col">
+            <div className="flex min-h-0 flex-1 flex-col">
               <InvoicePanel order={order} ticket={ticket} onError={setError} />
             </div>
           )}
 
           {step === "payment" && view === "waiting" && waiting !== null && (
-            <div className="mt-6">
+            <div className="mt-6 short:mt-3">
               <WaitingCard
                 method={method}
                 charge={money(plan.charge)}
@@ -431,7 +437,7 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
           )}
 
           {step === "payment" && view === "refused" && (
-            <div className="mt-6">
+            <div className="mt-6 short:mt-3">
               <RefusedCard
                 method={method}
                 reason={error ?? ""}
@@ -446,7 +452,7 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
           )}
 
           {step === "payment" && view === "uncertain" && unsettled && (
-            <div className="mt-6">
+            <div className="mt-6 short:mt-3">
               <UncertainCard
                 method={unsettled.sent.body.method}
                 amount={unsettled.sent.body.amount}
@@ -457,7 +463,7 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
           )}
 
           {step === "payment" && view === "received" && received && (
-            <div className="mt-6">
+            <div className="mt-6 short:mt-3">
               <ReceivedCard
                 received={received}
                 next={inUse ? "Next share" : "Next payment"}
@@ -473,7 +479,7 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
           {step === "payment" && view === "entry" && (
             <>
               {inUse && (
-                <div className="mt-5">
+                <div className="mt-5 short:mt-3">
                   <ShareStrip
                     split={inUse.split}
                     amountsKeyed={inUse.amountsKeyed}
@@ -485,13 +491,13 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
                   />
                 </div>
               )}
-              <h2 className="mt-5 font-serif text-xl 2xl:mt-6 2xl:text-total">Select payment method</h2>
-              <div className="mt-3 2xl:mt-4">
+              <h2 className="mt-5 font-serif text-xl short:mt-3 2xl:mt-6 2xl:text-total">Select payment method</h2>
+              <div className="mt-3 short:mt-2 2xl:mt-4">
                 <MethodTiles method={method} disabled={busy} onChoose={choose} />
               </div>
 
-              {/* One column on a tablet, the tip beside the amount from 1280, the pad beside both from 1536. */}
-              <div className="mt-5 grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_20rem] 2xl:grid-cols-[minmax(0,1fr)_23.75rem_19rem]">
+              {/* The pad beside the amount and the tip under both, so an odd sum is keyed with the amount in view; all three side by side from 1536. */}
+              <div className="mt-5 grid grid-cols-[minmax(0,1fr)_var(--panel)] items-start gap-4 short:mt-3 2xl:grid-cols-[minmax(0,1fr)_var(--rail)_var(--side)]">
                 <AmountCard
                   method={method}
                   target={money(target)}
@@ -515,24 +521,26 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
                     setError(null);
                   }}
                 />
-                <TipCard
-                  bill={money(plan.problem === null ? plan.amount : target)}
-                  base={target}
-                  tip={money(tip)}
-                  collect={money(collect)}
-                  cash={cash}
-                  note={note}
-                  active={field === "tip"}
-                  busy={busy}
-                  onActivate={() => setField("tip")}
-                  onKey={(k) => keyIn("tip", k)}
-                  onTip={(minor) => {
-                    setTip(minor);
-                    setError(null);
-                  }}
-                />
+                <div className="col-span-2 2xl:col-span-1">
+                  <TipCard
+                    bill={money(plan.problem === null ? plan.amount : target)}
+                    base={target}
+                    tip={money(tip)}
+                    collect={money(collect)}
+                    cash={cash}
+                    note={note}
+                    active={field === "tip"}
+                    busy={busy}
+                    onActivate={() => setField("tip")}
+                    onKey={(k) => keyIn("tip", k)}
+                    onTip={(minor) => {
+                      setTip(minor);
+                      setError(null);
+                    }}
+                  />
+                </div>
                 {/* The keypad the design leaves to a keyboard: a touch till has none (rule 4). */}
-                <div className="max-w-80 rounded-card border border-line bg-raised p-4 xl:col-span-2 2xl:col-span-1 2xl:max-w-none">
+                <div className="col-start-2 row-start-1 rounded-card border border-line bg-raised p-4 short:p-3 2xl:col-start-3">
                   <NumPad
                     layout="amount"
                     label={field === "tip" ? "Tip" : cash ? "Amount received" : "Amount"}
@@ -546,18 +554,26 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
         </div>
 
         {step === "payment" && view === "entry" && (
-          <div className="flex shrink-0 items-center gap-5 border-t border-line bg-canvas px-6 py-3.5 2xl:px-7">
-            <p
-              role={message?.tone === "error" ? "alert" : undefined}
-              className={message?.tone === "error" ? "flex-1 text-base text-danger" : "flex-1 text-base text-fg-muted"}
-            >
-              {message?.text}
-              {short > 0 && (
-                <>
-                  A part payment: <Money amount={money(short)} /> stays owed.
-                </>
+          <div className="flex shrink-0 items-center gap-5 border-t border-line bg-canvas px-4 py-3.5 short:py-2 xl:px-6 2xl:px-7">
+            <div aria-live="polite" className="min-w-0 flex-1">
+              {changeDue ? (
+                <p className="flex flex-wrap items-baseline gap-x-2.5 font-serif text-total leading-tight text-success">
+                  Change <Money amount={changeDue} variant="total" tone="success" />
+                </p>
+              ) : (
+                <p
+                  role={message?.tone === "error" ? "alert" : undefined}
+                  className={message?.tone === "error" ? "text-base text-danger" : "text-base text-fg-muted"}
+                >
+                  {message?.text}
+                  {short > 0 && (
+                    <>
+                      A part payment: <Money amount={money(short)} /> stays owed.
+                    </>
+                  )}
+                </p>
               )}
-            </p>
+            </div>
             <Button
               variant="primary"
               size="charge"

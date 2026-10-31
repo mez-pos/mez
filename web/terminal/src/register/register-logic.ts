@@ -95,6 +95,20 @@ export function dietFilterActive(f: DietFilter): boolean {
   return f.veg || f.nonVeg || f.vegan || f.glutenFree;
 }
 
+/** Each filter's word, in the order the pills stand. */
+export const dietLabels: Readonly<Record<keyof DietFilter, string>> = { veg: "Veg", nonVeg: "Non-Veg", vegan: "Vegan", glutenFree: "Gluten Free" };
+
+/**
+ * What the one Diet button says below xl, where the four pills wait behind it:
+ * "Diet" with none on, the filter's word with one, how many with more.
+ */
+export function dietSummary(f: DietFilter): string {
+  const on = (Object.keys(dietLabels) as (keyof DietFilter)[]).filter((key) => f[key]);
+  const [only] = on;
+  if (only === undefined) return "Diet";
+  return on.length === 1 ? `Diet: ${dietLabels[only]}` : `Diet: ${on.length} on`;
+}
+
 /**
  * The items a filter lets through. Veg, Non-Veg and Vegan add up (veg and vegan
  * on shows both); Gluten Free narrows whatever they leave. Nothing on shows all.

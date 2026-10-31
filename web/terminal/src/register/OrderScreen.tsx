@@ -6,10 +6,12 @@
 // at /shift (ADR-148): each is a route of its own, and the order in front lives
 // above them all (terminal-context). ADR-151 records what this screen draws.
 //
-// A waiter's is T02, the same screen rearranged (ADR-165): the search over the
-// categories, Popular first, three cards across, and a rail that ends in Save
-// and Send to Kitchen. The table, the guests and how it is served are in the
-// top bar (WaiterOrderBar).
+// The search stands over the categories (TILL-3), and on a short screen the
+// menu's chrome closes up, so a 1024x768 tablet shows six dishes.
+//
+// A waiter's is T02, the same screen rearranged (ADR-165): Popular first, three
+// cards across, and a rail that ends in Save and Send to Kitchen. The table,
+// the guests and how it is served are in the top bar (WaiterOrderBar).
 
 import { useMemo, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
@@ -162,11 +164,13 @@ export function OrderScreen() {
           setView(next);
           clearSearch();
         }}
-        search={waiter ? <SearchField key={searchKey} label="Search menu" onSearch={setQuery} /> : undefined}
+        // "Search": a longer placeholder is cut off in a 184px sidebar.
+        search={<SearchField key={searchKey} label="Search" onSearch={setQuery} />}
+        waiter={waiter}
       />
-      <section aria-label="Menu" className="flex min-w-0 flex-1 flex-col px-4 pt-4 2xl:px-6 2xl:pt-5">
-        <MenuHeader title={title} filter={diet} onFilter={setDiet} searchKey={searchKey} onSearch={setQuery} searchElsewhere={waiter} />
-        <div className="min-h-0 flex-1 overflow-y-auto pb-4 pt-4 2xl:pb-6 2xl:pt-5">
+      <section aria-label="Menu" className="flex min-w-0 flex-1 flex-col px-4 pt-4 short:pt-3 2xl:px-6 2xl:pt-5">
+        <MenuHeader title={title} filter={diet} onFilter={setDiet} />
+        <div className="min-h-0 flex-1 overflow-y-auto pb-4 pt-4 short:pb-3 short:pt-3 2xl:pb-6 2xl:pt-5">
           <MenuBody
             addHref={auth.kind === "signed_in" && auth.permissions.includes("menu.edit") ? backOffice.menu : null}
             state={menu.isPending ? "loading" : menu.isError && !menu.data ? "error" : "ready"}
@@ -257,7 +261,6 @@ export function OrderScreen() {
           item={sheet.item}
           groups={index.groupsFor(sheet.item)}
           courses={index.menu.courses}
-          icon={iconFor(sheet.item)}
           line={sheet.kind === "edit" ? sheet.line : undefined}
           error={sheet.error}
           blocked={sheet.kind === "edit" && !sheet.busy ? movedOn(sheet.line, ticket.order?.lines) : null}

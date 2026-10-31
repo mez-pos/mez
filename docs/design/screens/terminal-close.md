@@ -26,11 +26,19 @@ title.
 
 **Step 1, count the drawer:**
 
-- **The counter** (`DrawerCounter`), titled "Count the drawer": a row for each
-  note and coin of the venue's currency, largest first: the face, the count,
-  and the row's value. The picked row has the green border and tint. Beside
-  the rows the pad (`NumPad`, amount layout, large) and **Next**. Under them,
-  "Counted" and the total.
+- **The counter** (`DrawerCounter`), titled "Count the drawer": over the
+  rows, their labels in small caps, **Note**, **Count**, **Value**; then a
+  row for each note and coin of the venue's currency, largest first: the
+  face as staff name it ("₹500", not "₹500.00"; a coin under the unit keeps
+  its fraction, "$0.25"), the count, and the row's value. The picked row has
+  the green border and tint. Beside the rows the pad (`NumPad`, amount
+  layout, large) and **Next**. Under them, "Counted" and the total, below
+  1024px only: from 1024px the rail says it, so the screen has one total.
+- **A row picked is always in sight** (TBS-15). At 768 tall the last coins
+  start under the sticky foot; a row picked by a tap or by Next scrolls into
+  view, and the screen keeps the foot's height clear when it scrolls, so the
+  row lands above Submit count, never under it. Under 820px tall the
+  paddings and gaps step down.
 - Nothing on this step says, hints or rounds towards what is expected.
 - **The foot, kept in sight:** the error line, **Back to the order screen**,
   and **Submit count** (the primary, 56px).

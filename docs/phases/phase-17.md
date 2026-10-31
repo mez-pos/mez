@@ -54,39 +54,44 @@ change to `mez-cloud`'s account area too (STATE.md): build it there.
 
 ### Fit the venue's devices (started first, at the human's word)
 
-- [ ] **Task 4 - The shared frame.** Modal scrolls its body and keeps its
+Tasks 4 to 12 were built on 2026-10-31 by six workers in parallel and
+seen by the audit's walk at 1024x768, 1366x768 and 1920x1080 before they
+were ticked (ADR-381, ADR-382). What the walk did not reach is in
+`KNOWN.md` under "Phase 17's device-fit pass".
+
+- [x] **Task 4 - The shared frame.** Modal scrolls its body and keeps its
   footer in view (TECH-2; ApprovalSheet passes `footer`). Toasts in the
   terminal at top centre, the body pass-through (TILL-11). An `--aside`
   token for the back office's 380px column (TECH-17). The terminal
   shell's right cluster gives way below xl (TBS-3, the shell half).
-- [ ] **Task 5 - Register.** Four order lines in view at 1366x768
+- [x] **Task 5 - Register.** Four order lines in view at 1366x768
   (TILL-2); six dishes at 1024 (TILL-3); no photo pane without a photo
   (TILL-13, TECH-16); a charge label that fits, "Pay" on an empty order
   (TECH-3, TILL-12); the waiter's rail header (TBS-13); the service
   control at 48px with its reason visible (TILL-10).
-- [ ] **Task 6 - Tender and split.** The change due in the sticky foot
+- [x] **Task 6 - Tender and split.** The change due in the sticky foot
   and the numpad beside the amount below 2xl (TILL-4); totals pinned in
   the summary and a single crumb on the paid step (TILL-16); split by
   item lists the items first (TILL-5).
-- [ ] **Task 7 - Lock and open shift.** The brand panel from xl; profiles
+- [x] **Task 7 - Lock and open shift.** The brand panel from xl; profiles
   per row by width (TILL-6, TILL-21); the float total and Open shift in a
   sticky foot (TILL-24).
-- [ ] **Task 8 - Tables and orders.** The floor fits or lists at 1024 and
+- [x] **Task 8 - Tables and orders.** The floor fits or lists at 1024 and
   the panel overlays only when a table is picked (TBS-4); Table List keeps
   Balance (TBS-5); Orders keeps Items (TBS-6, TECH-4); the order panel
   shows Paid in its header and fewer buttons (TBS-16).
-- [ ] **Task 9 - Waiter and close of day.** The waiter's order bar stops
+- [x] **Task 9 - Waiter and close of day.** The waiter's order bar stops
   overlapping (TBS-3); waiter home trims its chrome under `short:`
   (TBS-12); drawer rows labelled and scrolled into view (TBS-15).
-- [ ] **Task 10 - Kitchen: fit and read at a distance.** `short:` trims on
+- [x] **Task 10 - Kitchen: fit and read at a distance.** `short:` trims on
   the board (KDS-7, TECH-1); ADR-381's sizes and a clamp on
   `--text-kitchen` and `--text-display` (KDS-6, KDS-5); stats off the board
   below 2xl (KDS-10); the station as the title, no script lines (KDS-11);
   ink by default (KDS-8).
-- [ ] **Task 11 - Back office widths.** Fixed columns to tokens (TECH-17);
+- [x] **Task 11 - Back office widths.** Fixed columns to tokens (TECH-17);
   the item editor's Save always in view (BO-2, the layout half); the
   chosen table's card beside the grid (BO-7).
-- [ ] **Task 12 - Setup at 768.** A trimmed head; scroll and focus on each
+- [x] **Task 12 - Setup at 768.** A trimmed head; scroll and focus on each
   step (SET-3, SET-4).
 
 ### Money and state, the rest

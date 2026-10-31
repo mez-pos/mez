@@ -50,12 +50,13 @@ function AreaGrid({ data, areaId, now, names, picked, onTap, wanting }: AreaGrid
     <ul
       aria-label="Tables"
       className="grid flex-1 gap-2 2xl:gap-5"
-      // The tiles share the room they are given, as drawn: no smaller than
-      // holds their four lines (a floor too big for that scrolls), and no
-      // taller than a tile should be when the area has only a row or two.
+      // The tiles share the room they are given, as drawn: no narrower than a
+      // chip, no shorter than the lines a tile holds (a floor too big for that
+      // scrolls), and no taller than a tile should be when the area has only a
+      // row or two.
       style={{
         gridTemplateColumns: `repeat(${columns}, minmax(5.75rem, 1fr))`,
-        gridTemplateRows: `repeat(${rows.length}, minmax(9.25rem, 1fr))`,
+        gridTemplateRows: `repeat(${rows.length}, minmax(min-content, 1fr))`,
         maxHeight: `${rows.length * 17}rem`,
       }}
     >
@@ -94,7 +95,7 @@ function TableTile({ table: t, now, names, picked, wants, onTap }: TableTileProp
       aria-pressed={picked}
       aria-label={`Table ${t.name}, ${tableStatuses[t.status].word}, ${text.people}${text.time ? `, ${text.time}` : ""}${wants ? ", wants to order" : ""}`}
       className={cx(
-        "relative flex h-full w-full flex-col items-center justify-center gap-1.5 rounded-card border-2 bg-raised p-1.5 shadow-rest 2xl:p-3",
+        "relative flex h-full w-full flex-col items-center justify-center gap-1 rounded-card border-2 bg-raised p-1.5 shadow-rest 2xl:gap-1.5 2xl:p-3",
         "outline-offset-2 outline-attention hover:bg-raised-high focus-visible:outline-3",
         tone.border,
         picked && "outline-3",
@@ -109,10 +110,10 @@ function TableTile({ table: t, now, names, picked, wants, onTap }: TableTileProp
       </span>
       {/* A phone asking to order here is what staff need to know of this table, more than that it is free. */}
       {wants ? <WantsToOrder brief className="relative" /> : <StatusChip status={{ kind: "table", status: t.status }} className="relative max-2xl:px-2" />}
+      {/* How long, and under it what is owed: side by side they ran past a narrow tile's edge. */}
       {(text.time || owes) && (
-        <span className="relative flex items-center gap-1.5 font-mono text-sm tabular-nums text-fg-2">
-          {text.time}
-          {text.time && owes && <span aria-hidden="true">·</span>}
+        <span className="relative flex max-w-full flex-col items-center font-mono text-sm tabular-nums text-fg-2">
+          {text.time && <span>{text.time}</span>}
           {owes && t.balance && <Money amount={t.balance} />}
         </span>
       )}

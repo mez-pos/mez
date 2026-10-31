@@ -46,8 +46,12 @@ screen each scroll on their own.
   and "Nothing new from the venue", in the warning colour with the
   no-signal icon, once it is not (ADR-342: not "offline", which a quiet
   venue is not).
-- **The sidebar, 240px, chrome:** an icon and a name on every entry, each
-  48px, with its key chord at the right, faint, in the numeral face: `g m`.
+- **The sidebar, 240px, chrome** (208px under 1280px): an icon and a name
+  on every entry, each 48px, with its key chord at the right, faint, in the
+  numeral face: `g m`. These two widths are the frame's own and not `w-side`
+  (TECH-17): an entry is a fixed run of icon, name and chord, "Sales reports
+  g s" needs about 200px, and `w-side` is 184 to 191px from 1024 to 1366
+  wide. The screens beside the sidebar take the token widths.
   The current one is the terracotta fill. Grouped, each group under a
   small-caps label:
   - (no label) **Dashboard**
@@ -64,7 +68,9 @@ screen each scroll on their own.
     connection's word, which is cut with an ellipsis before it pushes
     anything out, and the profile as its initials, with the name and role
     in the panel it opens.
-- **The screen** fills the rest, padded 24px.
+- **The screen** fills the rest, padded 24px from 1280px and 16px under
+  that; on a screen 820px tall or less its top padding is 16px (`short:`),
+  so a 768-tall laptop keeps the 8px for the screen's content.
 
 Sign-in and pairing are the terminal's screens (`terminal-lock.md`), on a
 device paired as a back office.

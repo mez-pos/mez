@@ -24,8 +24,10 @@ Every figure is the stored report's: the screen adds nothing up.
 ## Layout
 
 **The report** (`ZReportView`, shared by both apps): the report in full on the
-left, and from 1280px a slip of paper beside it, 380px, that stays in sight as
-the report scrolls. Under 1280px the slip sits under the report.
+left, and from 1280px a slip of paper beside it at the back office's side
+width (`w-aside`: 307px at 1280, 328px at 1366, 380px from 1584; TECH-17),
+that stays in sight as the report scrolls. Under 1280px the slip sits under
+the report.
 
 - **The head:** "Z-report 12" in the serif; under it the trading day, "Opened
   18:02, closed 01:47" in the venue's time, and "Closed by Priya". At the

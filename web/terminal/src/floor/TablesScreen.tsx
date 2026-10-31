@@ -1,5 +1,6 @@
 // The tables screen (D05): how to look at the tables down the left, the floor
-// in the middle, the table picked on the right. A tap picks a table; the panel
+// in the middle, the table picked on the right (below xl, over the floor's
+// right edge, and only once one is picked). A tap picks a table; the panel
 // seats a party at it, shows its order, sends it, settles it. Moving a party
 // and joining tables start from the panel's More Actions and turn the next taps
 // into steps of that, until Done (ADR-088). ADR-155 records what this draws.
@@ -123,10 +124,11 @@ export function TablesScreen() {
   };
 
   return (
-    <div className="flex min-w-0 flex-1">
+    // Relative: below xl the panel lies over the floor rather than beside it (TablePanel).
+    <div className="relative flex min-w-0 flex-1">
       <TablesSidebar view={view} onView={setView} />
 
-      <section aria-label="Floor" className="flex min-w-0 flex-1 flex-col gap-4 px-4 py-4 2xl:px-6 2xl:py-5">
+      <section aria-label="Floor" className="flex min-w-0 flex-1 flex-col gap-4 px-4 py-4 short:gap-3 short:py-3 2xl:px-6 2xl:py-5">
         {data && tables.length > 0 && (
           <div className="flex flex-wrap items-center gap-2.5">
             {data.areas.length > 1 && (
@@ -188,6 +190,8 @@ export function TablesScreen() {
         onSettle={(orderId) => navigate(route.pay(orderId))}
         onMode={startMode}
         sendWaits={(orderId) => ticket.orderId === orderId && ticket.pending.length > 0}
+        onClose={() => setSelectedId(null)}
+        stepAside={mode.kind !== "idle"}
       />
     </div>
   );

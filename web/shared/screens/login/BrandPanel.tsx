@@ -4,16 +4,17 @@
 //
 // The design's illustration of a chef at the pass is a labelled placeholder for
 // artwork that does not exist yet, and so is the dark script card beside it:
-// neither is drawn. The panel is hidden below 1024px, where a tablet held
-// upright has no room for it.
+// neither is drawn. The panel shows from 1280px wide: on a 1024 tablet it took
+// half the screen, and the profiles, the pad and the foot did not fit beside it.
 
 import { Logo } from "../../ui";
 import { versionText } from "../../venue-text";
 
 export function BrandPanel({ version }: { version: string | null }) {
   return (
-    <aside aria-hidden="true" className="relative hidden w-[46%] shrink-0 flex-col overflow-hidden bg-sunken p-10 lg:flex 2xl:p-14">
-      <div className="absolute -right-36 -top-20 size-[620px] rounded-t-[999px] bg-line" />
+    <aside aria-hidden="true" className="relative hidden w-[46%] shrink-0 flex-col overflow-hidden bg-sunken p-10 xl:flex 2xl:p-14">
+      {/* The arch runs to the foot of the panel, however tall: a fixed square ended in a hard edge. */}
+      <div className="absolute -right-36 -top-20 bottom-0 w-[620px] rounded-t-[999px] bg-line" />
       <div className="relative">
         <Logo className="h-14" />
         <p className="mt-3 text-meta font-bold uppercase tracking-[.22em] text-fg-muted">Good food brings people together</p>

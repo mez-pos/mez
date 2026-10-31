@@ -33,7 +33,10 @@ export function ZReportView({ z, actions }: ZReportViewProps) {
   const approved = approvedTips(r);
 
   return (
-    <article aria-label={`Z-report ${z.number}`} className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+    <article
+      aria-label={`Z-report ${z.number}`}
+      className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_var(--aside)]"
+    >
       <div className="flex min-w-0 flex-col gap-4">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>

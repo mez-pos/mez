@@ -2,35 +2,35 @@
 // left to right. New Orders are sent and untouched, with Start preparing;
 // Preparing are the ones a cook has, with Mark ready; Ready for pickup are on
 // the pass, for as long as they can be recalled. ADR-175 gave the server the
-// middle column; ADR-176 records what this screen draws.
+// middle column; ADR-176 records what this screen draws, ADR-381 its sizes.
 //
-// Kept, where D10 draws nothing (rule 4): the station's name in the header,
-// the all-day counts in a strip under it, and Recall on each ready card. A new ticket is started before it is marked ready here;
-// the server would take a bump from new too (ADR-175).
+// Kept, where D10 draws nothing (rule 4): the station's name as the title,
+// the all-day counts in a strip under it, and Recall on each ready card. A
+// new ticket is started before it is marked ready here; the server would take
+// a bump from new too (ADR-175).
 //
 // The foot holds what the display is set to: its station, the chime, a
-// table's tickets together, and espresso night (D11), which is the same board
-// on the ink surface (BoardFoot.tsx, ADR-177).
+// table's tickets together, and espresso night (D11), the same board on the
+// ink surface. Night is where a display starts (BoardFoot.tsx, ADR-381).
 //
-// Beside the columns, from 1536px wide, is Today's stats: the station's
-// trading day so far, from the server (ADR-178). On a narrower display the
-// same figures are one line under the all-day strip. Under it is Coming
-// next, what the station is sent when a later course is fired (ADR-181).
+// On a 768 screen every fixed height is paid out of the columns, so `short:`
+// trims the header, the bands and the foot, and a three-line ticket with its
+// button fits a column at 1366x768. Beside the columns, from 1536px wide, are
+// Coming next and the day's stats (BoardStats.tsx); under that the stats
+// leave the board and Coming next is a strip, when it has rows (ADR-381).
 
 import { BellIcon, ChefHatIcon, UtensilsIcon, type LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { KitchenTicketResponse, StationResponse } from "../../../shared/api-types";
 import { browserStorage } from "../../../shared/auth/storage";
-import { ConnectionIndicator } from "../../../shared/ConnectionIndicator";
-import { Logo } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
-import { clockText } from "../../../shared/venue-text";
 import { useClock } from "../../../shared/use-clock";
 import { useMenu } from "../../../shared/use-menu";
 import { failureOf } from "../register/order-messages";
 import { courseNamer } from "../register/rail-logic";
 import { BoardFoot, type SignedIn } from "./BoardFoot";
-import { BoardStats, StatsLine } from "./BoardStats";
+import { AllDayStrip, BoardHeader, ComingStrip } from "./BoardHead";
+import { BoardSide } from "./BoardStats";
 import { groupByTable, readPrefs, surfaceOf, ticketId, writePrefs, type BoardPrefs } from "./board-prefs";
 import { allDay, boardColumns, comingRows, statRows } from "./kitchen-logic";
 import { TicketCard, type CardStage } from "./TicketCard";
@@ -93,38 +93,12 @@ export function KitchenBoard({ station, onChangeStation, signedIn }: KitchenBoar
 
   return (
     <main className="flex h-screen flex-col overflow-hidden bg-canvas text-fg">
-      <header className="flex min-h-23 shrink-0 items-center gap-6 border-b border-line bg-chrome px-7 py-2">
-        <Logo className="h-9 shrink-0" />
-        <div className="min-w-0 flex-1 text-center">
-          <h1 className="flex items-center justify-center gap-3 font-serif text-total leading-tight">
-            <ChefHatIcon aria-hidden="true" size={30} strokeWidth={1.7} className="shrink-0 text-attention" />
-            Kitchen Display
-          </h1>
-          <p className="truncate text-base text-fg-muted">
-            {station.name} · {prefs.night ? "Espresso night" : "Fresh orders. Happy people."}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-4">
-          <span className="hidden font-mono text-base font-semibold tabular-nums xl:block">{clockText(new Date(now), null)}</span>
-          <ConnectionIndicator />
-        </div>
-      </header>
-
-      {counts.length > 0 && (
-        <section aria-label="All day" className="flex shrink-0 flex-wrap gap-x-6 gap-y-1 border-b border-line bg-chrome px-7 py-2 text-xl">
-          <span className="text-fg-muted">All day</span>
-          {counts.map((c) => (
-            <span key={c.name}>
-              <span className="font-mono font-bold tabular-nums text-attention-text">{c.qty}</span> {c.name}
-            </span>
-          ))}
-        </section>
-      )}
-
-      {stats && <StatsLine rows={stats} coming={coming} comingMore={comingMore} />}
+      <BoardHeader stationName={station.name} now={now} />
+      {counts.length > 0 && <AllDayStrip counts={counts} />}
+      {coming.length > 0 && <ComingStrip coming={coming} comingMore={comingMore} />}
 
       {!canWork && (
-        <p className="shrink-0 border-b border-line bg-chrome px-7 py-2 text-lg text-fg-muted">
+        <p className="shrink-0 border-b border-line bg-chrome px-7 py-2 text-lg text-fg-muted short:px-5 short:py-1">
           You can see the board. Starting and finishing tickets is the kitchen&apos;s.
         </p>
       )}
@@ -141,32 +115,34 @@ export function KitchenBoard({ station, onChangeStation, signedIn }: KitchenBoar
         </p>
       )}
 
-      <div className="grid min-h-0 flex-1 grid-cols-3 gap-3 px-4 py-3 xl:gap-4 xl:px-5 xl:py-4 2xl:grid-cols-[repeat(3,minmax(0,1fr))_21.25rem]">
-        {columns.map((col) => {
-          const tickets = prefs.groupByTable ? groupByTable(cols[col.stage]) : cols[col.stage];
-          return (
-            <Column key={col.stage} title={col.title} icon={col.icon} band={col.band} count={tickets.length}>
-              {board.data && tickets.length === 0 && <p className="py-10 text-center text-xl text-fg-muted">{col.empty}</p>}
-              {tickets.map((t) => {
-                const id = ticketId(t);
-                return (
-                  <li key={id}>
-                    <TicketCard
-                      ticket={t}
-                      stage={col.stage}
-                      now={now}
-                      lateAfter={lateAfter}
-                      busy={busy === id}
-                      disabled={busy !== null}
-                      onAct={canWork ? () => run(id, () => acts[col.stage](t)) : null}
-                    />
-                  </li>
-                );
-              })}
-            </Column>
-          );
-        })}
-        {stats && <BoardStats rows={stats} coming={coming} comingMore={comingMore} />}
+      <div className="flex min-h-0 flex-1 gap-3 px-4 py-3 short:py-2 xl:gap-4 xl:px-5 xl:py-4">
+        <div className="grid min-h-0 min-w-0 flex-1 grid-cols-3 gap-3 xl:gap-4">
+          {columns.map((col) => {
+            const tickets = prefs.groupByTable ? groupByTable(cols[col.stage]) : cols[col.stage];
+            return (
+              <Column key={col.stage} title={col.title} icon={col.icon} band={col.band} count={tickets.length}>
+                {board.data && tickets.length === 0 && <p className="py-10 text-center text-xl text-fg-muted short:py-6">{col.empty}</p>}
+                {tickets.map((t) => {
+                  const id = ticketId(t);
+                  return (
+                    <li key={id}>
+                      <TicketCard
+                        ticket={t}
+                        stage={col.stage}
+                        now={now}
+                        lateAfter={lateAfter}
+                        busy={busy === id}
+                        disabled={busy !== null}
+                        onAct={canWork ? () => run(id, () => acts[col.stage](t)) : null}
+                      />
+                    </li>
+                  );
+                })}
+              </Column>
+            );
+          })}
+        </div>
+        {stats && <BoardSide rows={stats} coming={coming} comingMore={comingMore} />}
       </div>
 
       <BoardFoot prefs={prefs} onPrefs={keep} onChangeStation={onChangeStation} signedIn={signedIn} />
@@ -186,12 +162,12 @@ interface ColumnProps {
 function Column({ title, icon: Icon, band, count, children }: ColumnProps) {
   return (
     <section aria-label={`${title}, ${count}`} className="flex min-h-0 flex-col overflow-hidden rounded-card border border-line bg-chrome">
-      <header className={cx("flex min-h-16 shrink-0 items-center gap-3 px-5", band)}>
+      <header className={cx("flex min-h-16 shrink-0 items-center gap-3 px-5 short:min-h-12 short:px-4", band)}>
         <Icon aria-hidden="true" size={24} strokeWidth={1.9} />
         <h2 className="font-serif text-xl text-current">{title}</h2>
         <span className="ml-auto flex size-10 items-center justify-center rounded-round bg-current/20 font-mono text-lg font-bold tabular-nums">{count}</span>
       </header>
-      <ul className="grid min-h-0 flex-1 content-start gap-3 overflow-y-auto p-3 xl:p-3.5">{children}</ul>
+      <ul className="grid min-h-0 flex-1 content-start gap-3 overflow-y-auto p-3 short:gap-2 short:p-2 xl:p-3.5">{children}</ul>
     </section>
   );
 }

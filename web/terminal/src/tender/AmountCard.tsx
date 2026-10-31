@@ -2,6 +2,9 @@
 // round sums a guest is likely to hand over, and the change to give back. Card
 // and UPI have no change: there the amount follows the balance, and the payment
 // is taken on the venue's own machine or code after Collect (PayStates.tsx).
+//
+// The change is said in the payment screen's foot at every size (ADR-381); the
+// card repeats it, as drawn, only from 1536, where there is room for it.
 
 import { BanknoteIcon } from "lucide-react";
 import type { Money as Amount, PaymentMethod } from "../../../shared/api-types";
@@ -40,11 +43,11 @@ export function AmountCard(props: AmountCardProps) {
   const money = (minor: number): Amount => ({ minor, currency: target.currency });
 
   return (
-    <section aria-label="Amount" className="rounded-card border border-line bg-raised p-5">
+    <section aria-label="Amount" className="rounded-card border border-line bg-raised p-5 short:p-4">
       <p className="text-base text-fg-2">{share ? "This share" : "Amount to collect"}</p>
       <Money amount={target} variant="display" className="block text-left leading-tight" />
 
-      <div className="mt-4">
+      <div className="mt-4 short:mt-3">
         <AmountField
           label={cash ? "Amount received" : "Amount"}
           amount={amount}
@@ -57,7 +60,7 @@ export function AmountCard(props: AmountCardProps) {
       </div>
 
       {cash ? (
-        <div role="group" aria-label="Quick amounts" className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
+        <div role="group" aria-label="Quick amounts" className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(6.5rem,1fr))] gap-2">
           {quickShown(quick, 4).map((q) => {
             const on = amount.minor === q;
             return (
@@ -91,10 +94,7 @@ export function AmountCard(props: AmountCardProps) {
       )}
 
       {cash && (
-        <div
-          aria-live="polite"
-          className="mt-4 flex items-center justify-between gap-4 rounded-card border border-chip-success-border bg-chip-success-bg/50 px-5 py-4"
-        >
+        <div className="mt-4 hidden items-center justify-between gap-4 rounded-card border border-chip-success-border bg-chip-success-bg/50 px-5 py-4 2xl:flex">
           <div>
             <p className="text-base text-fg-2">Change to return</p>
             <Money amount={change ?? money(0)} variant="total" tone="accent" className="block text-left leading-tight" />

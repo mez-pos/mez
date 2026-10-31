@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { floatRequest, joinNames, setFaceCount, soldOutNames, soldOutNotice, typedFloat } from "./open-shift-logic";
+import { countedTotal, faceText, floatRequest, joinNames, setFaceCount, soldOutNames, soldOutNotice, typedFloat } from "./open-shift-logic";
 import { maxPieces } from "./shift-logic";
 
 describe("setFaceCount", () => {
@@ -100,5 +100,45 @@ describe("floatRequest", () => {
   it("sends the notes counted, whatever was typed, for a currency with them", () => {
     const req = floatRequest("INR", { tally: { 50000: 2 }, typed: null });
     expect(req?.total).toEqual({ minor: 100000, currency: "INR" });
+  });
+});
+
+describe("countedTotal", () => {
+  const tests = [
+    { name: "the notes counted", currency: "INR", counted: { tally: { 50000: 2, 2000: 10 }, typed: 0 }, want: 120000 },
+    { name: "nothing counted", currency: "INR", counted: { tally: {}, typed: 0 }, want: 0 },
+    { name: "notes, whatever was typed", currency: "INR", counted: { tally: { 100: 3 }, typed: 999 }, want: 300 },
+    { name: "the amount typed, with no notes for the currency", currency: "XYZ", counted: { tally: {}, typed: 4200 }, want: 4200 },
+    { name: "text that is not an amount counts as nothing", currency: "XYZ", counted: { tally: {}, typed: null }, want: 0 },
+  ];
+  for (const tt of tests) {
+    it(tt.name, () => expect(countedTotal(tt.currency, tt.counted)).toBe(tt.want));
+  }
+});
+
+describe("faceText", () => {
+  const tests = [
+    { name: "a note, without paise", face: 50000, currency: "INR", want: "₹500" },
+    { name: "the smallest rupee", face: 100, currency: "INR", want: "₹1" },
+    { name: "a dollar bill", face: 10000, currency: "USD", want: "$100" },
+    { name: "a coin under the unit keeps its cents", face: 25, currency: "USD", want: "$0.25" },
+    { name: "a euro coin", face: 50, currency: "EUR", want: "€0.50" },
+    { name: "a pound coin", face: 200, currency: "GBP", want: "£2" },
+  ];
+  for (const tt of tests) {
+    it(tt.name, () => expect(faceText(tt.face, tt.currency)).toBe(tt.want));
+  }
+  it("names every INR face without paise", () => {
+    expect([50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100].map((face) => faceText(face, "INR"))).toEqual([
+      "₹500",
+      "₹200",
+      "₹100",
+      "₹50",
+      "₹20",
+      "₹10",
+      "₹5",
+      "₹2",
+      "₹1",
+    ]);
   });
 });

@@ -17,7 +17,22 @@ something now: an order to send, a bill to take, a table to clear.
 
 ## Layout
 
-Three columns inside the frame (`terminal-shell.md`).
+Three columns inside the frame (`terminal-shell.md`) from 1280px wide (xl).
+Below that, two: the panel is not beside the floor but over its right edge,
+and only once a table is picked (ADR-381, TBS-4).
+
+- **At 1366x768:** sidebar, floor and panel side by side, the panel's empty
+  state while nothing is picked. A floor of up to seven columns fits beside
+  the panel without scrolling.
+- **At 1024x768:** sidebar and floor only, the floor across the rest of the
+  width, so a floor of up to seven columns fits and every table is in view.
+  A tap on a tile lays the panel over the floor's right edge, with a shadow
+  and a round close button (X, 48px, "Show the whole floor" to a screen
+  reader) at the right of its head; the tiles
+  left of it can still be tapped, and the close button gives the floor back.
+  While Move, Join or Part is on, the panel is not drawn, so every tile can
+  be tapped; Done brings it back. Under 820px tall (`short:`) the section's
+  padding and gaps and the panel's head and foot step down.
 
 - **Sidebar, 240px, chrome:** **Floor Plan** and **Table List**, two ways to
   look at the same tables, the chosen one the terracotta fill; **Order
@@ -30,22 +45,26 @@ Three columns inside the frame (`terminal-shell.md`).
   - The error line.
   - **Floor Plan:** the area as the back office drew it, on the sunken ground
     in a card. Empty rows and columns are taken out, so the tiles share the
-    room. A tile is at least 92px by 148px and grows to fill; a floor too big
-    for that scrolls. Each tile: the table's shape faint in its state's
+    room. A tile is at least 92px wide and as tall as its lines, and grows to
+    fill; a floor too big for that scrolls. Each tile: the table's shape faint in its state's
     colour (round if it is round), its name in the serif, who is at it ("4
     seats", "3 guests", "Seated", "With T4", "Needs clearing"), its state as
     a chip (or, while a guest's phone has asked to order there, the
-    terracotta "Request" mark of `terminal-requests.md`), and how long with what is owed ("42m · ₹930.00"). The border is
+    terracotta "Request" mark of `terminal-requests.md`), how long ("42m"),
+    and under it what is owed ("₹930.00"): side by side they ran past a
+    narrow tile's edge. The border is
     the state's tone; the picked tile has the terracotta outline. Under
     "All Areas" each area has its name over its grid.
   - **The legend** under the plan: a dot and a word for each of the five
     states.
   - **Table List:** a card, **Table availability**, with a count and a bar
     for each state; then a table of rows: Table, Area, Guests, Status, Time,
-    Balance. Area by area, and within one by name the way people count ("T2"
+    Balance from 1280px wide. Below that (TBS-5): Table, Guests with the time
+    under it ("Guests · Time"), Status, Balance; Area is left out, and
+    Balance never leaves. Area by area, and within one by name the way people count ("T2"
     before "T10"). The picked row has the green tint.
-- **The panel, 400px, chrome:** the table picked. With none: "Pick a table to
-  see its order."
+- **The panel, 400px, chrome:** the table picked. With none, from 1280px:
+  "Pick a table to see its order."; below that it is not drawn.
   - **The head:** "Table T4", or "Table T4 + T7" for a joined party, in the
     serif; the state chip; how long as a pill, terracotta once late; and the
     guests, or the seats of a table with nobody at it.
@@ -129,7 +148,8 @@ cannot be moved from here.
 
 | Action | Does | Emits | Then |
 |---|---|---|---|
-| Tap a tile or a row | Picks the table, or the party's own table if it is joined | | The panel shows it |
+| Tap a tile or a row | Picks the table, or the party's own table if it is joined | | The panel shows it; below 1280px it lays itself over the floor |
+| The panel's X, below 1280px | Lets go of the table | | The panel goes; the whole floor is in view |
 | Seat 4 guests | Opens an order at the table | `order.opened` | Stays on Tables; the button waits until the tile reads Seated, so a second tap cannot open a second order |
 | Seat and order | The same, then the order screen | `order.opened` | The order screen, on the new order |
 | Add Items | Brings the order to the front, off hold if it was saved | `order.resumed` if saved | The order screen |
@@ -167,8 +187,9 @@ goes.
 - Colour and a word on every tile and row, never colour alone.
 - Every button is 48px; Seat and Settle Bill are 56px; numbers are tabular.
 - No drag and no long press: every action is a tap.
-- The plan holds together down to 1366 wide; a floor of seven or more columns
-  scrolls sideways there.
+- At 1024 and at 1366 wide a floor of up to seven columns fits with no
+  table off screen; a bigger one scrolls sideways (ADR-381). Nothing on a
+  tile runs past its edge.
 - A move or a join works on one party at a time, and the server decides: the
   mode only chooses what to ask.
 

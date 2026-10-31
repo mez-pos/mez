@@ -28,6 +28,20 @@ export function taxRows(order: Pick<OrderResponse, "tax" | "totals"> | undefined
 }
 
 /**
+ * The tax rows as one, for the rail on a short screen (TILL-2): "incl. GST"
+ * and the order's tax, which opens out into the rows on a tap. GST when every
+ * component is a part of it (CGST, SGST, IGST), else Tax. Null when there is
+ * only one row, so nothing to fold. The amount is the server's.
+ */
+export function foldedTax(order: Pick<OrderResponse, "tax" | "totals"> | undefined, currency: string): TaxRow | null {
+  const components = order?.tax?.components ?? [];
+  if (components.length < 2) return null;
+  const within = order?.tax?.pricing === "inclusive" ? "incl. " : "";
+  const name = components.every((c) => /GST$/.test(c.name)) ? "GST" : "Tax";
+  return { label: `${within}${name}`, amount: order?.totals.tax ?? { minor: 0, currency } };
+}
+
+/**
  * What the order still asks for: its total, or the balance once any of it is
  * paid. Zero in the venue's currency before there is an order.
  */

@@ -18,16 +18,28 @@ const ticket = (order: string, seq: number): KitchenTicketResponse => ({
 const holding = (value: string | null) => ({ getItem: (key: string) => (key === prefsKey ? value : null) });
 
 describe("readPrefs", () => {
-  it("starts on paper, silent and ungrouped", () => {
+  it("starts on night, silent and ungrouped", () => {
     expect(readPrefs(holding(null))).toEqual(defaultPrefs);
     expect(readPrefs(null)).toEqual(defaultPrefs);
-    expect(defaultPrefs).toEqual({ night: false, sound: false, groupByTable: false });
+    expect(defaultPrefs).toEqual({ night: true, sound: false, groupByTable: false });
+  });
+  it("is night unless paper was chosen on this device", () => {
+    const cases: readonly { kept: string; night: boolean }[] = [
+      { kept: "{}", night: true },
+      { kept: '{"sound":true}', night: true },
+      { kept: '{"night":"dark"}', night: true },
+      { kept: '{"night":true}', night: true },
+      { kept: '{"night":false}', night: false },
+      { kept: '{"night":false,"groupByTable":true}', night: false },
+    ];
+    for (const c of cases) expect(readPrefs(holding(c.kept)).night, c.kept).toBe(c.night);
   });
   it("reads what was kept", () => {
     expect(readPrefs(holding('{"night":true,"sound":true,"groupByTable":true}'))).toEqual({ night: true, sound: true, groupByTable: true });
   });
   it("takes the default for anything missing or not a yes or no", () => {
-    expect(readPrefs(holding('{"night":true,"sound":"loud"}'))).toEqual({ night: true, sound: false, groupByTable: false });
+    expect(readPrefs(holding('{"night":false,"sound":"loud"}'))).toEqual({ night: false, sound: false, groupByTable: false });
+    expect(readPrefs(holding('{"groupByTable":true}'))).toEqual({ night: true, sound: false, groupByTable: true });
   });
   it("takes the defaults for what it cannot read", () => {
     for (const bad of ["not json", "[]", "7", '"night"']) expect(readPrefs(holding(bad))).toEqual(defaultPrefs);
@@ -64,7 +76,11 @@ describe("writePrefs", () => {
 describe("surfaceOf", () => {
   it("is ink at night and paper otherwise", () => {
     expect(surfaceOf({ ...defaultPrefs, night: true })).toBe("ink");
-    expect(surfaceOf(defaultPrefs)).toBe("paper");
+    expect(surfaceOf({ ...defaultPrefs, night: false })).toBe("paper");
+  });
+  it("is ink on a display that has chosen nothing", () => {
+    expect(surfaceOf(readPrefs(null))).toBe("ink");
+    expect(surfaceOf(defaultPrefs)).toBe("ink");
   });
 });
 

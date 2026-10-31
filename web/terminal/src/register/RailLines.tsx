@@ -5,6 +5,14 @@
 //
 // A line the kitchen has not seen can be stepped and removed here. One it has
 // seen cannot change quantity: its bin asks a manager to void it (ADR-072).
+//
+// On a tall screen the stepper stands over the bin, beside the line. On a
+// short one (TILL-2) they sit side by side with the tap gap, under the name and
+// beside the price, so a line is about 90px, not 130, and a 768-tall till shows
+// four. The name keeps the rail's whole width: beside a stepper and a bin it
+// would have 60px at 1024. The line's button is its name, and its hit area is
+// stretched over the whole line, under the stepper and the bin, so the layout
+// can move the parts about and the whole line still opens its sheet.
 
 import { Trash2Icon } from "lucide-react";
 import type { Diet, LineResponse, Money as Amount, NoteResponse, OrderResponse } from "../../../shared/api-types";
@@ -44,9 +52,9 @@ export function RailLines(props: RailLinesProps) {
   const paid = order?.tenders.some((t) => t.status !== "voided") ?? false;
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 2xl:px-5">
+    <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 short:py-2 2xl:px-5">
       {empty ? (
-        <div className="py-12 text-center">
+        <div className="py-12 text-center short:py-8">
           <p className="font-serif text-xl text-fg-muted">No items yet</p>
           <p className="mt-1.5 text-sm text-fg-muted">Tap a dish to start the order</p>
         </div>
@@ -121,21 +129,28 @@ function OrderLine({ line, diet, course, notes, ready, paid, onOpen, onVoid, onR
   const bin = can.remove ? { label: `Remove ${line.name}`, act: onRemove } : can.void ? { label: `Void ${line.name}`, act: onVoid } : null;
 
   return (
-    <li className="flex gap-3 border-b border-line-soft py-3.5">
+    <li className="relative isolate grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto_1fr] gap-x-3 border-b border-line-soft py-3.5 short:gap-y-1 short:py-2">
       <button
         type="button"
         onClick={onOpen}
         aria-label={`${line.qty} ${line.name}${line.status === "active" ? "" : `, ${line.status}`}`}
-        className="min-w-0 flex-1 rounded text-left outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+        className={cx(
+          "col-start-1 row-start-1 text-left outline-none short:col-span-2 short:col-start-1",
+          // The hit area, the hover and the focus ring are the whole line's.
+          "after:absolute after:inset-0 after:-z-10 after:rounded after:outline-offset-2 after:outline-line-focus hover:after:bg-raised-high focus-visible:after:outline-2",
+        )}
       >
         <span className={cx("flex items-start gap-2", voided && "line-through opacity-60")}>
           <DietMark diet={diet} />
           <span className="text-base font-bold">{line.name}</span>
         </span>
+      </button>
+      {/* Taps here fall through to the line's button underneath. */}
+      <div className="pointer-events-none col-start-1 row-start-2 mt-0.5 short:mt-0 short:self-center">
         <Money
           amount={line.gross}
           tone={line.status === "active" ? "default" : "muted"}
-          className={cx("mt-0.5 block text-left font-semibold text-fg-heading", voided && "line-through")}
+          className={cx("block text-left font-semibold text-fg-heading", voided && "line-through")}
         />
         {ready && !voided && <StatusChip status={{ kind: "kitchen", status: "ready" }} className="mt-1.5" />}
         {line.status !== "active" && (
@@ -158,8 +173,8 @@ function OrderLine({ line, diet, course, notes, ready, paid, onOpen, onVoid, onR
             Discount <Money amount={negate(line.discount)} />
           </span>
         )}
-      </button>
-      <div className="flex shrink-0 flex-col items-end gap-1">
+      </div>
+      <div className="col-start-2 row-span-2 row-start-1 flex flex-col items-end gap-1 self-start short:row-span-1 short:row-start-2 short:flex-row short:items-center short:gap-tap-gap">
         {can.change ? (
           <Qty value={line.qty} onChange={onQty} label={line.name} />
         ) : (
@@ -190,7 +205,7 @@ function PendingRow({ line, onRetry, onDrop }: PendingRowProps) {
   const failed = line.status === "failed";
   const { command } = line;
   return (
-    <li className="border-b border-line-soft py-3.5" aria-busy={!failed}>
+    <li className="border-b border-line-soft py-3.5 short:py-2" aria-busy={!failed}>
       <div className={cx("flex items-baseline gap-2", !failed && "text-fg-faint")}>
         <span className="font-mono text-sm tabular-nums">{command.qty}×</span>
         <span className="text-base font-medium">{command.name}</span>

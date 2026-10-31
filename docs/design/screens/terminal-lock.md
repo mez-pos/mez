@@ -13,23 +13,35 @@ plainly when that cannot happen, and send them on to their own work.
 
 ## Layout
 
-**Staff Login**, two columns, nothing scrolls at 1366x768:
+**Staff Login**, two columns from 1280px wide and one under it; nothing
+scrolls at 1024x768 or 1366x768:
 
-- **Left, 46% wide, on the sunken ground** (`BrandPanel`): the logo, "Good
-  food brings people together" in small caps, "Great Food / Brighter Days" in
-  the serif, a script line under it, and along the foot the server's version
-  ("mez v1.0.0") and a second small-caps line. A pale arch sits behind. It is
-  decoration, hidden from a screen reader, and hidden altogether under 1024px.
-- **Right, the rest:**
-  - A script line top right ("Good Teams, Great Service"), from 768px wide.
-  - The logo, only where the left panel is hidden.
+- **Left, 46% wide, on the sunken ground** (`BrandPanel`), from 1280px wide:
+  the logo, "Good food brings people together" in small caps, "Great Food /
+  Brighter Days" in the serif, a script line under it, and along the foot the
+  server's version ("mez v1.0.0") and a second small-caps line. A pale arch
+  sits behind and runs to the panel's foot, however tall. It is decoration,
+  hidden from a screen reader, and hidden altogether under 1280px: on a 1024
+  tablet it took half the screen, More wrapped to a second row and the foot
+  needed a scroll (ADR-381, TILL-6).
+- **Right, the rest** (the whole screen under 1280px):
+  - Along the top, the title on the left and a script line on the right
+    ("Good Teams, Great Service"), from 768px wide. The script sits beside
+    the title, never over it.
+  - The logo above the title, only where the left panel is hidden.
   - **Staff Login** in the serif, and "Select your profile and enter your PIN".
   - A notice, when the last session ended on its own.
-  - **The profiles** (`ProfileTiles`): four to a page. Each is a round avatar
-    with the person's initials, their name, and their role under it. The
-    chosen one has the terracotta ring and tint. With more than four people a
-    round **More** follows the fourth and goes to the next page, round to the
-    first.
+  - **The profiles** (`ProfileTiles`): as many to a page as one row holds,
+    never a fixed count (ADR-255, TILL-21). The row's width is measured and
+    counted in slots, every tile, Back and More one slot wide. Everyone shows
+    when everyone fits. Otherwise a page keeps one slot for More or Back when
+    there are two pages, and two when there are more. Each profile is a round
+    avatar with the person's initials, their name, and their role under it.
+    The chosen one has the terracotta ring and tint. A round **More** follows
+    the last profile and goes to the next page, round to the first; on the
+    second of two pages only **Back** shows, since More would go to the same
+    page. A row too narrow for a profile, Back and More (a phone held
+    upright) keeps four to a page and wraps.
   - **The pad** (`LoginPad`), 30rem at most: a well with the chosen person's
     name at its left ("Choose a profile" before anyone is) and the PIN dots in
     its middle; under it a 3 by 4 grid of keys: 1 to 9, delete, 0, and the
@@ -38,6 +50,15 @@ plainly when that cannot happen, and send them on to their own work.
   - "Forgot your PIN? Ask a manager to reset it."
   - **The foot:** the venue's name, the connection indicator, and the venue's
     date and time.
+
+At **1024x768** the right column is the whole screen: the logo, the title,
+one row of up to eight profiles, the pad, the error line, the help line and
+the foot, without a scroll. At **1366x768** it sits beside the brand panel
+and its row holds five. Under 820px high (`short:`) the padding, the space
+above the profiles, the pad, the error line and the foot, and the gaps
+between the keys (to the 8px two targets need) step down; no text changes
+size. A notice of an ended session costs about 50px more: at 1024x768 it
+pushes the foot below the fold, never the pad or the error line.
 
 **Pair**, one centred column, 28rem: the logo, the trail (`TERMINAL ·
 PAIRING`), "Pair this terminal" in the serif, where a code comes from (a
@@ -66,7 +87,7 @@ The words follow the app: terminal, back office, kitchen display.
 | Action | Does | Then |
 |---|---|---|
 | Tap a profile | Chooses it, clears the PIN | The pad is enabled and names them. With one person on the list they are chosen already |
-| More | Shows the next four | Whoever is chosen stays chosen; the pad still names them |
+| More, Back | Shows the next page, or the one before | Whoever is chosen stays chosen; the pad still names them |
 | Tap a digit, or type one | Appends, up to 8 | A dot fills; past four, a dot is added |
 | Delete, or Backspace | Removes one digit | |
 | Login, or Enter | `POST /sessions` once the PIN has 4 digits | Signed in: the Gate goes to `/`, which lands the person by their role (`terminal-shell.md`) |
@@ -103,7 +124,10 @@ link, where it is that control's own click: a profile is chosen, More pages.
 
 - Keys are 76px on a tall screen and shrink with its height,
   `clamp(48px, 7vh, 76px)`: never under the 48px a thumb needs (ADR-014). The
-  spacing above the profiles and the pad tightens under 900px and 800px high.
+  spacing above the profiles and the pad tightens under 900px and again
+  under 820px high.
+- A row of profiles that changes width (a window resized, a tablet turned)
+  pages again, keeping whoever is chosen in view.
 - A physical keyboard types into the PIN from anywhere on the screen.
 - The error line is always reserved (`min-h-6`), so an error never moves
   Login out from under a finger.

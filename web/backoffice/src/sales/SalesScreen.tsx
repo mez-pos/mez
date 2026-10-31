@@ -27,9 +27,11 @@ import { useCsvDownload, useCsvFile } from "./use-csv-download";
 import { useRangeSales } from "./use-range-sales";
 import { averageBill, csvPath } from "./sales-logic";
 
-// Three across from 1280px, as the dashboard's rows are; at the design's
-// width the two cards beside the wide one are its 420px.
-const row = "grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)_minmax(0,2fr)] min-[1800px]:grid-cols-[minmax(0,1fr)_420px_420px]";
+// Three across from 1280px, as the dashboard's rows are; from 1536px the two
+// cards beside the wide one take the back office's side width (the design
+// draws 420px).
+const row =
+  "grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)_minmax(0,2fr)] 2xl:grid-cols-[minmax(0,1fr)_var(--aside)_var(--aside)]";
 
 export function SalesScreen() {
   const { range, every, picked } = useReportRange();

@@ -2,8 +2,12 @@
 // done with it. A free table seats a party, one to clear is cleared, one with
 // an order shows it (TableOrderView), and one with several asks which. With no
 // table picked it says so: nothing here acts on a table nobody chose.
+//
+// Below xl the floor needs the whole width (ADR-381): the panel is drawn only
+// once a table is picked, over the floor's right edge, with a way to close it,
+// and it steps aside while a move or a join wants taps on the tiles.
 
-import { ArmchairIcon, ArrowRightIcon, ChevronLeftIcon, TimerIcon, UsersIcon } from "lucide-react";
+import { ArmchairIcon, ArrowRightIcon, ChevronLeftIcon, TimerIcon, UsersIcon, XIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import type { LiveTableResponse, TicketSummary } from "../../../shared/api-types";
 import { Button, EmptyState, Money, Qty, StatusChip } from "../../../shared/ui";
@@ -32,11 +36,22 @@ export interface TablePanelProps {
   onMode: (kind: PartyMode) => void;
   /** Whether the order still has items on their way to the server from this till. */
   sendWaits: (orderId: string) => boolean;
+  /** Lets go of the table picked: below xl, that uncovers the floor. */
+  onClose: () => void;
+  /** A move or a join is on: below xl the panel is not drawn, so every tile can be tapped. */
+  stepAside: boolean;
 }
 
 export function TablePanel(props: TablePanelProps) {
   return (
-    <aside aria-label="Table" className="flex w-rail shrink-0 flex-col border-l border-line bg-chrome">
+    <aside
+      aria-label="Table"
+      className={cx(
+        "flex w-rail shrink-0 flex-col border-l border-line bg-chrome",
+        "max-xl:absolute max-xl:inset-y-0 max-xl:right-0 max-xl:z-20 max-xl:shadow-modal",
+        (!props.table || props.stepAside) && "max-xl:hidden",
+      )}
+    >
       {props.table ? (
         // Keyed by the table: the guests counted and the order picked are its own.
         <Picked key={props.table.id} {...props} table={props.table} />
@@ -60,6 +75,7 @@ function Picked({
   onSettle,
   onMode,
   sendWaits,
+  onClose,
 }: TablePanelProps & { table: LiveTableResponse }) {
   const [pickedOrder, setPickedOrder] = useState<string | null>(null);
   const [covers, setCovers] = useState(() => startingCovers(t.seats));
@@ -79,9 +95,21 @@ function Picked({
 
   return (
     <>
-      <header className="border-b border-line px-5 py-5">
-        <h2 className="truncate font-serif text-total leading-tight">{title}</h2>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+      <header className="border-b border-line px-5 py-5 short:py-4">
+        <div className="flex items-start gap-3">
+          <h2 className="min-w-0 flex-1 truncate font-serif text-total leading-tight">{title}</h2>
+          {/* Over the floor, the panel hides tables: this gives them back. Beside it, there is nothing to uncover. */}
+          <button
+            type="button"
+            onClick={onClose}
+            // Not "Close the table": that would sound like settling it.
+            aria-label="Show the whole floor"
+            className="flex size-tap shrink-0 items-center justify-center rounded-round border border-line-strong bg-raised outline-offset-2 outline-attention hover:bg-raised-high focus-visible:outline-3 xl:hidden"
+          >
+            <XIcon aria-hidden="true" size={20} />
+          </button>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2 short:mt-2">
           <StatusChip status={{ kind: "table", status: t.status }} />
           {time && (
             <span
@@ -95,7 +123,7 @@ function Picked({
             </span>
           )}
         </div>
-        <p className="mt-3.5 flex items-center gap-2 text-base text-fg">
+        <p className="mt-3.5 flex items-center gap-2 text-base text-fg short:mt-2">
           <UsersIcon aria-hidden="true" size={17} />
           {guests}
         </p>
@@ -209,7 +237,7 @@ function Picked({
 function Body({ failure, footer, children }: { failure: string | null; footer?: ReactNode; children: ReactNode }) {
   return (
     <>
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 short:py-4">
         {children}
         {failure && (
           <p role="alert" className="mt-4 text-base text-danger">
@@ -217,7 +245,7 @@ function Body({ failure, footer, children }: { failure: string | null; footer?: 
           </p>
         )}
       </div>
-      {footer && <footer className="border-t border-line px-5 pb-5 pt-4">{footer}</footer>}
+      {footer && <footer className="border-t border-line px-5 pb-5 pt-4 short:pb-4 short:pt-3">{footer}</footer>}
     </>
   );
 }

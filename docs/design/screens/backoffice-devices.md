@@ -137,7 +137,9 @@ Inside the frame (`backoffice-shell.md`).
 
 - **Waiting to be paired**, a card, only when there are any: each code made
   and not yet used: the name it will have, its kind, and when it runs out.
-  The code itself is not shown again.
+  The code itself is not shown again. From 1280px it is a column beside the
+  table at the back office's side width (`w-aside`, 307 to 380px; TECH-17);
+  under that, under the table.
 - With no device but this one: "Pair a terminal, a kitchen display or
   another back office to start."
 

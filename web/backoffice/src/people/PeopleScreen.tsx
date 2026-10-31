@@ -91,7 +91,7 @@ export function PeopleScreen() {
         <EmptyState icon={<InboxIcon />} line={problemOf(api.list.error).message} action={{ label: "Try again", onClick: () => void api.list.refetch() }} />
       )}
       {data && (
-        <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_var(--aside)]">
           <div className="flex min-w-0 flex-col gap-3">
             <StaffTable
               staff={staffRows(data.staff, showOff)}

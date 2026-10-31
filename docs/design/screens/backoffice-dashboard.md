@@ -27,7 +27,12 @@ drawn.
   - **Active tables** (`order.open`): "12 / 18", and "67% occupied".
   - **Average order value** (`reports.view`): the total over the bills,
     against yesterday; "No bills yet" before the first.
-- **Second row**, three across from 1280px (a wide card, then two lists):
+- **Second row**, three across from 1280px (a wide card, then two lists),
+  the wide card three sevenths of the row and each list two (at 1366x768
+  about 448px, 299px and 299px). From 1536px the lists take the back
+  office's side width (`w-aside`, 369 to 380px; the design draws 400px) and
+  the wide card the rest (TECH-17). From 1024px it is two across, the wide
+  card over both; under that, one.
   - **Sales overview**, with **View reports**: a bar for each hour of the
     trading day against a round axis, every other hour named under it. One
     green.

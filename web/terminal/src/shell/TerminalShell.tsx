@@ -18,6 +18,7 @@ import { useLocation } from "wouter";
 import { useAuth, useAuthStore } from "../../../shared/auth/use-auth";
 import { Logo } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { useRealtime } from "../../../shared/use-realtime";
 import { useServerVersion, useVenue } from "../../../shared/use-venue";
 import { PrintQueueSheet } from "../print/PrintQueueSheet";
 import { trouble } from "../print/print-queue";
@@ -53,6 +54,7 @@ export function TerminalShell({ children }: { children: ReactNode }) {
   const calling = useMemo(() => [...guests.requests, ...guests.paid, ...guests.unapplied], [guests.requests, guests.paid, guests.unapplied]);
   useRequestChime(calling, guests.loaded);
   const waiter = useWaiterFrame();
+  const live = useRealtime().status.state === "live";
   if (auth.kind !== "signed_in") return null; // the Gate never lets this happen
 
   const failing = trouble(queue.jobs);
@@ -97,8 +99,10 @@ export function TerminalShell({ children }: { children: ReactNode }) {
             }
           />
         )}
-        <div className="ml-auto flex items-center gap-5 whitespace-nowrap">
-          {waiter && <ConnectionWord brief className="text-sm" />}
+        {/* Below xl the cluster gives way to the bar beside it (TBS-3): tighter, and the
+            connection, while it is Online, is its icon alone. Anything else keeps its word. */}
+        <div className="ml-auto flex shrink-0 items-center gap-3 whitespace-nowrap xl:gap-5">
+          {waiter && <ConnectionWord brief className={cx("text-sm", live && "max-xl:w-4 max-xl:overflow-hidden")} />}
           <ConnectionRetry />
           {waiting > 0 && (
             <button

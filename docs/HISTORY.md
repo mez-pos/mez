@@ -8,6 +8,34 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**The venue PC's three complaints, a stability audit, the dead ends, and
+every owed fix from the audits, 2026-10-24 to 26** (ADR-366 to ADR-379),
+outside the phase plan at the human's word. ADR-376 to ADR-379 (the
+26th): a stuck print job frees itself, a paid table takes a waiter's new
+ticket, the waiter's bill keeps a lost payment, retries replay under one
+key, six small doors; cash rounds once at the end to the venue's step;
+a shift's cash is kept as it happens; the server answers for
+`mez.local`. ADR-372 to ADR-375, done
+at the human's "go ahead": a paid ticket rolls when the party orders
+again, `discount.removed`, an order carries the taxes it opened under,
+the shift close projects the day once, the Windows service reports
+checkpoints while stopping and has a minute at shutdown, and daily
+housekeeping. ADR-371: the back office opened from the till leads back
+to it (the Till pill), a till that cannot close the day is told so
+instead of being bounced between two redirects, and nine smaller ways
+out. The
+shortcut now runs `mez open`, which starts or waits for the service and
+then opens the till; every user may start the service; a double-clicked
+`mez.exe` opens the till where the service is installed; the firewall
+rule is for every profile; a `listen_addr` the computer does not have yet
+is waited for. Pair a device shows each address with a QR code that lands
+the device paired. Three audits (orders and money, server and queues, the
+terminal) found no critical defect; the high and medium ones are fixed
+(ADR-368 to ADR-370) and the rest are listed at the top of `KNOWN.md`.
+**None of it seen on a venue PC or in a browser yet**: the walk is the
+first item in `KNOWN.md`. Before it, Phase 15 Task 6d (ADR-364), the
+last report at the venue, **not looked at in a browser** either.
+
 **Phase 15, Task 3c, this repo's part: the watched events** (ADR-363).
 `internal/service/watched.Since` reads the venue's event stream past an
 id and answers the voids, comps, refunds, credit notes and discounts in

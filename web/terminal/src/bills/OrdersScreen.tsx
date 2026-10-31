@@ -48,9 +48,11 @@ interface OrdersScreenProps {
   onPay: (order: OrderResponse) => void;
 }
 
-// Eight columns in 640px at the least; the panel beside them is the `panel`
-// width, so a 1024 tablet scrolls the table sideways and nothing wider does.
-const columns = "grid grid-cols-[8.5rem_4.5rem_4rem_5rem_minmax(0,1fr)_6rem_7rem_4rem] items-center gap-3 2xl:gap-4";
+// Eight columns from xl. Below it the time goes under the order's number and
+// the type under the table, so Items keeps a real width beside the `panel`
+// on a 1024 tablet instead of shrinking to nothing (TBS-6).
+const columns =
+  "grid grid-cols-[8.5rem_5rem_minmax(0,1fr)_6rem_7rem_4rem] items-center gap-3 xl:grid-cols-[8.5rem_4.5rem_4rem_5rem_minmax(0,1fr)_6rem_7rem_4rem] 2xl:gap-4";
 
 export function OrdersScreen({ selectedId, names, onSelect, onNewOrder, onOpenOrder, onPay }: OrdersScreenProps) {
   const day = useDayOrders();
@@ -102,7 +104,7 @@ export function OrdersScreen({ selectedId, names, onSelect, onNewOrder, onOpenOr
           </div>
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center gap-2.5">
+        <div className="mt-5 flex flex-wrap items-center gap-2.5 short:mt-3">
           <div role="tablist" aria-label="Orders by status" className="flex flex-wrap gap-2.5">
             {ordersTabs.map((t) => (
               <button
@@ -120,14 +122,14 @@ export function OrdersScreen({ selectedId, names, onSelect, onNewOrder, onOpenOr
           <SearchField label="Search order #, table or pickup code" onSearch={setQuery} className="ml-auto w-60 xl:w-72 2xl:w-80" />
         </div>
 
-        <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-line bg-raised">
+        <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-line bg-raised short:mt-3">
           <div className="overflow-x-auto overflow-y-auto">
             <div className="min-w-160 px-2">
-              <div className={cx(columns, "border-b border-line px-3 py-3.5 text-meta font-bold uppercase text-fg-muted")}>
+              <div className={cx(columns, "border-b border-line px-3 py-3.5 text-meta font-bold uppercase text-fg-muted short:py-3")}>
                 <span>Order #</span>
-                <span>Time</span>
+                <span className="max-xl:hidden">Time</span>
                 <span>Table</span>
-                <span>Type</span>
+                <span className="max-xl:hidden">Type</span>
                 <span>Items</span>
                 <span className="text-right">Amount</span>
                 <span>Status</span>
@@ -249,10 +251,16 @@ function OrderRow({ selected, number, time, table, type, items, amount, status, 
           selected ? "bg-accent-tint" : "hover:bg-raised-high",
         )}
       >
-        <span className="truncate font-mono font-bold">{number}</span>
-        <span className="font-mono text-fg-2">{time}</span>
-        <span className="truncate font-semibold">{table}</span>
-        <span className="truncate text-fg-2">{type}</span>
+        <span className="flex min-w-0 flex-col">
+          <span className="truncate font-mono font-bold">{number}</span>
+          <span className="font-mono text-sm text-fg-2 xl:hidden">{time}</span>
+        </span>
+        <span className="font-mono text-fg-2 max-xl:hidden">{time}</span>
+        <span className="flex min-w-0 flex-col">
+          <span className="truncate font-semibold">{table}</span>
+          {type && <span className="truncate text-sm text-fg-2 xl:hidden">{type}</span>}
+        </span>
+        <span className="truncate text-fg-2 max-xl:hidden">{type}</span>
         <span className="truncate">{items}</span>
         <Money amount={amount} className="font-bold" />
         {collect ? (

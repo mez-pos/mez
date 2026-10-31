@@ -3,8 +3,8 @@
 
 import type { CountRequest } from "../../../shared/api-types";
 import { isSoldOut } from "../../../shared/menu";
-import { parseAmount } from "../../../shared/money";
-import { countRequest, facesFor, maxPieces, type Tally } from "./shift-logic";
+import { exponentOf, formatMoney, parseAmount } from "../../../shared/money";
+import { countRequest, facesFor, maxPieces, tallyTotal, type Tally } from "./shift-logic";
 
 /**
  * The float as counted: by note, or for a currency with no table of notes as
@@ -21,6 +21,21 @@ export const emptyFloat: FloatCounted = { tally: {}, typed: 0 };
 export function typedFloat(text: string, currency: string): number | null {
   if (text.trim() === "") return 0;
   return parseAmount(text, currency);
+}
+
+/** What the boxes add up to, for display: the notes counted, or the one amount typed. Text that is not an amount counts as nothing. */
+export function countedTotal(currency: string, counted: FloatCounted): number {
+  return facesFor(currency).length > 0 ? tallyTotal(counted.tally) : (counted.typed ?? 0);
+}
+
+/**
+ * A note or coin as staff name it: "₹500", not "₹500.00". A coin worth less
+ * than the unit keeps its fraction, "$0.25". A label for a row, never an
+ * amount anyone pays: the row's value beside it is a figure in full.
+ */
+export function faceText(face: number, currency: string): string {
+  const text = formatMoney({ minor: face, currency });
+  return face % 10 ** exponentOf(currency) === 0 ? text.replace(/\.0+(?!\d)/, "") : text;
 }
 
 /** The opening float to send, or null while the amount typed is not one: the shift is not opened on a guess. */

@@ -97,7 +97,7 @@ export function ItemsScreen() {
       )}
 
       {picked && (
-        <div className={cx("grid grid-cols-1 gap-4", canStock && "lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]")}>
+        <div className={cx("grid grid-cols-1 gap-4", canStock && "lg:grid-cols-[minmax(0,1fr)_var(--aside)]")}>
           <Panel title="Wastage">
             {waste.data ? (
               <Wastage report={waste.data} />

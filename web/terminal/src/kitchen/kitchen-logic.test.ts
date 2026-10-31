@@ -13,6 +13,7 @@ import {
   timerText,
   timerTone,
   toMake,
+  whereParts,
   whereText,
 } from "./kitchen-logic";
 
@@ -104,6 +105,20 @@ describe("the board", () => {
     expect(whereText(ticket({ table: "T4 + T7", table_id: 4 }))).toBe("T4 + T7");
     expect(whereText(ticket({ table_id: 4 }))).toBe("Table 4");
     expect(whereText(ticket())).toBe("Counter · NMRN");
+  });
+
+  it("puts a counter order's short id in the big type and a table whole", () => {
+    const cases: readonly { name: string; t: KitchenTicketResponse; lead: string | null; main: string }[] = [
+      { name: "a table by name", t: ticket({ table: "T4", table_id: 4 }), lead: null, main: "T4" },
+      { name: "tables joined", t: ticket({ table: "T4 + T7", table_id: 4 }), lead: null, main: "T4 + T7" },
+      { name: "a table the menu has no name for", t: ticket({ table_id: 9 }), lead: null, main: "Table 9" },
+      { name: "a counter order", t: ticket(), lead: "Counter", main: "NMRN" },
+      { name: "a counter order with a short id", t: ticket({ order_id: "ord_AB" }), lead: "Counter", main: "AB" },
+    ];
+    for (const c of cases) {
+      expect(whereParts(c.t), c.name).toEqual({ lead: c.lead, main: c.main });
+      expect(whereText(c.t), c.name).toBe(c.lead ? `${c.lead} · ${c.main}` : c.main);
+    }
   });
 });
 

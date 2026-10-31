@@ -61,6 +61,13 @@ middle and scrolls inside itself, so an order's total never leaves the screen.
   - On the bill, nothing: the bill carries its own way back.
 - At the right: the connection as a word ("Online", "Server unreachable"),
   Retry now, table requests, Not printed, the profile.
+
+**The right-hand cluster gives way below 1280px** (TBS-3), so the screen's
+own bar beside it (the waiter's order bar on a 1024 tablet) never runs under
+it: its gaps close from 20px to 12px, and a waiter's connection, while it is
+"Online", is its Wi-Fi icon alone, in green, the word still read out to a
+screen reader. Any other state ("Reconnecting", "Server unreachable") keeps
+its word at every width.
 - **No status bar.** The top bar says whether the server is there.
 
 **The profile menu** opens under the name: **Lock**; **Close the shift**, for
@@ -142,7 +149,10 @@ Every screen inside the frame waits on the shift (`shiftGate`, ADR-094):
 
 - Everything tapped in the frame is 48px or taller. The pills are 48px, not
   the design's 44, and a waiter's tile label is 15px, not 12.5 (ADR-014).
-- The connection is a colour and a word, never a colour alone.
+- The connection is a colour and a word, never a colour alone. The one
+  exception is a waiter's "Online" below 1280px, which is the icon alone:
+  only the calm state gives up its word, and its icon is not the crossed-out
+  one an offline state shows.
 - The clock is the venue's, not the device's, so a tablet set wrong still
   shows the trading day right.
 - Nothing in the frame is drawn that does nothing.

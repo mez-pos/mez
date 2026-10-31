@@ -88,11 +88,15 @@ export function WaiterHome() {
 
   return (
     <div className="flex min-w-0 flex-1 flex-col">
-      <div className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-7 py-6">
+      <div className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-7 py-6 short:py-4">
         <LeafIcon aria-hidden="true" size={230} strokeWidth={1} className="pointer-events-none absolute -left-8 bottom-14 text-accent opacity-10" />
 
-        <div className="relative flex items-start justify-between gap-8">
-          <div className="min-w-0">
+        {/* One wrapping row: the greeting and its garnish, then (after the break) the
+            pills and the search. On a screen 820px tall or less the promo card goes and
+            the search takes its place beside the greeting (`order`), so it costs no row
+            of its own and the tables start higher (TBS-12). */}
+        <div className="relative flex flex-wrap items-start gap-x-8 gap-y-3 short:gap-y-2">
+          <div className="min-w-0 flex-1">
             <h1 className="font-serif text-total leading-tight">
               {hello.hello}, {firstName(auth.staff.name)}!
             </h1>
@@ -103,7 +107,7 @@ export function WaiterHome() {
             <br />
             Brighter Days ♡
           </p>
-          <div className="hidden w-80 shrink-0 items-center gap-3.5 rounded-card border border-chip-success-border bg-accent-tint px-5 py-4 lg:flex">
+          <div className="hidden w-80 shrink-0 items-center gap-3.5 rounded-card border border-chip-success-border bg-accent-tint px-5 py-4 lg:flex short:hidden">
             <div className="flex-1">
               <p className="font-serif text-lg leading-tight">
                 Same Tables.
@@ -116,10 +120,9 @@ export function WaiterHome() {
               <LeafIcon size={30} strokeWidth={1.5} />
             </span>
           </div>
-        </div>
-
-        <div className="relative mt-6 flex flex-wrap items-center gap-2.5">
-          <div role="group" aria-label="Show tables" className="flex flex-wrap gap-2.5">
+          <SearchField label="Search table number" onSearch={setQuery} debounceMs={100} className="order-3 ml-auto w-64 self-center short:order-none" />
+          <div aria-hidden="true" className="order-1 basis-full" />
+          <div role="group" aria-label="Show tables" className="order-2 flex flex-wrap gap-2.5">
             <FilterPill pressed={filter === "all"} count={counts.all} onPick={() => setFilter("all")}>
               <LayoutGridIcon aria-hidden="true" size={19} />
               All Tables
@@ -134,10 +137,9 @@ export function WaiterHome() {
               );
             })}
           </div>
-          <SearchField label="Search table number" onSearch={setQuery} debounceMs={100} className="ml-auto w-64" />
         </div>
 
-        <div className="relative mt-5">{body()}</div>
+        <div className="relative mt-5 short:mt-4">{body()}</div>
       </div>
 
       {asking?.kind === "seat" && (
@@ -170,7 +172,8 @@ export function WaiterHome() {
         The guests have paid and gone. Clear it once it is laid again, and it is free.
       </Confirm>
 
-      <footer className="flex h-24 shrink-0 items-center gap-3.5 border-t border-line bg-chrome px-7">
+      {/* A working screen at 768 tall: the bar is cut to its buttons and loses its script line (tokens.md). */}
+      <footer className="flex h-24 shrink-0 items-center gap-3.5 border-t border-line bg-chrome px-7 short:h-18">
         <Link
           href={route.orders}
           className="inline-flex min-h-charge items-center gap-2.5 rounded-pill border border-line-strong px-5 text-base font-semibold outline-offset-2 outline-attention hover:bg-raised-high focus-visible:outline-3"
@@ -181,13 +184,13 @@ export function WaiterHome() {
             {active}
           </span>
         </Link>
-        <p aria-hidden="true" className="ml-auto hidden font-script text-xl text-fg-2 lg:block">
+        <p aria-hidden="true" className="ml-auto hidden font-script text-xl text-fg-2 lg:block short:hidden">
           Good Food, Happier People ♡
         </p>
         <Button
           variant="primary"
           size="charge"
-          className="ml-auto h-16 px-8 lg:ml-0"
+          className="ml-auto h-16 px-8 lg:ml-0 short:ml-auto short:h-14"
           onClick={() => {
             // A fresh order in front; the order screen asks for its table and how it is served.
             ticket.startNew({ channel: "counter", covers: 0 });
@@ -218,7 +221,7 @@ function FilterPill({ pressed, count, badge, onPick, children }: FilterPillProps
       aria-pressed={pressed}
       onClick={onPick}
       className={cx(
-        "inline-flex h-13 items-center gap-2.5 rounded-pill border px-5 text-base outline-offset-2 outline-attention focus-visible:outline-3",
+        "inline-flex h-13 items-center gap-2.5 rounded-pill border px-5 text-base outline-offset-2 outline-attention focus-visible:outline-3 short:h-tap",
         pressed ? "border-accent bg-accent font-semibold text-accent-fg" : "border-line-strong bg-raised font-medium text-fg hover:bg-raised-high",
       )}
     >

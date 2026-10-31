@@ -28,8 +28,12 @@ Tables, **Past bills** under the order screen's "...", and a waiter's
     **Open**, **Paid**, **Refunded**, **Voided**. At the right, the search,
     "Search order #, table or pickup code".
   - **The table**, in a card that scrolls: Order #, Time, Table, Type, Items,
-    Amount, Status, and **View**. A row is one button, 56px; the picked one
-    has the green tint. The number is the invoice's once there is one.
+    Amount, Status, and **View**, from 1280px wide. Below that (TBS-6,
+    ADR-381) the time sits under the order's number and the type under the
+    table, so six columns are left and Items keeps a real width: at 1024x768,
+    beside the panel, Items is about 130px and View is whole. A row is one
+    button, 56px; the picked one has the green tint. The number is the
+    invoice's once there is one.
   - **Before today**, under the day's rows, when a search finds settled
     bills from earlier.
   - **An order to collect** (ADR-253), paid for on a guest's phone: its
@@ -45,7 +49,11 @@ Tables, **Past bills** under the order screen's "...", and a waiter's
 - **The order, 384px, 440px from 1536px, chrome.** With none picked: "Pick an
   order to see it."
   - **The head:** the invoice number, or the order's id, in the serif; where
-    and when; and its status chip.
+    and when; and its status chip. Under them, in a tinted band, where the
+    money stands: **Amount due ₹500.00** (mustard) while anything is due, else
+    **Paid ₹860.00** (green) while anything stands paid; no band for an
+    order with neither. So an order paid and still open says Paid in view at
+    1024x768 and 1366x768, without scrolling to its totals (TBS-16).
   - For an order to collect, under the head: "To collect · B7K" where the
     table and service are, and while it is out a card, tinted green once
     it is ready: "Call out", the code at the display size in the numeral
@@ -59,12 +67,18 @@ Tables, **Past bills** under the order screen's "...", and a waiter's
   - **Payments:** each with its method, reference, a chip when it is not
     plainly taken, its amount, and what has gone back on it.
   - **Credit notes:** each with its number, reason and amount.
-  - **The foot:** for an order to collect still out, **Handed over**, the
+  - **The foot**, drawing only the buttons that do something (TBS-16,
+    ADR-381; it drew seven, some shut, and at 768 tall pushed Paid out of
+    sight): for an order to collect still out, **Handed over**, the
     primary, at the charge button's height, above the rest; Open order is
-    then secondary. For an order still open, **Open order** and **Pay**; for a
-    reopened bill that owes, **Take the balance**; then **Reprint receipt**,
-    **Invoice** and **History**, and **Refund** and **Void** as the danger
-    pair.
+    then secondary. For an order still open, **Open order**, and **Pay**
+    beside it while it owes and is not saved; for a reopened bill that owes,
+    **Take the balance**. Then, as many to a row as the width holds,
+    **Reprint receipt** once there is an invoice, **Refund** (danger) while
+    something can be credited and nothing is owed, and **More**, which opens
+    upward: **Invoice** once there is one, **Order history**, and **Void a
+    payment** while one can be voided. At 1024 that is two rows: Reprint
+    receipt, then Refund and More.
 
 **The four statuses**, a colour and a word each:
 
@@ -148,10 +162,11 @@ A modal, "Refund INV/26-27/000042?", in two steps like every approval.
 | Tap a row | Opens it in the panel | | The path is `/orders/:id`; picking another replaces it, so Back leaves the screen |
 | New Order | Opens the order screen | | |
 | Open order | Brings it to the order screen, off hold if it was saved | `order.resumed` if saved | |
-| Pay | Opens payment on it | | Shut for a saved order and one that owes nothing |
+| Pay | Opens payment on it | | Not drawn for a saved order or one that owes nothing |
 | Refund, a choice, a stepper or the pad | Asks for a preview | | The figures redraw |
 | Refund, the approval | Issues the credit note | `credit_note.issued`, `refund.issued` | A toast, "Credit note CN/26-27/000001 issued. It is printing."; the panel shows it |
-| Void, reason, the approval | Voids the payment, reopening a closed bill | `order.reopened`, `payment.voided` | **Take the balance** |
+| More | Opens Invoice, Order history and Void a payment, upward | | A choice closes it |
+| Void a payment, reason, the approval | Voids the payment, reopening a closed bill | `order.reopened`, `payment.voided` | **Take the balance** |
 | Take the balance | Opens payment on the bill | | The balance is paid again; no new invoice |
 | Reprint receipt | | `invoice.reprinted` | A DUPLICATE prints |
 
@@ -164,11 +179,11 @@ A modal, "Refund INV/26-27/000042?", in two steps like every approval.
 - **Empty:** "No orders yet today."; on a tab, "No orders here yet today.";
   on a search, "No order matches "42"."
 - **Error:** the server's words in the table, or in the panel.
-- **Nothing left to credit:** Refund shut, "Everything on this bill has been
+- **Nothing left to credit:** no Refund, and "Everything on this bill has been
   credited."
-- **No invoice** (a bill closed at nothing): Refund, Reprint and Invoice
-  shut, "This bill has no invoice."
-- **A bill that owes:** Refund is shut until the balance is taken.
+- **No invoice** (a bill closed at nothing): no Refund, Reprint or Invoice,
+  and "This bill has no invoice."
+- **A bill that owes:** no Refund until the balance is taken.
 - **The refund is not ready:** "Choose what goes back.", "Choose the payment
   it goes back to.", "Choose a reason.", or "That is more than this payment
   has left. Refund it in parts, one payment each." (ADR-084).
@@ -182,7 +197,8 @@ A modal, "Refund INV/26-27/000042?", in two steps like every approval.
 
 - No arithmetic in the UI: every figure in the refund modal is the
   preview's.
-- Refund and Void are the danger button, brick on its tint. The one green
+- Refund is the danger button, brick on its tint; Void a payment, under
+  More, is always confirmed with an approval. The one green
   here is the way on for an order still open, Take the balance, or Handed
   over.
 - A pickup code is never the only thing that says an order is ready: the
@@ -190,8 +206,10 @@ A modal, "Refund INV/26-27/000042?", in two steps like every approval.
 - Every number is tabular and right-aligned; every target 48px, a row 56px.
 - A refund goes back to one payment per credit note; a larger one is made in
   parts.
-- The table holds together to 1366 wide, where it scrolls sideways inside
-  its card before a column is dropped.
+- The table holds together at 1024 and 1366 wide with no column cut to
+  nothing: below 1280px Time and Type fold into the cells beside them
+  (ADR-381), and only a narrower screen scrolls the table sideways inside
+  its card.
 
 ## Reference
 

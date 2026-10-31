@@ -1,13 +1,15 @@
 // The profiles to tap on the sign-in screen (D01): a round avatar with the
-// person's initials, their name and their role under it, four to a page and a
-// More for the rest. The design draws photographs; nobody has one yet, so the
-// initials are the avatar.
+// person's initials, their name and their role under it, as many to a page as
+// one row holds, and a More for the rest. The design draws photographs; nobody
+// has one yet, so the initials are the avatar.
 
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { useEffect, useRef } from "react";
 import type { StaffResponse } from "../../api-types";
 import { initials, roleText } from "../../auth/format";
 import { cx } from "../../ui/cx";
-import { tilePage } from "./login-logic";
+import { pageOf, perPage, tilePage } from "./login-logic";
+import { useSlotsAcross } from "./use-slots-across";
 
 interface ProfileTilesProps {
   people: readonly StaffResponse[];
@@ -17,10 +19,27 @@ interface ProfileTilesProps {
   onPage: (page: number) => void;
 }
 
+// One width for every tile, Back and More included, so the row is counted in
+// whole slots (use-slots-across.ts).
+const slot = "w-26 2xl:w-31";
+
 export function ProfileTiles({ people, selectedId, page, onChoose, onPage }: ProfileTilesProps) {
-  const view = tilePage(people, page);
+  const [row, slots] = useSlotsAcross<HTMLUListElement>();
+  const size = perPage(slots, people.length);
+  const view = tilePage(people, page, size);
+
+  // A row that changed width pages differently: whoever is chosen, or else
+  // whoever led the page, stays in view.
+  const shownSize = useRef(size);
+  useEffect(() => {
+    const before = shownSize.current;
+    if (before === size) return;
+    shownSize.current = size;
+    onPage(selectedId !== null ? pageOf(people, selectedId, size) : Math.floor((view.page * before) / size));
+  }, [size, people, selectedId, view.page, onPage]);
+
   return (
-    <ul className="mt-10 flex flex-wrap items-start gap-x-4 gap-y-6 2xl:gap-x-6 [@media(max-height:900px)]:mt-5">
+    <ul ref={row} className="mt-10 flex flex-wrap items-start gap-x-4 gap-y-6 2xl:gap-x-6 [@media(min-height:821px)_and_(max-height:900px)]:mt-5 short:mt-4">
       {view.shown.map((member) => {
         const chosen = member.id === selectedId;
         return (
@@ -29,7 +48,7 @@ export function ProfileTiles({ people, selectedId, page, onChoose, onPage }: Pro
               type="button"
               aria-pressed={chosen}
               onClick={() => onChoose(member)}
-              className="group flex w-26 flex-col items-center 2xl:w-31 rounded text-center outline-offset-4 outline-line-focus focus-visible:outline-2"
+              className={cx(slot, "group flex flex-col items-center rounded text-center outline-offset-4 outline-line-focus focus-visible:outline-2")}
             >
               <span
                 aria-hidden="true"
@@ -54,7 +73,7 @@ export function ProfileTiles({ people, selectedId, page, onChoose, onPage }: Pro
             type="button"
             onClick={() => onPage(view.prev ?? 0)}
             aria-label={`Previous profiles, page ${view.page} of ${view.pages}`}
-            className="flex w-20 flex-col items-center pt-3 text-center outline-offset-4 outline-line-focus focus-visible:outline-2 2xl:w-25 2xl:pt-6"
+            className={cx(slot, "flex flex-col items-center pt-3 text-center outline-offset-4 outline-line-focus focus-visible:outline-2 2xl:pt-6")}
           >
             <span className="flex size-14 items-center justify-center rounded-round border border-line-strong bg-raised hover:bg-raised-high">
               <ChevronLeftIcon aria-hidden="true" size={24} strokeWidth={2} />
@@ -69,7 +88,7 @@ export function ProfileTiles({ people, selectedId, page, onChoose, onPage }: Pro
             type="button"
             onClick={() => onPage(view.next)}
             aria-label={`More profiles, page ${view.page + 1} of ${view.pages}`}
-            className="flex w-20 flex-col items-center pt-3 text-center outline-offset-4 outline-line-focus focus-visible:outline-2 2xl:w-25 2xl:pt-6"
+            className={cx(slot, "flex flex-col items-center pt-3 text-center outline-offset-4 outline-line-focus focus-visible:outline-2 2xl:pt-6")}
           >
             <span className="flex size-14 items-center justify-center rounded-round border border-line-strong bg-raised hover:bg-raised-high">
               <ChevronRightIcon aria-hidden="true" size={24} strokeWidth={2} />

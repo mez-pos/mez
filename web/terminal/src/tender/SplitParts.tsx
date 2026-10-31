@@ -1,6 +1,7 @@
 // What the split step is drawn from (D08a), while a split is being made and
-// once it is in use: the frame (a title bar, the mode column, the guests, a
-// footer bar), one guest's card, and the pill saying whether they have paid.
+// once it is in use: the frame (a title bar with the mode, a column for what
+// the mode needs, the guests, a footer bar), one guest's card, and the pill
+// saying whether they have paid.
 
 import { XIcon } from "lucide-react";
 import type { ReactNode } from "react";
@@ -9,39 +10,54 @@ import { Money } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 
 interface SplitFrameProps {
-  /** "Split bill · Table T4". */
-  heading: string;
+  /** "Table T4", or how the order is served. */
+  title: string;
   /** What is being split, named: "Total", or "Still owed" after a payment. */
   totalLabel: string;
   total: Amount;
+  /** The mode: a control to choose it while the split is made, its name once it is in use. */
+  mode: ReactNode;
+  /** What the mode needs: how many guests, a keypad, how many shares are paid. */
   aside: ReactNode;
   footer: ReactNode;
+  /** The wide column: by item the items still to give out, then the guests. */
   children: ReactNode;
 }
 
-export function SplitFrame({ heading, totalLabel, total, aside, footer, children }: SplitFrameProps) {
+export function SplitFrame({ title, totalLabel, total, mode, aside, footer, children }: SplitFrameProps) {
   return (
     <section aria-label="Split bill" className="flex min-h-96 flex-1 flex-col overflow-hidden rounded-sheet border border-line bg-canvas shadow-card">
-      <header className="flex min-h-16 shrink-0 items-center gap-3.5 border-b border-line bg-chrome px-6">
-        <h2 className="min-w-0 truncate font-serif text-xl">{heading}</h2>
+      <header className="flex min-h-16 shrink-0 flex-wrap items-center gap-x-3.5 gap-y-1 border-b border-line bg-chrome px-6 py-1 short:min-h-14 short:px-4">
+        {/* Below 1280 "Split bill" gives way so the mode fits on the one row: the step strip above says it. */}
+        <h2 className="min-w-0 truncate font-serif text-xl">
+          <span className="max-xl:sr-only">Split bill · </span>
+          {title}
+        </h2>
+        {mode}
         <p className="ml-auto flex shrink-0 items-baseline gap-2 text-base text-fg-muted">
           {totalLabel} <Money amount={total} className="font-bold text-fg" />
         </p>
       </header>
       <div className="flex min-h-0 flex-1">
-        <aside className="w-72 shrink-0 overflow-y-auto border-r border-line bg-chrome p-5 2xl:w-82">{aside}</aside>
-        <div className="grid min-w-0 flex-1 grid-cols-2 content-start gap-4 overflow-y-auto p-5">{children}</div>
+        <aside className="w-panel shrink-0 overflow-y-auto border-r border-line bg-chrome p-5 short:p-4">{aside}</aside>
+        <div className="min-w-0 flex-1 overflow-y-auto p-5 short:p-4">{children}</div>
       </div>
-      <footer className="flex min-h-20 shrink-0 flex-wrap items-center gap-3.5 border-t border-line bg-chrome px-6 py-3">{footer}</footer>
+      <footer className="flex min-h-20 shrink-0 flex-wrap items-center gap-3.5 border-t border-line bg-chrome px-6 py-3 short:min-h-0 short:px-4 short:py-2">
+        {footer}
+      </footer>
     </section>
   );
 }
 
-/** A split mode's tile, and how the chosen one is drawn. */
-export const modeTile = "flex min-h-13 w-full items-center gap-3 rounded border px-4 text-left text-base";
-export const modeTileOn = "border-accent bg-accent-tint font-bold text-accent-text";
+/** The guests' cards, as many across as the column holds. */
+export function GuestGrid({ children }: { children: ReactNode }) {
+  return <div className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] content-start gap-4">{children}</div>;
+}
 
-/** The small capital heading over a group in the mode column. */
+/** How a chosen mode, or the guest the next item goes to, is drawn. */
+export const chosen = "border-accent bg-accent-tint font-bold text-accent-text";
+
+/** The small capital heading over a group. */
 export function ColumnHeading({ children }: { children: ReactNode }) {
   return <h3 className="mb-3.5 text-meta font-bold uppercase text-fg-muted">{children}</h3>;
 }

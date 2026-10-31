@@ -7,7 +7,16 @@
 
 ## Current phase
 
-**Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
+**Phase 17 - Every screen at the venue's own size**,
+`docs/phases/phase-17.md`, opened 2026-10-31 (ADR-381): the fixes from
+the UI audit (`docs/design/ui-audit-2026-10-31.md`). Tasks 1 and 4 to
+12 are done: at the human's word the device-fit pass came first, built
+and seen at 1024x768, 1366x768 and 1920x1080 on 2026-10-31 (ADR-381,
+ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s are
+Tasks 2 and 3, next. It runs before Phase 16, which is mostly
+`mez-cloud`'s.
+
+Before it, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
 2026-10-22. Seven tasks; Task 1 (the ADR) and Task 4 (the health summary
 over the relay connection) are this repo's, Task 7 is words in both, and
 Tasks 2, 3, 5 and 6 are `mez-cloud`'s. Phase 14's tasks that were this
@@ -19,37 +28,33 @@ list below.
 
 ## Last completed task
 
-**The venue PC's three complaints, a stability audit, the dead ends, and
-every owed fix from the audits, 2026-10-24 to 26** (ADR-366 to ADR-379),
-outside the phase plan at the human's word. ADR-376 to ADR-379 (the
-26th): a stuck print job frees itself, a paid table takes a waiter's new
-ticket, the waiter's bill keeps a lost payment, retries replay under one
-key, six small doors; cash rounds once at the end to the venue's step;
-a shift's cash is kept as it happens; the server answers for
-`mez.local`. ADR-372 to ADR-375, done
-at the human's "go ahead": a paid ticket rolls when the party orders
-again, `discount.removed`, an order carries the taxes it opened under,
-the shift close projects the day once, the Windows service reports
-checkpoints while stopping and has a minute at shutdown, and daily
-housekeeping. ADR-371: the back office opened from the till leads back
-to it (the Till pill), a till that cannot close the day is told so
-instead of being bounced between two redirects, and nine smaller ways
-out. The
-shortcut now runs `mez open`, which starts or waits for the service and
-then opens the till; every user may start the service; a double-clicked
-`mez.exe` opens the till where the service is installed; the firewall
-rule is for every profile; a `listen_addr` the computer does not have yet
-is waited for. Pair a device shows each address with a QR code that lands
-the device paired. Three audits (orders and money, server and queues, the
-terminal) found no critical defect; the high and medium ones are fixed
-(ADR-368 to ADR-370) and the rest are listed at the top of `KNOWN.md`.
-**None of it seen on a venue PC or in a browser yet**: the walk is the
-first item in `KNOWN.md`. Before it, Phase 15 Task 6d (ADR-364), the
-last report at the venue, **not looked at in a browser** either.
+**Phase 17, Tasks 1 and 4 to 12: the UI audit and every screen at the
+venue's own size** (ADR-381, ADR-382), 2026-10-31, at the human's word.
+The impeccable skill's audit walked every screen of v0.2.0-beta.1 at
+1366x768, 1024x768, 1920x1080 and 390x844 (`docs/design/ui-audit-2026-10-31.md`):
+119 findings, 2 P0. Phase 17 carries the plan. The
+device-fit pass came first: the shared Modal scrolls its body, the till's
+toasts sit at the top, `--aside` and fluid kitchen sizes are tokens; the
+register shows four order lines and six dishes at 768 tall; tender keeps
+the change in its foot; split by item lists items first; the lock, open
+shift and setup keep their main action in view; tables, Orders, the
+waiter and close of day fit 1024; the kitchen board opens on ink with the
+station as its title and fits a ticket and its action at 768; the back
+office's side columns are tokens, the item editor's Save is sticky and a
+picked table's card sits beside the floor. Seen by a scripted walk at
+each size; 2,531 vitest tests pass. What was not seen is the top of
+`KNOWN.md`.
 
 ## Next task
 
-**The human's walk of ADR-366 and ADR-367 on the venue PC** (the first
+**Here: Phase 17 Task 2, paid means closed (TBS-1, P0)**, then Task 3
+(TILL-1, P0), then Task 13 onward. Each screen is checked by eye at
+1024x768 and 1366x768 before it is ticked: the audit's walk (a demo venue
+from `mez setup -demo-menu` in a scratch data directory, a scripted
+Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel
+breakpoint never shares a property with `xl:` or `short:`.
+
+**The human's, at the venue:** the walk of ADR-366 and ADR-367 on the venue PC (the first
 item in `KNOWN.md`): the installer
 `dist/mez_v0.2.0-beta.1_windows_amd64_setup.exe` is built (ADR-380, the
 beta tag, 2026-10-26, local and not pushed). Install it over the old one
