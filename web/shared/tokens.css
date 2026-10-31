@@ -23,6 +23,9 @@
    shells never scroll, so on one of these every fixed height is paid for out
    of the list in the middle. `short:` trims chrome; it never shrinks text. */
 @custom-variant short (@media (max-height: 820px));
+/* The ink surface (espresso night): what only the dark ground needs, like an
+   edge a button loses against a dark card (KDS-9, ADR-391). */
+@custom-variant ink (&:where([data-surface="ink"] *));
 
 :root {
   /* Paper surfaces */

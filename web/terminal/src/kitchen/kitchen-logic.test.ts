@@ -1,15 +1,21 @@
 import { describe, expect, it } from "vitest";
+import { ApiError } from "../../../shared/api";
 import type { KitchenBoardResponse, KitchenTicketResponse } from "../../../shared/api-types";
 import {
   agoText,
   allDay,
   boardColumns,
   comingRows,
+  isNewTicket,
   latePercent,
   metaText,
   minutesText,
+  moveFailure,
+  readFailure,
   readStation,
+  staleText,
   statRows,
+  tapHeld,
   timerText,
   timerTone,
   toMake,
@@ -218,5 +224,40 @@ describe("readStation", () => {
         },
       }),
     ).toBeNull();
+  });
+});
+
+describe("a board to trust (ADR-391)", () => {
+  it("says it may be out of date once the server has been silent 10 seconds (KDS-2)", () => {
+    expect(staleText(null)).toBeNull();
+    expect(staleText(9_999)).toBeNull();
+    expect(staleText(10_000)).toBe("Not up to date: no word from the server for 10 seconds. New tickets may be missing.");
+    expect(staleText(119_000)).toMatch(/for 119 seconds\./);
+    expect(staleText(185_000)).toMatch(/for 3 minutes\./);
+  });
+
+  it("takes no tap for 700 ms after the board moves, so a double tap does not land on the next card (KDS-3)", () => {
+    expect(tapHeld(1_000, 1_699)).toBe(true);
+    expect(tapHeld(1_000, 1_700)).toBe(false);
+  });
+
+  it("says New for a minute after a ticket arrives, and never for one there at the first read (KDS-1)", () => {
+    expect(isNewTicket(undefined, 5_000)).toBe(false);
+    expect(isNewTicket(1_000, 60_999)).toBe(true);
+    expect(isNewTicket(1_000, 61_000)).toBe(false);
+  });
+
+  it("says a failed move in the kitchen's words, never the till's (KDS-14)", () => {
+    expect(moveFailure(new ApiError("network", "offline"), "T4")).toBe("T4 did not move: no answer from the server. Tap again.");
+    expect(moveFailure(new ApiError("invalid_transition", "x", 409), "T4")).toBe("T4 has already moved on another screen.");
+    expect(moveFailure(new ApiError("ticket_not_found", "x", 404), "Counter · NMRN")).toBe("Counter · NMRN is no longer on the board.");
+    expect(moveFailure(new ApiError("forbidden", "x", 403), "T4")).toMatch(/^T4 did not move: the server refused it\./);
+    expect(moveFailure(new Error("boom"), "T4")).toBe("T4 did not move. Tap again.");
+    for (const err of [new ApiError("network", "x"), new Error("x")]) expect(moveFailure(err, "T4")).not.toMatch(/Not sent/);
+  });
+
+  it("says the board could not be read, and that it is trying again", () => {
+    expect(readFailure(new ApiError("timeout", "x"))).toBe("The tickets could not be read: no answer from the server. Trying again.");
+    expect(readFailure(new ApiError("forbidden", "x", 403))).toBe("The tickets could not be read. Trying again.");
   });
 });

@@ -10,6 +10,18 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The kitchen display, heard and trusted** (ADR-391, Phase 17 Task 20;
+  2026-10-31). Seen in a scripted Chromium at 1366x768: a ticket sent from
+  the till arriving as new, with "1 new below" in a full New Orders; Recall
+  and Change station asking for a second tap, and Recall's resetting after
+  4 s; the brick band 13 s after the demo server was stopped; the 2px edges
+  on night. The sound band seen only with Chrome's rule emulated in the page
+  (headless Chromium plays sound without a tap), and gone at a tap on the
+  board. **Not heard:** the chime itself, louder and twice, on a real
+  kitchen screen; **not seen:** a double tap held by the 700 ms rule (tested
+  in vitest), the failure words on screen (tested). Left: "1 new below"
+  covers the foot of the column's last card while it shows.
+
 - **Sold out without a fade; the warning toast as a chip** (ADR-390, Phase
   17 Task 19; 2026-10-31). Seen in a scripted Chromium with two demo dishes
   sold out: the till's cards at 1024 (opacity 1, the well's fill, the chip,

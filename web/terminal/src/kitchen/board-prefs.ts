@@ -15,13 +15,21 @@ export interface BoardPrefs {
 }
 
 /**
- * A display starts on espresso night, silent, in the order tickets were sent.
- * Night is the kitchen's surface (tokens.md): a bright screen over a hot pass
- * is the wrong tool. Paper stays a choice in the foot (ADR-381, over ADR-177).
+ * A display starts on espresso night, with its chime on, in the order tickets
+ * were sent. Night is the kitchen's surface (tokens.md): a bright screen over
+ * a hot pass is the wrong tool. A silent board loses tickets, so sound is on
+ * until a kitchen turns it off (ADR-381, ADR-391, over ADR-177).
  */
-export const defaultPrefs: BoardPrefs = { night: true, sound: false, groupByTable: false };
+export const defaultPrefs: BoardPrefs = { night: true, sound: true, groupByTable: false };
 
 export const prefsKey = "mez.kitchen.prefs";
+
+/**
+ * Written with the choices. Choices kept before it (ADR-391) had sound off
+ * because that was the default, not because anyone chose it: read, they keep
+ * their night and grouping and take the new default for sound.
+ */
+export const prefsVersion = 2;
 
 /** The choices kept on this device; anything unreadable or missing is the default. */
 export function readPrefs(storage: Pick<Storage, "getItem"> | null): BoardPrefs {
@@ -30,7 +38,8 @@ export function readPrefs(storage: Pick<Storage, "getItem"> | null): BoardPrefs 
     if (typeof raw !== "object" || raw === null) return defaultPrefs;
     const kept = raw as Record<string, unknown>;
     const flag = (key: keyof BoardPrefs) => (typeof kept[key] === "boolean" ? kept[key] : defaultPrefs[key]);
-    return { night: flag("night"), sound: flag("sound"), groupByTable: flag("groupByTable") };
+    const sound = kept.v === prefsVersion ? flag("sound") : defaultPrefs.sound;
+    return { night: flag("night"), sound, groupByTable: flag("groupByTable") };
   } catch {
     return defaultPrefs;
   }
@@ -39,7 +48,7 @@ export function readPrefs(storage: Pick<Storage, "getItem"> | null): BoardPrefs 
 /** Keeps the choices. A device that blocks storage keeps them until it reloads. */
 export function writePrefs(storage: Pick<Storage, "setItem"> | null, prefs: BoardPrefs): void {
   try {
-    storage?.setItem(prefsKey, JSON.stringify(prefs));
+    storage?.setItem(prefsKey, JSON.stringify({ ...prefs, v: prefsVersion }));
   } catch {
     // Storage blocked: the choice lasts until the page is reloaded.
   }
@@ -77,4 +86,20 @@ export const ticketId = (t: KitchenTicketResponse): string => `${t.order_id}-${t
 export function arrivals(seen: ReadonlySet<string> | null, fresh: readonly KitchenTicketResponse[]): string[] {
   if (seen === null) return [];
   return fresh.map(ticketId).filter((id) => !seen.has(id));
+}
+
+/** When each ticket in New Orders arrived, as far as this board has seen: none for those there at its first read. */
+export interface Arrived {
+  readonly seen: ReadonlySet<string> | null;
+  readonly at: ReadonlyMap<string, number>;
+}
+
+export const noArrivals: Arrived = { seen: null, at: new Map() };
+
+/** The arrivals once New Orders reads `fresh` at `now`: the new ones noted, the ones gone from it dropped (KDS-1, ADR-391). */
+export function noteArrivals(prev: Arrived, fresh: readonly KitchenTicketResponse[], now: number): Arrived {
+  const ids = new Set(fresh.map(ticketId));
+  const at = new Map([...prev.at].filter(([id]) => ids.has(id)));
+  for (const id of arrivals(prev.seen, fresh)) at.set(id, now);
+  return { seen: ids, at };
 }

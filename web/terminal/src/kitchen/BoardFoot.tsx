@@ -11,6 +11,7 @@
 // script line: a working screen carries none (ADR-381).
 
 import { LockIcon, Settings2Icon, Volume2Icon, VolumeXIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import { cx } from "../../../shared/ui/cx";
 import type { BoardPrefs } from "./board-prefs";
 
@@ -31,16 +32,33 @@ interface BoardFootProps {
   signedIn?: SignedIn | undefined;
 }
 
-const plain =
-  "inline-flex min-h-tap items-center gap-2.5 rounded-pill px-4 text-base font-semibold outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-4";
+const shape =
+  "inline-flex min-h-tap items-center gap-2.5 rounded-pill px-4 text-base font-semibold outline-offset-2 outline-line-focus focus-visible:outline-4";
+const plain = cx(shape, "hover:bg-raised-high");
 
 export function BoardFoot({ prefs, onPrefs, onChangeStation, signedIn }: BoardFootProps) {
   const Sound = prefs.sound ? Volume2Icon : VolumeXIcon;
+  // Leaving the board for the choice of station takes a second tap: a wet
+  // hand brushing the foot does not take the tickets off the screen (KDS-15).
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const timer = setTimeout(() => setArmed(false), 4000);
+    return () => clearTimeout(timer);
+  }, [armed]);
   return (
     <footer className="flex min-h-19 shrink-0 flex-wrap items-center gap-x-5 gap-y-1 border-t border-line bg-chrome px-7 py-2 short:min-h-14 short:gap-x-4 short:px-5 short:py-1">
-      <button type="button" onClick={onChangeStation} className={plain}>
+      <button
+        type="button"
+        onClick={() => {
+          if (!armed) return setArmed(true);
+          setArmed(false);
+          onChangeStation();
+        }}
+        className={armed ? cx(shape, "bg-attention text-attention-fg hover:bg-attention-hover") : plain}
+      >
         <Settings2Icon aria-hidden="true" size={19} strokeWidth={1.85} />
-        Change station
+        {armed ? "Tap again to change station" : "Change station"}
       </button>
       <button type="button" aria-pressed={prefs.sound} onClick={() => onPrefs({ ...prefs, sound: !prefs.sound })} className={plain}>
         <Sound aria-hidden="true" size={19} strokeWidth={1.85} />

@@ -8,6 +8,16 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 19: sold out without opacity; warning toasts as chips**
+(TECH-13, ADR-390), 2026-10-31. A sold-out card on the till and on the
+guest's menu is sunken (the well's fill, the photo in grey, name and price
+muted, the till's name struck), with "Sold out" as the warning chip, and
+no opacity, so every word holds AA; the till draws no "+" for it. A
+warning toast is the warning chip's fill, ink and border, with no side
+stripe. `shared/tokens.test.ts` holds every chip's ink to 4.5:1 on its
+fill. Seen in a browser: the till at 1024, the guest's menu at 390 and a
+warning toast at 1366 (the server's refusal made up in the walk).
+
 **Phase 17, Task 18: diet marks by shape** (GST-1, TILL-15, ADR-389),
 2026-10-31. `DietMark` is an SVG: a square with a dot for veg and vegan,
 a square with a filled triangle for non-veg, as FSSAI marks them, so the

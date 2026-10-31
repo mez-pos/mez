@@ -14977,3 +14977,50 @@ in the card's ground and the photo, not in the words; and a warning should look 
 whether it is a chip in a table or news in a toast.
 Cost: a sold-out card on the till is a little less quiet than it was at a distance: its
 words are now as dark as the ink allows.
+
+## ADR-391 - The kitchen display: heard, and trusted
+2026-10 · Status: accepted. Phase 17 Task 20 (KDS-1, KDS-2, KDS-3, KDS-14, KDS-15, KDS-9);
+carries out ADR-381's item 1 for sound, over ADR-177.
+Context: a new ticket could arrive unheard. The board started silent, and after a reload a
+browser holds sound back until the page is touched, while the foot still said "Sound on";
+and New Orders run oldest first, so a new card landed at the foot of a full column. A board
+that had lost the server looked live: its timers ticked, and only the header's small pill
+said otherwise. A double tap on Start or Mark ready landed on the next card as it slid into
+place. A failed move spoke the till's words ("Not sent: ...") and stayed on screen for good.
+One wet tap on Recall undid a cook's work, and one on Change station took the board away.
+On night the action buttons were 1.3 to 1.5:1 against their card: no edge to aim at.
+Decision:
+  - **Sound is on by default** (`board-prefs.ts`). A display that kept its choices before
+    this had sound off because that was the default, not a choice: read once, it keeps its
+    night and grouping and takes sound on (`prefsVersion`).
+  - **A held-back chime says so**: while sound is on and the browser holds it, a band under
+    the header says "Sound is blocked by the browser. Tap here to turn it on, so new tickets
+    chime.", and the first tap anywhere on the board unblocks it.
+  - **The chime is twice as long and louder**: the two rising notes twice, half a second
+    apart, in a triangle wave at twice the gain.
+  - **A new ticket says New** for a minute, and when one is under New Orders' fold a button
+    at the column's foot says "1 new below" and scrolls to it.
+  - **A board without the server says so** after ten seconds without the live stream, in a
+    brick band: "Not up to date: no word from the server for 12 seconds. New tickets may be
+    missing." It goes when the stream is back.
+  - **A tap within 700 ms of the board moving is not taken**: the second half of a double tap
+    lands on a card that was not there when the finger came down.
+  - **Kitchen words for a failed move**, naming the ticket ("T4 has already moved on another
+    screen.", "T4 did not move: no answer from the server. Tap again."), gone after eight
+    seconds or at the next move; a board that cannot be read says it is trying again.
+  - **Recall and Change station take a second tap** within four seconds, saying "Tap again to
+    recall" and "Tap again to change station" in terracotta.
+  - **On night every action has an edge**: a 2px border in the muted ink, 5:1 on the card, by a
+    new `ink:` variant (the ink surface) in tokens.css.
+Rejected: a chime that repeats until a ticket is started (a busy pass with three tickets
+waiting would ring without end; the New marker and the button below the fold do that work
+without noise); disabling the buttons for 700 ms (they would flash on every arrival; a tap
+not taken looks the same as a tap that missed); a confirm dialog for Recall (a modal on a
+wet pass is two more targets; the second tap on the same place is the gesture a cook
+already makes); stopping the timers while the board is stale (the time a ticket has waited
+is still true; what is missing is tickets, and the band says that).
+Because: the kitchen display is the one screen read from across a room by people with full
+hands: a ticket it fails to announce, or a tap it takes twice, is a dish late or lost.
+Cost: the "1 new below" button covers the foot of the lowest card in the column while it
+shows. A headless browser plays sound without a tap, so the blocked band was seen with
+Chrome's rule emulated in the page, not in Chrome itself.

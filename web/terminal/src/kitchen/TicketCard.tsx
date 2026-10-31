@@ -17,7 +17,7 @@
 // display knows no waiter). Recall stands there instead (rule 4).
 
 import { BikeIcon, CheckIcon, PlayIcon, ShoppingBagIcon, Undo2Icon, UtensilsIcon, type LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { KitchenTicketResponse, ServiceType } from "../../../shared/api-types";
 import { cx } from "../../../shared/ui/cx";
 import { clockText } from "../../../shared/venue-text";
@@ -42,8 +42,14 @@ const tonePill: Readonly<Record<TimerTone, string>> = {
   late: "bg-chip-danger-bg text-chip-danger-fg",
 };
 
+// On night every action has a 2px edge in the muted ink, 5:1 on the card:
+// the fills alone are 1.3 to 1.5:1 there, and a button with no edge is a
+// guess (KDS-9, ADR-391).
 const action =
-  "mt-4 flex min-h-16 w-full items-center justify-center gap-2.5 rounded-pill text-xl font-semibold outline-offset-2 outline-line-focus focus-visible:outline-4 disabled:opacity-50 short:mt-3";
+  "mt-4 flex min-h-16 w-full items-center justify-center gap-2.5 rounded-pill text-xl font-semibold outline-offset-2 outline-line-focus focus-visible:outline-4 disabled:opacity-50 short:mt-3 ink:border-2 ink:border-fg-muted";
+
+/** How long Recall waits for its second tap. */
+const recallArmedMs = 4000;
 
 interface TicketCardProps {
   ticket: KitchenTicketResponse;
@@ -56,9 +62,18 @@ interface TicketCardProps {
   disabled: boolean;
   /** Start preparing, Mark ready, or Recall: what this column does. Null for someone who may only look (ADR-180). */
   onAct: (() => void) | null;
+  /** It arrived in the last minute: it says New (KDS-1). */
+  isNew?: boolean;
 }
 
-export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, onAct }: TicketCardProps) {
+export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, onAct, isNew = false }: TicketCardProps) {
+  // Recall undoes a cook's work, so it asks for a second tap: one wet tap is not enough (KDS-15).
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const timer = setTimeout(() => setArmed(false), recallArmedMs);
+    return () => clearTimeout(timer);
+  }, [armed]);
   const elapsed = now - Date.parse(t.sent_at);
   const tone = timerTone(elapsed, lateAfter);
   const word = toneWord[tone];
@@ -70,7 +85,7 @@ export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, o
 
   return (
     <article
-      aria-label={ready ? `${whereText(t)}, ready` : `${whereText(t)}, ${timerText(elapsed)}${word ? `, ${word}` : ""}`}
+      aria-label={ready ? `${whereText(t)}, ready` : `${whereText(t)}${isNew ? ", new" : ""}, ${timerText(elapsed)}${word ? `, ${word}` : ""}`}
       className={cx("rounded-card border border-l-8 bg-raised p-4 shadow-rest short:p-3", look.card)}
     >
       <header>
@@ -92,6 +107,7 @@ export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, o
           )}
         </div>
         <p className="mt-0.5 flex items-center gap-2 text-lg text-fg-muted">
+          {isNew && <span className="shrink-0 rounded-pill bg-attention px-2.5 text-lg font-bold uppercase text-attention-fg">New</span>}
           <Icon aria-hidden="true" size={18} strokeWidth={1.9} className="shrink-0" />
           <span className="min-w-0">{[metaText(t), placed].filter(Boolean).join(" · ")}</span>
         </p>
@@ -140,9 +156,18 @@ export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, o
         </button>
       )}
       {onAct && ready && (
-        <button type="button" disabled={disabled} onClick={onAct} className={cx(action, "bg-accent-tint text-accent-text hover:bg-raised-high")}>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => {
+            if (!armed) return setArmed(true);
+            setArmed(false);
+            onAct();
+          }}
+          className={cx(action, armed ? "bg-attention text-attention-fg" : "bg-accent-tint text-accent-text hover:bg-raised-high")}
+        >
           <Undo2Icon aria-hidden="true" size={22} strokeWidth={2.2} />
-          {busy ? "Recalling" : "Recall"}
+          {busy ? "Recalling" : armed ? "Tap again to recall" : "Recall"}
         </button>
       )}
     </article>

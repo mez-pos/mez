@@ -13,7 +13,7 @@ the UI audit (`docs/design/ui-audit-2026-10-31.md`). Tasks 1 and 4 to
 12 are done: at the human's word the device-fit pass came first, built
 and seen at 1024x768, 1366x768 and 1920x1080 on 2026-10-31 (ADR-381,
 ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s,
-Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 19 (ADR-384 to ADR-390). It runs before Phase 16, which is mostly
+Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 20 (ADR-384 to ADR-391). It runs before Phase 16, which is mostly
 `mez-cloud`'s.
 
 Before it, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
@@ -28,20 +28,23 @@ list below.
 
 ## Last completed task
 
-**Phase 17, Task 19: sold out without opacity; warning toasts as chips**
-(TECH-13, ADR-390), 2026-10-31. A sold-out card on the till and on the
-guest's menu is sunken (the well's fill, the photo in grey, name and price
-muted, the till's name struck), with "Sold out" as the warning chip, and
-no opacity, so every word holds AA; the till draws no "+" for it. A
-warning toast is the warning chip's fill, ink and border, with no side
-stripe. `shared/tokens.test.ts` holds every chip's ink to 4.5:1 on its
-fill. Seen in a browser: the till at 1024, the guest's menu at 390 and a
-warning toast at 1366 (the server's refusal made up in the walk).
+**Phase 17, Task 20: the kitchen display, heard and trusted** (KDS-1,
+KDS-2, KDS-3, KDS-14, KDS-15, KDS-9, ADR-391), 2026-10-31. Sound is on by
+default (older kept choices take it once); while the browser holds it back
+a band says "Sound is blocked by the browser. Tap here..." and any tap
+unblocks it; the chime is two figures, louder. A new ticket says New for a
+minute, and "1 new below" points to one under the fold. After 10 s without
+the live stream a brick band says the board is not up to date. A tap within
+700 ms of the board moving is not taken. Failed moves are in the kitchen's
+words and clear after 8 s. Recall and Change station take a second tap. On
+night every action has a 2px edge (a new `ink:` variant). Seen in a browser
+at 1366x768 (the blocked band with Chrome's rule emulated, the stale band
+by stopping the server).
 
 ## Next task
 
-**Here: Phase 17 Task 20, the kitchen display: hear it and trust it (KDS-1, KDS-2, KDS-3, KDS-14, KDS-15, KDS-9)**,
-then Task 21 onward; Tasks 1 to 19 are done. Each screen is checked by eye at
+**Here: Phase 17 Task 21, the kitchen display: what changed (KDS-12, KDS-13, KDS-16, KDS-17, KDS-18, TECH-19)**,
+then Task 22 onward; Tasks 1 to 20 are done. Each screen is checked by eye at
 1024x768 and 1366x768 before it is ticked: the audit's walk (a demo venue
 from `mez setup -demo-menu` in a scratch data directory, a scripted
 Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { KitchenTicketResponse } from "../../../shared/api-types";
-import { arrivals, defaultPrefs, groupByTable, prefsKey, readPrefs, surfaceOf, ticketId, writePrefs } from "./board-prefs";
+import { arrivals, defaultPrefs, groupByTable, noArrivals, noteArrivals, prefsKey, readPrefs, surfaceOf, ticketId, writePrefs } from "./board-prefs";
 
 const ticket = (order: string, seq: number): KitchenTicketResponse => ({
   order_id: order,
@@ -18,10 +18,16 @@ const ticket = (order: string, seq: number): KitchenTicketResponse => ({
 const holding = (value: string | null) => ({ getItem: (key: string) => (key === prefsKey ? value : null) });
 
 describe("readPrefs", () => {
-  it("starts on night, silent and ungrouped", () => {
+  it("starts on night, with the chime on, ungrouped (ADR-391)", () => {
     expect(readPrefs(holding(null))).toEqual(defaultPrefs);
     expect(readPrefs(null)).toEqual(defaultPrefs);
-    expect(defaultPrefs).toEqual({ night: true, sound: false, groupByTable: false });
+    expect(defaultPrefs).toEqual({ night: true, sound: true, groupByTable: false });
+  });
+  it("turns the chime on for a display that kept its choices before it was the default, and keeps the rest", () => {
+    expect(readPrefs(holding('{"night":false,"sound":false,"groupByTable":true}'))).toEqual({ night: false, sound: true, groupByTable: true });
+  });
+  it("keeps sound off where it was turned off since", () => {
+    expect(readPrefs(holding('{"night":true,"sound":false,"groupByTable":false,"v":2}')).sound).toBe(false);
   });
   it("is night unless paper was chosen on this device", () => {
     const cases: readonly { kept: string; night: boolean }[] = [
@@ -35,11 +41,11 @@ describe("readPrefs", () => {
     for (const c of cases) expect(readPrefs(holding(c.kept)).night, c.kept).toBe(c.night);
   });
   it("reads what was kept", () => {
-    expect(readPrefs(holding('{"night":true,"sound":true,"groupByTable":true}'))).toEqual({ night: true, sound: true, groupByTable: true });
+    expect(readPrefs(holding('{"night":true,"sound":true,"groupByTable":true,"v":2}'))).toEqual({ night: true, sound: true, groupByTable: true });
   });
   it("takes the default for anything missing or not a yes or no", () => {
-    expect(readPrefs(holding('{"night":false,"sound":"loud"}'))).toEqual({ night: false, sound: false, groupByTable: false });
-    expect(readPrefs(holding('{"groupByTable":true}'))).toEqual({ night: true, sound: false, groupByTable: true });
+    expect(readPrefs(holding('{"night":false,"sound":"loud","v":2}'))).toEqual({ night: false, sound: true, groupByTable: false });
+    expect(readPrefs(holding('{"groupByTable":true}'))).toEqual({ night: true, sound: true, groupByTable: true });
   });
   it("takes the defaults for what it cannot read", () => {
     for (const bad of ["not json", "[]", "7", '"night"']) expect(readPrefs(holding(bad))).toEqual(defaultPrefs);
@@ -105,5 +111,21 @@ describe("arrivals", () => {
     const seen = new Set(["ord_A-3"]);
     expect(arrivals(seen, [ticket("ord_A", 3), ticket("ord_A", 6), ticket("ord_B", 3)])).toEqual(["ord_A-6", "ord_B-3"]);
     expect(arrivals(seen, [ticket("ord_A", 3)])).toEqual([]);
+  });
+});
+
+describe("noteArrivals", () => {
+  const t = (seq: number) => ({ order_id: "ord_A", ticket_seq: seq }) as Parameters<typeof ticketId>[0];
+  it("notes none at the first read, then each new ticket at the time it was seen, and drops those gone (KDS-1)", () => {
+    const first = noteArrivals(noArrivals, [t(1), t(2)], 1_000);
+    expect(first.at.size).toBe(0);
+    const second = noteArrivals(first, [t(1), t(2), t(3)], 5_000);
+    expect([...second.at]).toEqual([[ticketId(t(3)), 5_000]]);
+    const third = noteArrivals(second, [t(1), t(3), t(4)], 9_000);
+    expect(third.at.get(ticketId(t(3)))).toBe(5_000);
+    expect(third.at.get(ticketId(t(4)))).toBe(9_000);
+    const fourth = noteArrivals(third, [t(1)], 12_000);
+    expect(fourth.at.size).toBe(0);
+    expect(second.at.size).toBe(1);
   });
 });

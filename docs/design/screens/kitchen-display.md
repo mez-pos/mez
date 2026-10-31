@@ -143,8 +143,9 @@ differs.
   noted elsewhere carries no station, so the board is also read every 20
   seconds.
 - Kept on the device (`mez.kitchen.prefs`): night, sound, group by table. A
-  display starts on espresso night (ADR-381, over ADR-177's paper), silent,
-  in the order tickets were sent. A display that kept any of its switches
+  display starts on espresso night (ADR-381, over ADR-177's paper), with
+  sound on (ADR-391), in the order tickets were sent. A display that kept its
+  choices before ADR-391 takes sound on once, and keeps the rest. A display that kept any of its switches
   before ADR-381 keeps the surface it had until Night mode is turned on.
   Night is set before anything is drawn, so a dark pass is never lit by a
   flash.
@@ -157,15 +158,22 @@ differs.
 | Choose a station | Keeps it on the device | | The board. The wall display reloads, to listen to that station alone; a terminal does not need to |
 | Start preparing | `.../start` | `ticket.started` | The card moves to Preparing |
 | Mark ready | `.../bump` | `ticket.bumped` | The card moves to Ready for pickup; the order's lines read Ready on the order screen |
-| Recall | `.../recall` | `ticket.recalled` | The card is back in New Orders |
-| Sound | Toggles the chime | | Two rising notes when a ticket arrives in New Orders |
+| Recall | Asks for a second tap: "Tap again to recall", for 4 s (KDS-15); then `.../recall` | `ticket.recalled` | The card is back in New Orders |
+| Sound | Toggles the chime | | Two rising notes, twice, half a second apart, when a ticket arrives in New Orders (ADR-391) |
 | Group by table | Toggles | | In each column an order's tickets sit together, at the place of its first |
 | Night mode | Toggles the surface, on to start | | Off is paper, for a bright kitchen. Kept across a reload |
-| Change station | Back to the choice | | |
+| Change station | Asks for a second tap: "Tap again to change station", for 4 s (KDS-15); then back to the choice | | |
 | Lock (a terminal) | Signs the cook out | | Staff Login, on paper |
 
 One move at a time: while one is on its way every button waits, and its own
-says "Starting", "Marking" or "Recalling".
+says "Starting", "Marking" or "Recalling". A tap within 700 ms of the board
+moving is not taken: it is a double tap landing on the card that slid into
+place (KDS-3, ADR-391). On night every action button has a 2px edge in the
+muted ink, 5:1 on the card (KDS-9).
+
+A ticket that arrived in the last minute says **New** before its meta line;
+when one is under New Orders' fold, a terracotta button at the column's foot
+says "1 new below" and scrolls to it (KDS-1).
 
 ## States
 
@@ -175,10 +183,19 @@ says "Starting", "Marking" or "Recalling".
   clear."
 - **Nothing held back:** Coming next is not drawn (ADR-381).
 - **No ticket ready yet today:** the two times read "Not yet".
-- **Error:** the server's words over the columns. A move refused says why
-  and the card stays where it was.
+- **Error:** over the columns, in the kitchen's words, naming the ticket:
+  "T4 has already moved on another screen.", "T4 did not move: no answer
+  from the server. Tap again." The card stays where it was, and the line goes
+  after 8 seconds or at the next move (KDS-14, ADR-391). A board that cannot
+  be read says "The tickets could not be read. Trying again."
 - **Offline:** the board last read stays; the connection indicator says what
-  is wrong, with Retry now.
+  is wrong, with Retry now, and after 10 seconds without the live stream a
+  brick band under the header says "Not up to date: no word from the server
+  for 12 seconds. New tickets may be missing." until it is back (KDS-2).
+- **Sound held back:** sound is on and the browser has not let the page play
+  it (after a reload, before anyone has touched it): a terracotta band says
+  "Sound is blocked by the browser. Tap here to turn it on, so new tickets
+  chime." The first tap anywhere on the board turns it on (KDS-1).
 - **Permission denied:** a person with `kitchen.view` and not `kitchen.work`
   sees the board with no buttons and the line saying so.
 - **Storage blocked:** the station and the switches last until the page is
@@ -198,8 +215,8 @@ says "Starting", "Marking" or "Recalling".
   others close up.
 - The chime is made by the browser's own oscillator: no sound file, so it
   works with no internet. A browser lets a page make sound only after a
-  touch; turning Sound on is that touch. A display turned on to a full board
-  stays quiet.
+  touch; the band says so until one comes. A display turned on to a full
+  board stays quiet.
 - A ready ticket stays for `recall_minutes`, then leaves the board. Nothing
   marks it collected (ADR-090).
 - The counts are of tickets, which is what a station is sent: an order sent

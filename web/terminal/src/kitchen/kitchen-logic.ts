@@ -3,6 +3,7 @@
 // all-day counts, and which ticket Recall would bring back. The board is
 // the server's (ADR-090); this only reads it.
 
+import { ApiError } from "../../../shared/api";
 import type { KitchenBoardResponse, KitchenComingResponse, KitchenStatsResponse, KitchenTicketResponse } from "../../../shared/api-types";
 
 /** A ticket's timer: calm, then waiting from half the late time, then late. */
@@ -189,4 +190,53 @@ export function readStation(storage: Pick<Storage, "getItem"> | null): string | 
   } catch {
     return null;
   }
+}
+
+/** How long the board may go without the server before it says it may be out of date (KDS-2, ADR-391). */
+export const STALE_AFTER_MS = 10_000;
+
+/**
+ * What the board says once the server has been silent for STALE_AFTER_MS or
+ * more: a board that looks live while it is not loses tickets. Null while it
+ * is live, or silent for less.
+ */
+export function staleText(downForMs: number | null): string | null {
+  if (downForMs === null || downForMs < STALE_AFTER_MS) return null;
+  const seconds = Math.floor(downForMs / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const how = seconds < 120 ? `${seconds} seconds` : `${minutes} minutes`;
+  return `Not up to date: no word from the server for ${how}. New tickets may be missing.`;
+}
+
+/** How long after the board moves its buttons take no tap (KDS-3, ADR-391). */
+export const HOLD_AFTER_MOVE_MS = 700;
+
+/** A tap this soon after the board moved is a double tap landing on the card that slid under it. */
+export function tapHeld(movedAt: number, now: number = Date.now()): boolean {
+  return now - movedAt < HOLD_AFTER_MOVE_MS;
+}
+
+/** How long a card says New after it arrives (KDS-1, ADR-391). */
+export const NEW_FOR_MS = 60_000;
+
+/** Whether a ticket that arrived at `arrivedAt` still says New. One there when the board was first read never does. */
+export function isNewTicket(arrivedAt: number | undefined, now: number): boolean {
+  return arrivedAt !== undefined && now - arrivedAt < NEW_FOR_MS;
+}
+
+/** A move that did not go through, in the kitchen's words: where the ticket goes, and what to do (KDS-14, ADR-391). */
+export function moveFailure(err: unknown, where: string): string {
+  if (err instanceof ApiError) {
+    if (err.unreachable) return `${where} did not move: no answer from the server. Tap again.`;
+    if (err.code === "invalid_transition") return `${where} has already moved on another screen.`;
+    if (err.code === "ticket_not_found") return `${where} is no longer on the board.`;
+    return `${where} did not move: the server refused it. Tap again, or tell the manager.`;
+  }
+  return `${where} did not move. Tap again.`;
+}
+
+/** The board could not be read, in the kitchen's words: it reads again by itself (KDS-14). */
+export function readFailure(err: unknown): string {
+  if (err instanceof ApiError && err.unreachable) return "The tickets could not be read: no answer from the server. Trying again.";
+  return "The tickets could not be read. Trying again.";
 }
