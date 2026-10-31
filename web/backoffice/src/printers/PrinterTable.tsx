@@ -8,6 +8,7 @@ import type { PrinterResponse, StationPrinterResponse } from "../../../shared/ap
 import { Card, StatusChip, useToast } from "../../../shared/ui";
 import { useClock } from "../../../shared/use-clock";
 import { useAway } from "../../../shared/use-realtime";
+import { useVenueClock } from "../../../shared/use-venue";
 import { cx } from "../../../shared/ui/cx";
 import { RowMenu } from "../RowMenu";
 import { agoText, connectionText, printsText, problemOf } from "./printers-logic";
@@ -30,6 +31,7 @@ export function PrinterTable({ printers, stations, api, onEdit, onProblem }: Pri
   const away = useAway();
   // "12 min ago" moves on each half minute.
   const now = new Date(useClock(30_000));
+  const { timezone } = useVenueClock();
   // The printer an action is running on: its menu waits for the answer.
   const [busy, setBusy] = useState<number | null>(null);
   const run = (p: PrinterResponse, what: () => Promise<void>, done: string) => {
@@ -88,7 +90,7 @@ export function PrinterTable({ printers, stations, api, onEdit, onProblem }: Pri
                     <span className="flex flex-col items-start gap-1">
                       <StatusChip status={{ kind: "print", status: p.last_job.state }} />
                       <span className="text-sm text-fg-muted">
-                        {p.last_job.label} · {agoText(p.last_job.at, now)}
+                        {p.last_job.label} · {agoText(p.last_job.at, now, timezone)}
                       </span>
                       {p.last_job.error && <span className="max-w-md text-sm text-danger">{p.last_job.error}</span>}
                     </span>

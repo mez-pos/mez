@@ -8,6 +8,7 @@ import { Button, Confirm, EmptyState, InboxIcon, Meta, Money, useToast } from ".
 import { cx } from "../../../shared/ui/cx";
 import { AtTheVenue } from "../../../shared/shell/AtTheVenue";
 import { useAway } from "../../../shared/use-realtime";
+import { useVenueClock } from "../../../shared/use-venue";
 import { formatMoney } from "../../../shared/money";
 import { clockText } from "../../../shared/zreport/zreport-logic";
 import { membersOf, ruleWords, startingRows, tipProblem, type Row } from "./tips-logic";
@@ -200,6 +201,7 @@ function TimeField({ label, value, onChange }: { label: string; value: string; o
 }
 
 function Pooled({ pool }: { pool: TipPoolResponse }) {
+  const { timezone } = useVenueClock();
   const hours = pool.rule === "hours";
   const weights = pool.rule === "role_weight";
   return (
@@ -239,7 +241,7 @@ function Pooled({ pool }: { pool: TipPoolResponse }) {
           ))}
         </tbody>
       </table>
-      <p className="text-sm text-fg-muted">Pooled{pool.pooled_at ? ` at ${clockText(pool.pooled_at)}` : ""}. It can't be changed.</p>
+      <p className="text-sm text-fg-muted">Pooled{pool.pooled_at ? ` at ${clockText(pool.pooled_at, timezone)}` : ""}. It can't be changed.</p>
     </section>
   );
 }

@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { useAway } from "../../../shared/use-realtime";
+import { useVenueClock } from "../../../shared/use-venue";
 import { Button, StatusChip } from "../../../shared/ui";
 import { Panel } from "../dashboard/Panel";
 import { CloudPairModal } from "./CloudPairModal";
@@ -16,6 +17,7 @@ import { remoteState, remoteWords } from "./remote-logic";
 import { useTunnel } from "./use-tunnel";
 
 export function RemoteCard() {
+  const { timezone } = useVenueClock();
   const tunnel = useTunnel();
   const away = useAway();
   const [pairing, setPairing] = useState(false);
@@ -43,7 +45,7 @@ export function RemoteCard() {
         {(data.paired_to || !away) && (
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line-soft pt-3">
             <p className="max-w-prose text-base text-fg-2">
-              {data.paired_to ? pairedLine(data.paired_to) : "With a mez Cloud account, a code from it sets all of this up, and a backup with it."}
+              {data.paired_to ? pairedLine(data.paired_to, timezone) : "With a mez Cloud account, a code from it sets all of this up, and a backup with it."}
             </p>
             {!away && (
               <Button variant="secondary" onClick={() => setPairing(true)}>
@@ -54,9 +56,9 @@ export function RemoteCard() {
         )}
         {/* The owner's WhatsApp, read only: what is sent is changed in the
             account area, which is where the link goes (ADR-364). */}
-        {data.paired_to && lastReportLine(data.cloud, new Date()) && (
+        {data.paired_to && lastReportLine(data.cloud, new Date(), timezone) && (
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="max-w-prose text-base text-fg-2">{lastReportLine(data.cloud, new Date())}</p>
+            <p className="max-w-prose text-base text-fg-2">{lastReportLine(data.cloud, new Date(), timezone)}</p>
             {data.cloud?.messages_url && (
               <a
                 href={data.cloud.messages_url}

@@ -87,8 +87,10 @@ func TestVenueSettingsOverHTTP(t *testing.T) {
 	t.Run("a device with nobody signed in reads the name and no more", func(t *testing.T) {
 		rec := send(w.handler, http.MethodGet, "/api/v1/venue", "", w.asDevice())
 		var name venueNameResponse
-		// The zone is the one the owner just set: the status bar's clock reads in it.
-		if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &name) != nil || name.Name != "Blue Door" || name.Timezone != "Europe/London" {
+		// The zone is the one the owner just set: the status bar's clock reads in it,
+		// and a screen's "today" starts at the venue's day start (ADR-385).
+		if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &name) != nil || name.Name != "Blue Door" || name.Timezone != "Europe/London" ||
+			name.DayStart != "04:00" {
 			t.Fatalf("%d %s", rec.Code, rec.Body)
 		}
 		if rec := send(w.handler, http.MethodGet, "/api/v1/settings", "", w.asDevice()); rec.Code != http.StatusUnauthorized {

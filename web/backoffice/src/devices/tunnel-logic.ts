@@ -3,6 +3,7 @@
 // sentence is tested without a server that is in it.
 
 import type { TunnelCloud, TunnelResponse, TunnelState } from "../../../shared/api-types";
+import { venueDate } from "../../../shared/venue-clock";
 import { dateText, timeText } from "./devices-logic";
 
 /** How often the state is read again: often while it is changing, seldom once it has settled. */
@@ -24,14 +25,14 @@ export function refreshMs(state: TunnelState | undefined): number {
  * Every state short of connected says what guests can and cannot do; the two
  * that waiting will not mend say what will.
  */
-export function tunnelLine(t: Pick<TunnelResponse, "state" | "since" | "cloud" | "paired_to">, now: Date): string {
+export function tunnelLine(t: Pick<TunnelResponse, "state" | "since" | "cloud" | "paired_to">, now: Date, timezone: string | null): string {
   switch (t.state) {
     case "off":
       return "Guests order at the counter. Ordering from a phone needs a relay address and key in this venue's settings file.";
     case "connecting":
       return "Reaching the relay. Guests cannot order from their phones until it answers.";
     case "connected":
-      return t.since ? `Guests can order from their phones. Connected since ${sinceText(t.since, now)}.` : "Guests can order from their phones.";
+      return t.since ? `Guests can order from their phones. Connected since ${sinceText(t.since, now, timezone)}.` : "Guests can order from their phones.";
     case "waiting":
       return "The relay cannot be reached, so guests cannot order from their phones. The counter is not affected.";
     case "refused":
@@ -94,10 +95,10 @@ export function daysLeft(until: string | undefined, now: Date): string | null {
  * A relay that keeps accounts gives a state and is "Cloud"; one that keeps a
  * file gives a date at most.
  */
-export function cloudLine(cloud: TunnelCloud | undefined, now: Date): string | null {
+export function cloudLine(cloud: TunnelCloud | undefined, now: Date, timezone: string | null): string | null {
   if (!cloud) return null;
-  const paid = cloud.paid_until ? dateText(cloud.paid_until) : null;
-  const until = cloud.until ? dateText(cloud.until) : null;
+  const paid = cloud.paid_until ? dateText(cloud.paid_until, timezone) : null;
+  const until = cloud.until ? dateText(cloud.until, timezone) : null;
   switch (cloud.state) {
     case "trial":
       return paid ? `Cloud: free trial until ${paid}.` : "Cloud: free trial.";
@@ -118,10 +119,10 @@ export function cloudLine(cloud: TunnelCloud | undefined, now: Date): string | n
   }
 }
 
-/** "14:02" for today, "3 Oct 2026, 14:02" for any other day, on the browser's clock. */
-export function sinceText(iso: string, now: Date): string {
-  const at = new Date(iso);
-  return at.toDateString() === now.toDateString() ? timeText(iso) : `${dateText(iso)}, ${timeText(iso)}`;
+/** "2:02 PM" for today, "3 Oct 2026, 2:02 PM" for any other day, on the venue's clock. */
+export function sinceText(iso: string, now: Date, timezone: string | null): string {
+  const day = dateText(iso, timezone);
+  return day === venueDate(now, timezone) ? timeText(iso, timezone) : `${day}, ${timeText(iso, timezone)}`;
 }
 
 /** "Trying again in 20 s", "in 4 min", or "now"; nothing when no attempt is due. */

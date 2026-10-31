@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clockText, versionText } from "./venue-text";
+import { barClock, clockText, versionText } from "./venue-text";
 
 describe("clockText", () => {
   const at = new Date("2026-09-19T04:54:00Z");
@@ -32,5 +32,30 @@ describe("versionText", () => {
   it("says only the name until the version is known", () => {
     expect(versionText(null)).toBe("mez");
     expect(versionText("")).toBe("mez");
+  });
+});
+
+describe("barClock", () => {
+  const kolkata = { timezone: "Asia/Kolkata", dayStart: 240 };
+
+  it("is the date and time through the day, and the trading day short for a phone", () => {
+    expect(barClock(new Date("2026-10-31T05:28:00Z"), kolkata)).toEqual({
+      text: "Sat, 31 Oct 2026 · 10:58 AM",
+      short: "31 Oct",
+      label: "Sat, 31 Oct 2026 · 10:58 AM",
+    });
+  });
+
+  it("says whose trading day it still is between midnight and the day start (BO-3)", () => {
+    // 1:05 AM on 1 Nov in Kolkata: reports still count it as 31 Oct.
+    expect(barClock(new Date("2026-10-31T19:35:00Z"), kolkata)).toEqual({
+      text: "Trading day 31 Oct · 1:05 AM",
+      short: "31 Oct",
+      label: "Sun, 1 Nov 2026 · 1:05 AM, still the trading day of 31 Oct 2026",
+    });
+  });
+
+  it("turns over at the venue's own day start", () => {
+    expect(barClock(new Date("2026-10-31T19:35:00Z"), { ...kolkata, dayStart: 60 }).text).toBe("Sun, 1 Nov 2026 · 1:05 AM");
   });
 });

@@ -251,19 +251,20 @@ func TestSetIsAllOrNothingAndClears(t *testing.T) {
 // TestVenueIdentity: what a paired device may know of the venue is its name,
 // for the lock screen, the zone its clock reads in, for the status bar, and
 // the tip ceiling, so the payment screen asks for a manager before the
-// server has to refuse (ADR-261).
+// server has to refuse (ADR-261), and when its trading day begins, so a
+// screen's "today" is the venue's (ADR-385).
 func TestVenueIdentity(t *testing.T) {
 	s, d := newService(t)
 	ctx := context.Background()
-	if id, err := s.Identity(ctx, 1); err != nil || id != (Identity{Name: "Cafe", Timezone: "Asia/Kolkata", TipsMaxPercent: 50}) {
+	if id, err := s.Identity(ctx, 1); err != nil || id != (Identity{Name: "Cafe", Timezone: "Asia/Kolkata", TipsMaxPercent: 50, DayStart: "04:00"}) {
 		t.Fatalf("%+v, %v", id, err)
 	}
 	addRoles(t, d, "Manager")
-	if err := s.UpdateRules(ctx, 1, rulesWith(func(in *RulesInput) { in.TipsMaxPercent = percent(0) })); err != nil {
+	if err := s.UpdateRules(ctx, 1, rulesWith(func(in *RulesInput) { in.TipsMaxPercent = percent(0); in.DayStart = "05:30" })); err != nil {
 		t.Fatal(err)
 	}
-	if id, err := s.Identity(ctx, 1); err != nil || id.TipsMaxPercent != 0 {
-		t.Fatalf("after a ceiling of 0: %+v, %v", id, err)
+	if id, err := s.Identity(ctx, 1); err != nil || id.TipsMaxPercent != 0 || id.DayStart != "05:30" {
+		t.Fatalf("after a ceiling of 0 and a day from 05:30: %+v, %v", id, err)
 	}
 	if _, err := s.Identity(ctx, 99); !errors.Is(err, ErrNoVenue) {
 		t.Fatalf("an unknown venue: %v", err)

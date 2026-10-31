@@ -6,7 +6,7 @@
 import type { Group, LiveTableResponse, Money, SalesHour, StockItem, TableStatus } from "../../../shared/api-types";
 import type { StockLevel } from "../../../shared/ui/status";
 import { exponentOf } from "../../../shared/money";
-import { dayStartHour, slotOf } from "../sales/sales-logic";
+import { slotOf } from "../sales/sales-logic";
 
 export interface Change {
   direction: "up" | "down" | "same";
@@ -140,14 +140,14 @@ export interface HourChart {
  * when a bill fell outside that. The hours run as the trading day does, so
  * 1 AM comes after the evening it belongs to.
  */
-export function hourChart(cells: readonly SalesHour[], currency: string): HourChart {
+export function hourChart(cells: readonly SalesHour[], currency: string, startHour: number): HourChart {
   const live = cells.filter((c) => c.bills > 0);
-  const slots = live.map((c) => slotOf(c.hour));
-  const first = Math.min(slotOf(chartOpens), ...slots);
-  const last = Math.max(slotOf(chartCloses), ...slots);
+  const slots = live.map((c) => slotOf(c.hour, startHour));
+  const first = Math.min(slotOf(chartOpens, startHour), ...slots);
+  const last = Math.max(slotOf(chartCloses, startHour), ...slots);
   const top = axisTop(Math.max(0, ...live.map((c) => c.total.minor)), currency);
   const bars = Array.from({ length: last - first + 1 }, (_, i) => {
-    const hour = (first + i + dayStartHour) % 24;
+    const hour = (first + i + startHour) % 24;
     // A day's range has one weekday; were there two, an hour's cells are shown as the first.
     const cell = live.find((c) => c.hour === hour);
     const minor = cell?.total.minor ?? 0;

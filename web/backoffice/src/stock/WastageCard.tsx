@@ -12,7 +12,8 @@ import { formatQty } from "../../../shared/stock-qty";
 import { Money } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { useClock } from "../../../shared/use-clock";
-import { lastDays } from "../audit/audit-logic";
+import { useVenueClock } from "../../../shared/use-venue";
+import { lastDays } from "../../../shared/venue-clock";
 import { change, changeText } from "../dashboard/dashboard-logic";
 import { Nothing, Panel, ReadState } from "../dashboard/Panel";
 import { entriesText, wasteLeftOut, wastePath } from "../sales/items-logic";
@@ -32,7 +33,7 @@ export function WastageCard() {
   const store = useAuthStore();
   // The hour, so the week moves on a screen left open past the day's start.
   const now = useClock(60 * 60_000);
-  const week = lastDays(new Date(now), 7);
+  const week = lastDays(new Date(now), 7, useVenueClock());
   const before = previousRange(week);
   const read = (range: { from: string; to: string } | null) => ({
     queryKey: [...wastageKey, range],

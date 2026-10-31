@@ -10,7 +10,8 @@ import { ArmchairIcon, BanknoteIcon, ReceiptTextIcon, TagIcon } from "lucide-rea
 import { useAuth } from "../../../shared/auth/use-auth";
 import { Card, Money } from "../../../shared/ui";
 import { useClock } from "../../../shared/use-clock";
-import { lastDays, tradingDay } from "../audit/audit-logic";
+import { useVenueClock } from "../../../shared/use-venue";
+import { addDays, tradingDay } from "../../../shared/venue-clock";
 import { averageBill } from "../sales/sales-logic";
 import { usePermissions } from "../shell/BackOfficeShell";
 import { useStockItems } from "../stock/use-stock";
@@ -35,8 +36,10 @@ export function Dashboard() {
   const held = usePermissions();
   // The minute, so the day turns over and a table's wait moves on a screen left open.
   const now = useClock(60_000);
-  const today = tradingDay(new Date(now));
-  const yesterday = lastDays(new Date(now), 2).from;
+  // The venue's trading day, from its day start and in its zone (BO-1, ADR-385).
+  const clock = useVenueClock();
+  const today = tradingDay(new Date(now), clock);
+  const yesterday = addDays(today, -1);
 
   const canSales = held.includes("reports.view");
   const canFloor = held.includes("order.open");

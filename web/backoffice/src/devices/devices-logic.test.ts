@@ -54,15 +54,15 @@ describe("a device's kind", () => {
 
 describe("when a device was last heard from", () => {
   it("is in minutes, then hours, then a date", () => {
-    expect(lastSeenText(device({ last_seen_at: ago(20_000) }), now)).toBe("Seen just now");
-    expect(lastSeenText(device({ last_seen_at: ago(12 * MIN) }), now)).toBe("Seen 12 min ago");
-    expect(lastSeenText(device({ last_seen_at: ago(3 * HOUR) }), now)).toBe("Seen 3 h ago");
-    expect(lastSeenText(device({ last_seen_at: ago(40 * HOUR) }), now)).toBe("Seen 2 Oct 2026");
-    expect(lastSeenText(device({ last_seen_at: ago(24 * HOUR) }), now)).toBe("Seen 2 Oct 2026");
-    expect(lastSeenText(device({ last_seen_at: ago(23 * HOUR) }), now)).toBe("Seen 23 h ago");
+    expect(lastSeenText(device({ last_seen_at: ago(20_000) }), now, "Asia/Kolkata")).toBe("Seen just now");
+    expect(lastSeenText(device({ last_seen_at: ago(12 * MIN) }), now, "Asia/Kolkata")).toBe("Seen 12 min ago");
+    expect(lastSeenText(device({ last_seen_at: ago(3 * HOUR) }), now, "Asia/Kolkata")).toBe("Seen 3 h ago");
+    expect(lastSeenText(device({ last_seen_at: ago(40 * HOUR) }), now, "Asia/Kolkata")).toBe("Seen 2 Oct 2026");
+    expect(lastSeenText(device({ last_seen_at: ago(24 * HOUR) }), now, "Asia/Kolkata")).toBe("Seen 2 Oct 2026");
+    expect(lastSeenText(device({ last_seen_at: ago(23 * HOUR) }), now, "Asia/Kolkata")).toBe("Seen 23 h ago");
   });
   it("says so when it never was", () => {
-    expect(lastSeenText(device(), now)).toBe("Not heard from since it was paired");
+    expect(lastSeenText(device(), now, "Asia/Kolkata")).toBe("Not heard from since it was paired");
   });
   it("is stale at a day, and not before, and never for one not yet heard from", () => {
     expect(isStale(device({ last_seen_at: ago(23 * HOUR) }), now)).toBe(false);
@@ -74,11 +74,11 @@ describe("when a device was last heard from", () => {
 
 describe("dates", () => {
   it("are written as people write them", () => {
-    expect(dateText("2026-10-03T12:00:00Z")).toBe("3 Oct 2026");
-    expect(dateText("2026-01-05T12:00:00Z")).toBe("5 Jan 2026");
-    expect(dateText("2026-12-31T12:00:00Z")).toBe("31 Dec 2026");
-    expect(revokedText(device({ revoked_at: "2026-10-02T12:00:00Z" }))).toBe("Revoked 2 Oct 2026");
-    expect(revokedText(device())).toBe("Revoked");
+    expect(dateText("2026-10-03T12:00:00Z", "Asia/Kolkata")).toBe("3 Oct 2026");
+    expect(dateText("2026-01-05T12:00:00Z", "Asia/Kolkata")).toBe("5 Jan 2026");
+    expect(dateText("2026-12-31T12:00:00Z", "Asia/Kolkata")).toBe("31 Dec 2026");
+    expect(revokedText(device({ revoked_at: "2026-10-02T12:00:00Z" }), "Asia/Kolkata")).toBe("Revoked 2 Oct 2026");
+    expect(revokedText(device(), "Asia/Kolkata")).toBe("Revoked");
   });
 });
 

@@ -5,11 +5,14 @@ import type { StockItem } from "../../../shared/api-types";
 import { Button, Modal } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { formatDelta, formatQty } from "../../../shared/stock-qty";
+import { useVenueClock } from "../../../shared/use-venue";
+import { venueDateTime } from "../../../shared/venue-clock";
 import { movementText, problemOf } from "./stock-logic";
 import { useHistory } from "./use-stock";
 
 export function HistoryModal({ item, onClose }: { item: StockItem; onClose: () => void }) {
   const history = useHistory(item.id);
+  const { timezone } = useVenueClock();
   const movements = history.data?.pages.flatMap((p) => p.movements) ?? [];
 
   return (
@@ -31,7 +34,7 @@ export function HistoryModal({ item, onClose }: { item: StockItem; onClose: () =
               <span className="font-semibold">{movementText(m, item.unit)}</span>
               <span className="text-fg-3">
                 {" "}
-                · {m.staff_name} · {new Date(m.at).toLocaleString()}
+                · {m.staff_name} · {venueDateTime(m.at, timezone)}
               </span>
               {m.note && <span className="block text-fg-2">{m.note}</span>}
             </span>

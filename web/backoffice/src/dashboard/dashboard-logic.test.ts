@@ -175,13 +175,13 @@ describe("hourChart", () => {
   const cell = (hour: number, bills: number, total: number): SalesHour => ({ weekday: 1, hour, bills, total: inr(total) });
 
   it("runs from 8 AM to 10 PM on a day with nothing sold", () => {
-    const chart = hourChart([], "INR");
+    const chart = hourChart([], "INR", 4);
     expect(chart.bars.map((b) => b.hour)).toEqual([8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]);
     expect(chart.bars.every((b) => b.percent === 0 && b.total === null)).toBe(true);
   });
 
   it("sets each hour's bar against a round top", () => {
-    const chart = hourChart([cell(13, 3, 340_000), cell(20, 1, 100_000)], "INR");
+    const chart = hourChart([cell(13, 3, 340_000), cell(20, 1, 100_000)], "INR", 4);
     expect(chart.top).toBe(400_000);
     expect(chart.bars.find((b) => b.hour === 13)).toEqual({ hour: 13, bills: 3, total: inr(340_000), percent: 85 });
     expect(chart.bars.find((b) => b.hour === 20)?.percent).toBe(25);
@@ -189,17 +189,17 @@ describe("hourChart", () => {
   });
 
   it("widens for a bill before 8 AM or after midnight, in the trading day's order", () => {
-    const hours = hourChart([cell(6, 1, 100), cell(1, 1, 100)], "INR").bars.map((b) => b.hour);
+    const hours = hourChart([cell(6, 1, 100), cell(1, 1, 100)], "INR", 4).bars.map((b) => b.hour);
     expect(hours[0]).toBe(6);
     expect(hours.slice(-4)).toEqual([22, 23, 0, 1]);
   });
 
   it("gives a small sale a bar that can be seen", () => {
-    expect(hourChart([cell(9, 1, 100), cell(13, 1, 400_000)], "INR").bars.find((b) => b.hour === 9)?.percent).toBe(1);
+    expect(hourChart([cell(9, 1, 100), cell(13, 1, 400_000)], "INR", 4).bars.find((b) => b.hour === 9)?.percent).toBe(1);
   });
 
   it("ignores a cell with no bills", () => {
-    expect(hourChart([cell(5, 0, 0)], "INR").bars[0]?.hour).toBe(8);
+    expect(hourChart([cell(5, 0, 0)], "INR", 4).bars[0]?.hour).toBe(8);
   });
 });
 

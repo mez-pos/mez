@@ -5,7 +5,7 @@
 import type { AuditAnalysisSheet, Group, ReportEvery, ReportSheet, SalesHour, SalesPoint } from "../../../shared/api-types";
 import { averageMoney, formatMoney } from "../../../shared/money";
 import type { Sort } from "../../../shared/ui/table-state";
-import { dayText, lastDays, tradingDay } from "../audit/audit-logic";
+import { dayShort, lastDays, tradingDay, type VenueClock } from "../../../shared/venue-clock";
 
 export interface SalesRange {
   from: string;
@@ -21,26 +21,26 @@ export const quickRanges: readonly { id: QuickRange; label: string }[] = [
   { id: "this_month", label: "This month" },
 ];
 
-/** A quick range as trading days, today included. */
-export function quickRange(id: QuickRange, now: Date): SalesRange {
+/** A quick range as the venue's trading days, today included (ADR-385). */
+export function quickRange(id: QuickRange, now: Date, clock: VenueClock): SalesRange {
   switch (id) {
     case "today":
-      return lastDays(now, 1);
+      return lastDays(now, 1, clock);
     case "week":
-      return lastDays(now, 7);
+      return lastDays(now, 7, clock);
     case "month":
-      return lastDays(now, 30);
+      return lastDays(now, 30, clock);
     case "this_month": {
-      const to = tradingDay(now);
+      const to = tradingDay(now, clock);
       return { from: `${to.slice(0, 8)}01`, to };
     }
   }
 }
 
 /** The quick range these dates are, or null for a range typed by hand. */
-export function quickRangeOf(range: SalesRange, now: Date): QuickRange | null {
+export function quickRangeOf(range: SalesRange, now: Date, clock: VenueClock): QuickRange | null {
   for (const q of quickRanges) {
-    const r = quickRange(q.id, now);
+    const r = quickRange(q.id, now, clock);
     if (r.from === range.from && r.to === range.to) return q.id;
   }
   return null;
@@ -81,9 +81,9 @@ export function csvPath(range: SalesRange, every: ReportEvery, sheet: ReportShee
   return `/api/v1/reports/sales/csv?${p.toString()}`;
 }
 
-/** A period in words: "1 Oct" for a day, "28 Sept to 4 Oct" for longer. */
+/** A period in words: "1 Oct" for a day, "28 Sep to 4 Oct" for longer. */
 export function periodText(p: Pick<SalesPoint, "start" | "end">): string {
-  return p.start === p.end ? dayText(p.start) : `${dayText(p.start)} to ${dayText(p.end)}`;
+  return p.start === p.end ? dayShort(p.start) : `${dayShort(p.start)} to ${dayShort(p.end)}`;
 }
 
 /**
@@ -121,11 +121,11 @@ export function sortGroups(groups: readonly Group[], sort: Sort): Group[] {
   return [...groups].sort((a, b) => turn * compare(a, b));
 }
 
-/** The hour a trading day starts, as the server counts it (shift.DefaultDayStart). */
-export const dayStartHour = 4;
-
-/** Where an hour of the clock falls in the trading day: 0 for 04:00, 23 for 03:00. */
-export const slotOf = (hour: number): number => (hour - dayStartHour + 24) % 24;
+/**
+ * Where an hour of the clock falls in the trading day that starts in
+ * startHour (the venue's, dayStartHour): from 04:00, 0 for 04:00 and 23 for 03:00.
+ */
+export const slotOf = (hour: number, startHour: number): number => (hour - startHour + 24) % 24;
 
 const weekdayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
 
@@ -159,13 +159,13 @@ export interface HeatGrid {
  * with a bill to the last, counted from the start of the trading day so
  * 01:00 comes after the evening it belongs to.
  */
-export function heatGrid(cells: readonly SalesHour[]): HeatGrid {
+export function heatGrid(cells: readonly SalesHour[], startHour: number): HeatGrid {
   const live = cells.filter((c) => c.bills > 0);
   if (live.length === 0) return { hours: [], rows: [], busiest: null };
-  const slots = live.map((c) => slotOf(c.hour));
+  const slots = live.map((c) => slotOf(c.hour, startHour));
   const first = Math.min(...slots);
   const last = Math.max(...slots);
-  const hours = Array.from({ length: last - first + 1 }, (_, i) => (first + i + dayStartHour) % 24);
+  const hours = Array.from({ length: last - first + 1 }, (_, i) => (first + i + startHour) % 24);
   const rows = weekdayNames.map((_, i) => ({
     weekday: i + 1,
     cells: hours.map((h) => live.find((c) => c.weekday === i + 1 && c.hour === h) ?? null),

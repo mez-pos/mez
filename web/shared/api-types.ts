@@ -1825,6 +1825,7 @@ export interface VenueNameResponse {
   name: string;
   timezone: string;
   tips_max_percent: number;
+  day_start: string;
 }
 
 export interface SettingsVenueResponse {

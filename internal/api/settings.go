@@ -62,6 +62,9 @@ type venueNameResponse struct {
 	Name           string `json:"name"`
 	Timezone       string `json:"timezone"`
 	TipsMaxPercent int    `json:"tips_max_percent"`
+	// DayStart is when the trading day begins, the venue's time, "04:00":
+	// every screen's "today" is the trading day (ADR-385).
+	DayStart string `json:"day_start"`
 }
 
 type settingsVenueResponse struct {
@@ -116,7 +119,7 @@ func (s *Server) readVenueName(w http.ResponseWriter, r *http.Request) {
 		s.writeSettingsError(w, r, err)
 		return
 	}
-	writeJSON(w, s.log, http.StatusOK, venueNameResponse{Name: id.Name, Timezone: id.Timezone, TipsMaxPercent: id.TipsMaxPercent})
+	writeJSON(w, s.log, http.StatusOK, venueNameResponse{Name: id.Name, Timezone: id.Timezone, TipsMaxPercent: id.TipsMaxPercent, DayStart: id.DayStart})
 }
 
 func (s *Server) readSettings(w http.ResponseWriter, r *http.Request) {

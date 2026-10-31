@@ -10,7 +10,7 @@ import { formatDelta, formatQty } from "../../../shared/stock-qty";
 import { Card, EmptyState, InboxIcon, Money } from "../../../shared/ui";
 import { DataTable, type Column } from "../../../shared/ui/DataTable";
 import { cx } from "../../../shared/ui/cx";
-import { dayText } from "../audit/audit-logic";
+import { dayText } from "../../../shared/venue-clock";
 import { costMeasures } from "../stock/stock-logic";
 import { Section, count } from "./SalesSections";
 import { closingCsvPath, closingPath, closingRows, countsIn, uncostedText, varianceWords, type ClosingRow, type VarianceWords } from "./closing-logic";

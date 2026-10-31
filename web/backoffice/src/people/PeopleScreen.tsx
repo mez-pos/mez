@@ -10,6 +10,7 @@
 import { UserPlusIcon } from "lucide-react";
 import { useState } from "react";
 import type { Person, Role } from "../../../shared/api-types";
+import { useVenueClock } from "../../../shared/use-venue";
 import { initials, roleText } from "../../../shared/auth/format";
 import { useAuth } from "../../../shared/auth/use-auth";
 import { OnAMirror } from "../../../shared/shell/OnAMirror";
@@ -154,6 +155,7 @@ const head = "pb-3 text-meta font-bold uppercase text-fg-muted";
 const actionLabels: Record<StaffAction, string> = { unlock: "Unlock", edit: "Edit", pin: "New PIN", deactivate: "Deactivate", "bring-back": "Bring back" };
 
 function StaffTable({ staff, roleId, now, api, readOnly, onRole, onOpen, onProblem }: StaffTableProps) {
+  const { timezone } = useVenueClock();
   const status = useAuth();
   const me = status.kind === "signed_in" ? status.staff.id : "";
   const bringBack = (p: Person) => {
@@ -205,7 +207,7 @@ function StaffTable({ staff, roleId, now, api, readOnly, onRole, onOpen, onProbl
           <tbody>
             {staff.map((p, row) => {
               const shown = p.role_id === roleId;
-              const lock = lockedNote(p, now);
+              const lock = lockedNote(p, now, timezone);
               const actions = staffActions(p, me, readOnly);
               return (
                 <tr key={p.id} className={cx("border-b border-line-soft last:border-b-0", shown && "bg-accent-tint")}>
@@ -227,7 +229,7 @@ function StaffTable({ staff, roleId, now, api, readOnly, onRole, onOpen, onProbl
                           {p.name}
                           {p.id === me && <span className="font-normal text-fg-muted"> (you)</span>}
                         </strong>
-                        <span className="block font-mono text-sm tabular-nums text-fg-muted">{sinceText(p)}</span>
+                        <span className="block font-mono text-sm tabular-nums text-fg-muted">{sinceText(p, timezone)}</span>
                         <span className="sr-only">{shown ? ". Their role is shown beside the table." : ". Show their role."}</span>
                       </span>
                     </button>

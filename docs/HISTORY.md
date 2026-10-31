@@ -8,6 +8,18 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 13: close of day knows what is open** (TBS-2, ADR-384),
+2026-10-31. Counting the drawer holds every till at the close, so its
+first step now says what is still open, above the counter: "2 orders are
+still open: T3 and 1 at the counter.", that they carry into the next
+shift, and **See open orders**, to Orders on its Open tab
+(`/orders?tab=open`). The Submit count confirm says it again. The close
+records on its Z-report how many orders it carried and what was still to
+pay on them, read in its own transaction; a correction keeps that figure.
+The report, its slip and the printed slip say "Open orders carried
+2 · ₹250.00 to pay". Seen in a browser at 1024x768 and 1366x768: the note,
+the link landing on Open (2), the confirm, and Z-report 1's line.
+
 **Phase 17, Tasks 2 and 3: the two P0s** (ADR-383), 2026-10-31. The
 payment that settles a sale rung up at the counter with no table sends
 what is still waiting to its stations, takes the money, issues the

@@ -4,6 +4,7 @@
 import { useState } from "react";
 import type { DeviceKind, DeviceRecordResponse, PairingCodeResponse, PairingPlaceResponse } from "../../../shared/api-types";
 import { Button, Modal } from "../../../shared/ui";
+import { useVenueClock } from "../../../shared/use-venue";
 import { Choice, Field, inputClass } from "../FormFields";
 import { FormModal } from "../FormModal";
 import type { Problem } from "../settings/problem";
@@ -38,6 +39,7 @@ interface PairModalProps {
 }
 
 export function PairModal({ onPair, onClose }: PairModalProps) {
+  const { timezone } = useVenueClock();
   const [name, setName] = useState("");
   const [kind, setKind] = useState<DeviceKind>("terminal");
   const [problem, setProblem] = useState<Problem<PairField> | null>(null);
@@ -119,7 +121,7 @@ export function PairModal({ onPair, onClose }: PairModalProps) {
             </p>
             <p className="text-base">
               {main.length > 0 ? "Scanned, it is typed in by itself; opened by address, type it in." : "Type it in on the pairing screen."} It works once and
-              runs out at {timeText(code.expires_at)}.
+              runs out at {timeText(code.expires_at, timezone)}.
             </p>
           </div>
         </div>

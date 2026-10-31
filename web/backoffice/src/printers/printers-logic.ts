@@ -4,6 +4,7 @@
 
 import { ApiError } from "../../../shared/api";
 import type { PrinterResponse, PrinterSettings, PrinterTransport, StationPrinterResponse } from "../../../shared/api-types";
+import { venueDate } from "../../../shared/venue-clock";
 
 /** How the server reaches it: the address with its port, or the Windows printer's name. */
 export function connectionText(p: Pick<PrinterResponse, "transport" | "address">): string {
@@ -28,13 +29,13 @@ export function printsText(p: Pick<PrinterResponse, "is_receipt" | "stations">, 
   return parts.length === 0 ? "Nothing yet" : parts.join(", ");
 }
 
-/** "just now", "12 min ago", "3 h ago", or the date. */
-export function agoText(iso: string, now: Date): string {
+/** "just now", "12 min ago", "3 h ago", or the venue's date, "2 Oct 2026". */
+export function agoText(iso: string, now: Date, timezone: string | null): string {
   const minutes = Math.floor((now.getTime() - Date.parse(iso)) / 60000);
   if (minutes < 1) return "just now";
   if (minutes < 60) return `${minutes} min ago`;
   if (minutes < 24 * 60) return `${Math.floor(minutes / 60)} h ago`;
-  return new Date(iso).toLocaleDateString();
+  return venueDate(iso, timezone);
 }
 
 export interface PrinterForm {

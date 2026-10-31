@@ -5,6 +5,8 @@
 
 import type { SalesHour } from "../../../shared/api-types";
 import { formatMoney, formatMoneyCompact } from "../../../shared/money";
+import { useVenueClock } from "../../../shared/use-venue";
+import { dayStartHour } from "../../../shared/venue-clock";
 import { axisTicks, hourChart, hourLabel, type HourBar } from "./dashboard-logic";
 
 interface SalesOverviewProps {
@@ -13,7 +15,7 @@ interface SalesOverviewProps {
 }
 
 export function SalesOverview({ hours, currency }: SalesOverviewProps) {
-  const chart = hourChart(hours, currency);
+  const chart = hourChart(hours, currency, dayStartHour(useVenueClock()));
   const sold = chart.bars.some((b) => b.bills > 0);
   // Every hour has a bar; every other one is named, so the names do not run together.
   const named = (i: number) => chart.bars.length <= 8 || i % 2 === 0;

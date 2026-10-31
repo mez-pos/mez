@@ -35,7 +35,10 @@ screen each scroll on their own.
 
 - **The bar, 72px, chrome:** the logo; at the right the connection as a word
   ("Online", or what is wrong); the venue's date and time in a pill, to the
-  second, in the venue's zone, from 1024px; the profile (initials, name,
+  second, in the venue's zone, from 1024px, and between midnight and the day
+  start the trading day it still is where the date was, "Trading day 31 Oct
+  · 1:05 AM" (BO-3, ADR-385); under 1024px the trading day alone, "31 Oct";
+  the profile (initials, name,
   role), whose menu is **Sign out**; and a script line from 1536px.
 - **On a mirror** (ADR-329), the bar says so before the connection's word:
   "Mirror, as of 23:10", an info chip with the history icon, the time on

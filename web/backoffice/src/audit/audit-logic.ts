@@ -3,6 +3,7 @@
 // query the server reads.
 
 import type { AuditEntry, AuditKind } from "../../../shared/api-types";
+import { lastDays, type VenueClock } from "../../../shared/venue-clock";
 
 /** Each kind in words, one and many. A Record, so a new kind fails the typecheck until it has words. */
 export const kindWords: Readonly<Record<AuditKind, { one: string; many: string }>> = {
@@ -17,33 +18,6 @@ export const kindWords: Readonly<Record<AuditKind, { one: string; many: string }
 };
 
 export const kinds = Object.keys(kindWords) as AuditKind[];
-
-/** The hour a trading day starts, as the server counts it (shift.DefaultDayStart). */
-const dayStartHour = 4;
-
-const pad = (n: number) => String(n).padStart(2, "0");
-const dayOf = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-
-/** Today's trading day on this machine's clock: before 04:00 it is still yesterday's. */
-export function tradingDay(now: Date): string {
-  const d = new Date(now);
-  if (d.getHours() < dayStartHour) d.setDate(d.getDate() - 1);
-  return dayOf(d);
-}
-
-/** The last n trading days, today included. */
-export function lastDays(now: Date, n: number): { from: string; to: string } {
-  const to = tradingDay(now);
-  const [y, m, d] = to.split("-").map(Number) as [number, number, number];
-  const from = new Date(y, m - 1, d - (n - 1));
-  return { from: dayOf(from), to };
-}
-
-/** "24 Sept", for the empty state. */
-export function dayText(day: string): string {
-  const [y, m, d] = day.split("-").map(Number) as [number, number, number];
-  return new Date(y, m - 1, d).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-}
 
 /** A reason code in words: "wrong_item" reads "Wrong item"; free text stays as typed. */
 export function reasonWords(reason: string | undefined): string {
@@ -100,12 +74,12 @@ export function auditLink(f: Pick<AuditFilter, "from" | "to"> & Partial<Pick<Aud
  * so a day that is not one and a kind we do not have are dropped here, not
  * sent to the server.
  */
-export function filterFromSearch(search: string, now: Date): AuditFilter {
+export function filterFromSearch(search: string, now: Date, clock: VenueClock): AuditFilter {
   const p = new URLSearchParams(search);
   const from = p.get("from") ?? "";
   const to = p.get("to") ?? "";
   const kind = p.get("kind");
-  const range = dayPattern.test(from) && dayPattern.test(to) && from <= to ? { from, to } : lastDays(now, 7);
+  const range = dayPattern.test(from) && dayPattern.test(to) && from <= to ? { from, to } : lastDays(now, 7, clock);
   return { ...range, staff: p.get("staff") ?? "", kind: kinds.find((k) => k === kind) ?? null };
 }
 

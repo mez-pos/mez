@@ -103,9 +103,9 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
 - [x] **Task 13 - Close the day knows what is open (TBS-2).** An open
   orders card with a link, the count in the confirm, "Open orders
   carried" on the Z-report. Done 2026-10-31 (ADR-384).
-- [ ] **Task 14 - One venue clock (BO-1, BO-3, BO-4, TBS-17).** Shared
+- [x] **Task 14 - One venue clock (BO-1, BO-3, BO-4, TBS-17).** Shared
   `tradingDay`, `venueDate`, `venueDateTime` from `day_start` and the
-  venue's zone, at every site the audit lists.
+  venue's zone, at every site the audit lists. Done 2026-10-31 (ADR-385).
 - [ ] **Task 15 - Tax words (GST-2, TILL-18, GST-15).** `tax_included` on
   the guest table response; "before tax" only when prices exclude it.
 - [ ] **Task 16 - No silent loss of work (BO-2, BO-5, TECH-9, BO-6).**

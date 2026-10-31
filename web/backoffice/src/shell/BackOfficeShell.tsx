@@ -24,8 +24,8 @@ import { cx } from "../../../shared/ui/cx";
 import { useClock } from "../../../shared/use-clock";
 import { useMirror } from "../../../shared/use-mirror";
 import { useAway, useRealtimeNotices } from "../../../shared/use-realtime";
-import { useVenue } from "../../../shared/use-venue";
-import { clockText } from "../../../shared/venue-text";
+import { useVenue, useVenueClock } from "../../../shared/use-venue";
+import { barClock } from "../../../shared/venue-text";
 import { chord, sectionForPath, tillPath, type ChordState } from "./nav-logic";
 import { SectionNav, sectionNavId } from "./SectionNav";
 
@@ -187,15 +187,29 @@ function useEscape(active: boolean, close: () => void) {
   }, [active]);
 }
 
-/** The date and time in the venue's zone, so the bar is right on a laptop set to another. */
+/**
+ * The date and time in the venue's zone, so the bar is right on a laptop set
+ * to another; between midnight and the day start, the trading day it still is
+ * (BO-3). Under 1024px, where the pill has no room, the trading day alone.
+ */
 function VenueClock() {
-  const venue = useVenue();
+  const clock = useVenueClock();
   const now = useClock(1000);
+  const bar = barClock(new Date(now), clock);
   return (
-    <span className="hidden h-11 items-center gap-2 rounded-pill bg-sunken px-4 font-mono text-sm font-semibold tabular-nums lg:inline-flex">
-      <CalendarIcon aria-hidden="true" size={17} />
-      {clockText(new Date(now), venue?.timezone ?? null)}
-    </span>
+    <>
+      <span
+        title={bar.label}
+        className="hidden h-11 items-center gap-2 rounded-pill bg-sunken px-4 font-mono text-sm font-semibold tabular-nums lg:inline-flex"
+      >
+        <CalendarIcon aria-hidden="true" size={17} />
+        {bar.text}
+      </span>
+      <span title={bar.label} className="font-mono text-sm font-semibold tabular-nums lg:hidden">
+        <span className="sr-only">Trading day </span>
+        {bar.short}
+      </span>
+    </>
   );
 }
 

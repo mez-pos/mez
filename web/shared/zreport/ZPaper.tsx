@@ -11,6 +11,7 @@ import type { Money as Amount, ZReportResponse } from "../api-types";
 import { averageMoney, formatMoney } from "../money";
 import { Card } from "../ui";
 import { cx } from "../ui/cx";
+import { useVenueClock } from "../use-venue";
 import { carriedText, creditLines, differenceWords, methodName, rateText, staffName, stampText } from "./zreport-logic";
 
 interface ZPaperProps {
@@ -23,6 +24,7 @@ interface ZPaperProps {
 const minus = (a: Amount): string => formatMoney({ ...a, minor: -Math.abs(a.minor) });
 
 export function ZPaper({ z, venueName, className }: ZPaperProps) {
+  const { timezone } = useVenueClock();
   const r = z.report;
   const d = z.drawer;
   const average = averageMoney(r.sales.total, r.sales.bills);
@@ -36,7 +38,7 @@ export function ZPaper({ z, venueName, className }: ZPaperProps) {
       <div className="border-b border-dashed border-line-strong pb-3.5 text-center">
         <p className="text-base font-bold uppercase tracking-widest">Z-report {z.number}</p>
         {venueName && <p className="mt-1 text-fg-muted">{venueName}</p>}
-        <p className="mt-1 text-fg-muted">{stampText(z.shift.trading_day, z.shift.closed_at)}</p>
+        <p className="mt-1 text-fg-muted">{stampText(z.shift.trading_day, z.shift.closed_at, timezone)}</p>
       </div>
 
       <Block>

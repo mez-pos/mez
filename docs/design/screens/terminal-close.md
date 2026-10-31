@@ -70,8 +70,10 @@ after a reload or on another device:
 - **The foot:** the error line and **Close the day** with a padlock (the
   primary), waiting while a note or a stock count is owed.
 
-**The rail, 22rem:** "The shift" in small caps; Trading day, Opened, Shift
-(its public id) and Opening float; on step 1, "Counted" with the counter's
+**The rail, 22rem:** "The shift" in small caps; Trading day ("31 Oct
+2026"), Opened ("12:25 PM", the venue's clock) and Opening float, and no
+shift id (TBS-17, ADR-385); under 1024px "31 Oct 2026 · Opened 12:25 PM"
+under the title. On step 1, "Counted" with the counter's
 total as the one total on the screen; a script line at the foot.
 
 ## Closing stock (ADR-114)

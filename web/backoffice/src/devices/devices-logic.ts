@@ -4,6 +4,7 @@
 
 import type { DeviceKind, DeviceRecordResponse, PairingPlaceResponse } from "../../../shared/api-types";
 import type { DeviceState } from "../../../shared/ui/status";
+import { venueDate, venueTime } from "../../../shared/venue-clock";
 import { agoText } from "../printers/printers-logic";
 import { problemWith, type Problem } from "../settings/problem";
 
@@ -27,20 +28,17 @@ export const MAX_DEVICE_NAME = 64;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
-
-/** A date as people write it, "3 Oct 2026", on the browser's clock. Written out, not asked of the locale: its abbreviations differ between browsers. */
-export function dateText(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+/** A date as people write it, "3 Oct 2026", on the venue's clock wherever the browser is (ADR-385). */
+export function dateText(iso: string, timezone: string | null): string {
+  return venueDate(iso, timezone);
 }
 
 /** When a device was last heard from, in words: "Seen 12 min ago", or that it never was. */
-export function lastSeenText(d: Pick<DeviceRecordResponse, "last_seen_at">, now: Date): string {
+export function lastSeenText(d: Pick<DeviceRecordResponse, "last_seen_at">, now: Date, timezone: string | null): string {
   if (!d.last_seen_at) return "Not heard from since it was paired";
   // From a day on, the date: agoText would ask the locale for it.
-  if (now.getTime() - Date.parse(d.last_seen_at) >= DAY_MS) return `Seen ${dateText(d.last_seen_at)}`;
-  return `Seen ${agoText(d.last_seen_at, now)}`;
+  if (now.getTime() - Date.parse(d.last_seen_at) >= DAY_MS) return `Seen ${dateText(d.last_seen_at, timezone)}`;
+  return `Seen ${agoText(d.last_seen_at, now, timezone)}`;
 }
 
 /** A device heard from, but not for a day: a till in a drawer, or one that is off. */
@@ -48,7 +46,8 @@ export function isStale(d: Pick<DeviceRecordResponse, "last_seen_at">, now: Date
   return d.last_seen_at !== undefined && now.getTime() - Date.parse(d.last_seen_at) >= DAY_MS;
 }
 
-export const revokedText = (d: Pick<DeviceRecordResponse, "revoked_at">): string => (d.revoked_at ? `Revoked ${dateText(d.revoked_at)}` : "Revoked");
+export const revokedText = (d: Pick<DeviceRecordResponse, "revoked_at">, timezone: string | null): string =>
+  d.revoked_at ? `Revoked ${dateText(d.revoked_at, timezone)}` : "Revoked";
 
 /** The devices in service, then the revoked ones, each in the order the server sent. */
 export function split(devices: readonly DeviceRecordResponse[]): { inService: DeviceRecordResponse[]; revoked: DeviceRecordResponse[] } {
@@ -112,9 +111,9 @@ export function typedAddress(url: string): string {
   return url.replace(/^https?:\/\//, "");
 }
 
-/** A time of day, "17:42", for when a code stops working. */
-export function timeText(iso: string): string {
-  return new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
+/** A time of day on the venue's clock, "5:42 PM": when a code stops working, when a report went. */
+export function timeText(iso: string, timezone: string | null): string {
+  return venueTime(iso, timezone);
 }
 
 export type PairField = "name" | "kind";

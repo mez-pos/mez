@@ -6,6 +6,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ReceiptPreviewRequest, ReceiptPreviewResponse, ReceiptRequest, ReceiptResponse, RulesRequest, RulesResponse } from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
+import { venueKey } from "../../../shared/use-venue";
 
 export const rulesKey = ["settings", "rules"] as const;
 export const receiptKey = ["settings", "receipt"] as const;
@@ -35,6 +36,8 @@ export function useRules(): RulesApi {
     save: (input) =>
       store.api.put<RulesResponse>("/api/v1/settings/rules", input).then((next) => {
         queryClient.setQueryData(rulesKey, next);
+        // Every screen's "today" starts at the day start (ADR-385).
+        void queryClient.invalidateQueries({ queryKey: venueKey });
         return next;
       }),
   };

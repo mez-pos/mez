@@ -5,6 +5,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SettingsResponse, SettingsVenueResponse, VenueDetailsRequest } from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
+import { venueKey } from "../../../shared/use-venue";
 
 export const settingsKey = ["settings"] as const;
 
@@ -36,6 +37,8 @@ export function useSettings(): SettingsApi {
     saveVenue: async (input) => {
       const next = await store.api.put<SettingsResponse>("/api/v1/settings/venue", input);
       queryClient.setQueryData(settingsKey, next);
+      // The bar's clock reads the venue's zone.
+      void queryClient.invalidateQueries({ queryKey: venueKey });
       return next.venue;
     },
   };

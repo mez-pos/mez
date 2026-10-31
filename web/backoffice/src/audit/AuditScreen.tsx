@@ -8,18 +8,21 @@ import type { AuditEntry, AuditPage } from "../../../shared/api-types";
 import { wordsOf } from "../../../shared/api";
 import { useAuthStore } from "../../../shared/auth/use-auth";
 import { useStaffList } from "../../../shared/use-staff-list";
+import { useVenueClock } from "../../../shared/use-venue";
+import { dayRunsText, dayText, venueDateTime } from "../../../shared/venue-clock";
 import { Button, EmptyState, InboxIcon, Money } from "../../../shared/ui";
 import { DataTable, type Column } from "../../../shared/ui/DataTable";
 import { cx } from "../../../shared/ui/cx";
 import { pillClass } from "../../../shared/ui/pill";
 import { inputClass } from "../FormFields";
 import { RangePill } from "../sales/RangePill";
-import { auditQuery, authorisedText, dayText, filterFromSearch, itemText, kinds, kindWords, reasonWords, type AuditFilter } from "./audit-logic";
+import { auditQuery, authorisedText, filterFromSearch, itemText, kinds, kindWords, reasonWords, type AuditFilter } from "./audit-logic";
 
 export function AuditScreen() {
   const store = useAuthStore();
   // The filter in the address, when the screen was opened on one (a link from the Sales reports).
-  const [filter, setFilter] = useState<AuditFilter>(() => filterFromSearch(window.location.search, new Date()));
+  const clock = useVenueClock();
+  const [filter, setFilter] = useState<AuditFilter>(() => filterFromSearch(window.location.search, new Date(), clock));
   const staff = useStaffList();
   const trail = useInfiniteQuery({
     queryKey: ["audit", filter],
@@ -39,11 +42,7 @@ export function AuditScreen() {
           <h1 className="font-serif text-total">Audit</h1>
           <p className="mt-1 text-base text-fg-muted">Every correction to a bill, from the record. Amounts are what the bill itself used.</p>
         </div>
-        <RangePill
-          range={{ from: filter.from, to: filter.to }}
-          onChange={(range) => set(range)}
-          note="Both are trading days. A trading day runs 04:00 to 04:00."
-        />
+        <RangePill range={{ from: filter.from, to: filter.to }} onChange={(range) => set(range)} note={`Both are trading days. ${dayRunsText(clock)}`} />
       </div>
 
       <div role="group" aria-label="Filter" className="flex flex-wrap items-end gap-4">
@@ -100,15 +99,12 @@ export function AuditScreen() {
 }
 
 function Trail({ entries, empty }: { entries: readonly AuditEntry[]; empty: string }) {
+  const { timezone } = useVenueClock();
   const columns: Column<AuditEntry>[] = [
     {
       id: "when",
       header: "When",
-      cell: (e) => (
-        <span className="whitespace-nowrap font-mono tabular-nums">
-          {new Date(e.at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-        </span>
-      ),
+      cell: (e) => <span className="whitespace-nowrap font-mono tabular-nums">{venueDateTime(e.at, timezone)}</span>,
     },
     {
       id: "what",

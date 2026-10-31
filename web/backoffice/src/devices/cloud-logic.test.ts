@@ -34,11 +34,11 @@ describe("pairedLine", () => {
   const paired_at = new Date(2026, 9, 12, 14, 30).toISOString();
 
   it("says whose account, and since when", () => {
-    expect(pairedLine({ owner: "Priya Menon", paired_at })).toBe("Paired to Priya Menon's mez Cloud account since 12 Oct 2026.");
+    expect(pairedLine({ owner: "Priya Menon", paired_at }, "Asia/Kolkata")).toBe("Paired to Priya Menon's mez Cloud account since 12 Oct 2026.");
   });
 
   it("gives a name that ends in s the apostrophe alone", () => {
-    expect(pairedLine({ owner: "Chris", paired_at })).toBe("Paired to Chris' mez Cloud account since 12 Oct 2026.");
+    expect(pairedLine({ owner: "Chris", paired_at }, "Asia/Kolkata")).toBe("Paired to Chris' mez Cloud account since 12 Oct 2026.");
   });
 });
 
@@ -46,15 +46,15 @@ describe("lastReportLine", () => {
   const now = new Date(2026, 9, 22, 10, 0);
   const at = (d: Date) => d.toISOString();
   it("says today, yesterday, or the date", () => {
-    expect(lastReportLine({ last_report: at(new Date(2026, 9, 22, 0, 30)) }, now)).toBe("Last report: today 00:30.");
-    expect(lastReportLine({ last_report: at(new Date(2026, 9, 21, 23, 4)) }, now)).toBe("Last report: yesterday 23:04.");
-    expect(lastReportLine({ last_report: at(new Date(2026, 9, 12, 23, 4)) }, now)).toBe("Last report: 12 Oct 2026, 23:04.");
+    expect(lastReportLine({ last_report: at(new Date(2026, 9, 22, 0, 30)) }, now, "Asia/Kolkata")).toBe("Last report: today 12:30 AM.");
+    expect(lastReportLine({ last_report: at(new Date(2026, 9, 21, 23, 4)) }, now, "Asia/Kolkata")).toBe("Last report: yesterday 11:04 PM.");
+    expect(lastReportLine({ last_report: at(new Date(2026, 9, 12, 23, 4)) }, now, "Asia/Kolkata")).toBe("Last report: 12 Oct 2026, 11:04 PM.");
   });
   it("says none has gone when the cloud sends messages and none went yet", () => {
-    expect(lastReportLine({ messages_url: "https://app.mezpos.com/v/cafe" }, now)).toBe("No close-of-day report has gone yet.");
+    expect(lastReportLine({ messages_url: "https://app.mezpos.com/v/cafe" }, now, "Asia/Kolkata")).toBe("No close-of-day report has gone yet.");
   });
   it("says nothing when the cloud said nothing of reports", () => {
-    expect(lastReportLine({}, now)).toBeNull();
-    expect(lastReportLine(undefined, now)).toBeNull();
+    expect(lastReportLine({}, now, "Asia/Kolkata")).toBeNull();
+    expect(lastReportLine(undefined, now, "Asia/Kolkata")).toBeNull();
   });
 });

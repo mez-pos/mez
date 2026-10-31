@@ -14752,3 +14752,49 @@ Cost: one more read of the day's list on close of day, which the Orders screen a
 current. An order that will not project is logged and left out of the count, as the tills'
 list leaves it out. The owner's WhatsApp close-of-day message, the CSV exports and the
 X-report do not carry the figure.
+
+## ADR-385 - One venue clock: the trading day from the venue's day start, and one way to write a date
+2026-10 · Status: accepted. Phase 17 Task 14 (BO-1, BO-3, BO-4, TBS-17).
+Context: the server counts a trading day from the venue's `shift.day_start` in the venue's
+zone (`shift.TradingDay`), but the back office worked out "today" for itself, from a 04:00
+written into two files and the browser's own clock: a venue whose day starts at 05:30, or an
+owner reading the back office from another zone, saw a dashboard, a sales range and an audit
+week a day out. After midnight the ranges ended "yesterday" with nothing on screen saying
+why, and a phone showed no date at all. Dates were written four ways, some in UTC: a person
+added at 01:30 in Kolkata was "Since" the day before; the Z-reports list and the staff table
+said "2026-10-30"; the printers used the browser's locale; close of day showed a 24-hour time
+on the tablet's clock and the shift's internal `shf_` id.
+Decision:
+  - **The venue's read (`GET /api/v1/venue`) carries `day_start`** beside its zone ("04:00",
+    the stored setting formatted as the server reads it). Every paired device may know it.
+  - **`web/shared/venue-clock.ts` is the one clock**: `tradingDay`, `lastDays`, `addDays`
+    and `dayStartHour` from the venue's zone and day start, and the one way to write a date
+    or time, read in the venue's zone: `dayText` "3 Oct 2026", `dayShort` "3 Oct" inside a
+    range that says its year once, `venueDate`, `venueTime` "11:40 PM" (the twelve-hour
+    clock, as both status bars already said it) and `venueDateTime` "3 Oct 2026, 11:40 PM".
+    `useVenueClock()` reads it from the venue; until the venue is read it is the device's
+    zone and 04:00. Saving the venue's details or rules reads the venue again.
+  - **"Today" is the trading day everywhere the back office asks**: the dashboard and the
+    day before it, the sales quick ranges, the audit's week, the wastage week, and the order
+    of the hours in the heatmap and the dashboard's chart. "A trading day runs 4:00 AM to
+    4:00 AM." says the venue's own hour.
+  - **Both status bars say the trading day after midnight** (`barClock`): between midnight
+    and the day start the pill reads "Trading day 31 Oct · 1:05 AM" where the date was. Under
+    1024px the back office shows the trading day alone, "31 Oct".
+  - **Dates on the venue's clock, written one way**: staff Since and locked, devices (paired,
+    seen, revoked, a code's expiry, the relay's and the cloud's dates), printers' last job,
+    stock movements, an item's "Back on sale", the audit trail, Z-reports (the list, the
+    report's head and its slip, the tips' pooled time), and close of day, which names the
+    trading day and the time opened and no longer shows the shift's id.
+Rejected: the server sending "today" (a screen open past the day start would keep the old
+day until it read the venue again, where the minute's clock turns it over itself); the
+browser's locale for dates (its abbreviations and order differ between browsers, and a
+till's tablet set to US English would write 10/31/2026); 24-hour times (the status bars,
+the clock staff look at, were already twelve-hour).
+Because: a report's day is the server's, so the screen that picks the day has to count it the
+same way; and one format read in one zone is what makes "Since 2 Oct" and "seen 2 Oct" the
+same day for the person reading them.
+Cost: a back office opened straight onto Sales before the venue is read takes its first range
+on the device's clock (the bar's read of the venue is usually first). The mirror note
+("Mirror, as of 23:10"), the kitchen board's clock and the sales heatmap's hour labels keep
+their 24-hour times; the export files keep their dated names.

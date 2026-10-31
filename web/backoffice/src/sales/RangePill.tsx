@@ -5,6 +5,7 @@
 import { CalendarRangeIcon, ChevronDownIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useDisclosure } from "../../../shared/shell/use-disclosure";
+import { useVenueClock } from "../../../shared/use-venue";
 import { cx } from "../../../shared/ui/cx";
 import { pillClass } from "../../../shared/ui/pill";
 import { inputClass } from "../FormFields";
@@ -29,7 +30,8 @@ interface RangePillProps {
 export function RangePill({ range, onChange, note, children }: RangePillProps) {
   const { open, toggle, box, trigger, panel, panelId, leaves } = useDisclosure();
   // Worked out as it is drawn: which quick range these days are depends on today.
-  const quick = quickRangeOf(range, new Date());
+  const clock = useVenueClock();
+  const quick = quickRangeOf(range, new Date(), clock);
 
   return (
     <div ref={box} onBlur={leaves} className="relative">
@@ -62,7 +64,7 @@ export function RangePill({ range, onChange, note, children }: RangePillProps) {
                 type="button"
                 aria-pressed={quick === q.id}
                 className={pillClass(quick === q.id)}
-                onClick={() => onChange(quickRange(q.id, new Date()))}
+                onClick={() => onChange(quickRange(q.id, new Date(), clock))}
               >
                 {q.label}
               </button>

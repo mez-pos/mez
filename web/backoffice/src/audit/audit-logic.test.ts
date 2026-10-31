@@ -1,37 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { AuditEntry } from "../../../shared/api-types";
-import {
-  auditLink,
-  auditQuery,
-  authorisedText,
-  dayText,
-  filterFromSearch,
-  itemText,
-  kinds,
-  kindWords,
-  kindsText,
-  lastDays,
-  reasonWords,
-  tradingDay,
-} from "./audit-logic";
+import { auditLink, auditQuery, authorisedText, filterFromSearch, itemText, kinds, kindWords, kindsText, reasonWords } from "./audit-logic";
 
 const entry = (over: Partial<AuditEntry>): AuditEntry => ({ id: 1, kind: "void", at: "2026-10-01T06:30:00Z", order_id: "ord_1", ...over });
-
-describe("trading days", () => {
-  it("counts the hours before 04:00 as the day before", () => {
-    expect(tradingDay(new Date(2026, 9, 1, 12, 0))).toBe("2026-10-01");
-    expect(tradingDay(new Date(2026, 9, 1, 4, 0))).toBe("2026-10-01");
-    expect(tradingDay(new Date(2026, 9, 1, 3, 59))).toBe("2026-09-30");
-    expect(tradingDay(new Date(2026, 0, 1, 1, 30))).toBe("2025-12-31");
-  });
-  it("gives the last n days, today included, across a month", () => {
-    expect(lastDays(new Date(2026, 9, 3, 12, 0), 7)).toEqual({ from: "2026-09-27", to: "2026-10-03" });
-    expect(lastDays(new Date(2026, 9, 3, 2, 0), 1)).toEqual({ from: "2026-10-02", to: "2026-10-02" });
-  });
-  it("words a day", () => {
-    expect(dayText("2026-09-24")).toMatch(/24 Sep/);
-  });
-});
 
 describe("the words", () => {
   it("has words for every kind", () => {
@@ -71,12 +42,14 @@ describe("auditQuery", () => {
 });
 
 describe("opening on an address", () => {
-  const now = new Date(2026, 9, 3, 12, 0);
+  // Noon in Kolkata on 3 Oct: the week is the venue's, not the browser's (ADR-385).
+  const now = new Date("2026-10-03T06:30:00Z");
+  const clock = { timezone: "Asia/Kolkata", dayStart: 240 };
   const week = { from: "2026-09-27", to: "2026-10-03" };
   it("links to a filter and reads it back", () => {
     const link = auditLink({ from: "2026-09-01", to: "2026-09-30", staff: "stf_ASHA0001", kind: "void" });
     expect(link).toBe("/audit?from=2026-09-01&to=2026-09-30&staff=stf_ASHA0001&kind=void");
-    expect(filterFromSearch(link.slice(link.indexOf("?")), now)).toEqual({ from: "2026-09-01", to: "2026-09-30", staff: "stf_ASHA0001", kind: "void" });
+    expect(filterFromSearch(link.slice(link.indexOf("?")), now, clock)).toEqual({ from: "2026-09-01", to: "2026-09-30", staff: "stf_ASHA0001", kind: "void" });
   });
   it("leaves out what is not asked for", () => {
     expect(auditLink({ from: "2026-09-01", to: "2026-09-30" })).toBe("/audit?from=2026-09-01&to=2026-09-30");
@@ -96,7 +69,7 @@ describe("opening on an address", () => {
   ];
   for (const tt of tests) {
     it(tt.name, () => {
-      expect(filterFromSearch(tt.search, now)).toEqual(tt.want);
+      expect(filterFromSearch(tt.search, now, clock)).toEqual(tt.want);
     });
   }
 });

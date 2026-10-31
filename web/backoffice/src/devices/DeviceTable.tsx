@@ -9,6 +9,7 @@ import { Card, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { useOnMirror } from "../../../shared/use-mirror";
 import { useAway } from "../../../shared/use-realtime";
+import { useVenueClock } from "../../../shared/use-venue";
 import { RowMenu } from "../RowMenu";
 import { dateText, deviceActions, kindText, lastSeenText, revokedText, stateOf, type DeviceAction } from "./devices-logic";
 
@@ -27,6 +28,7 @@ const icons: Record<DeviceKind, LucideIcon> = { terminal: MonitorIcon, kitchen: 
 const actionLabels: Record<DeviceAction, string> = { rename: "Rename", revoke: "Revoke" };
 
 export function DeviceTable({ devices, now, onRename, onRevoke }: DeviceTableProps) {
+  const { timezone } = useVenueClock();
   // From away a device can be unpaired, a lost phone say, and not renamed (ADR-308).
   const away = useAway();
   const mirror = useOnMirror();
@@ -75,14 +77,14 @@ export function DeviceTable({ devices, now, onRename, onRevoke }: DeviceTablePro
                         </span>
                         <span className="block text-sm text-fg-muted">
                           {kindText(d)}
-                          {revoked && `. ${revokedText(d)}`}
+                          {revoked && `. ${revokedText(d, timezone)}`}
                           {d.this && ". You are using it: revoke it from another back office."}
                         </span>
                       </span>
                     </span>
                   </td>
-                  <td className="whitespace-nowrap py-2 pr-4 text-fg-2">{dateText(d.paired_at)}</td>
-                  <td className="py-2 pr-4 text-fg-2">{lastSeenText(d, now)}</td>
+                  <td className="whitespace-nowrap py-2 pr-4 text-fg-2">{dateText(d.paired_at, timezone)}</td>
+                  <td className="py-2 pr-4 text-fg-2">{lastSeenText(d, now, timezone)}</td>
                   <td className="py-2 pr-4">
                     <StatusChip status={{ kind: "device", status: stateOf(d, now) }} />
                   </td>

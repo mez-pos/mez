@@ -5,7 +5,7 @@
 
 import type { Group, Money, SalesPoint, ServiceType } from "../../../shared/api-types";
 import { axisTop } from "../dashboard/dashboard-logic";
-import { dayText } from "../audit/audit-logic";
+import { dayShort } from "../../../shared/venue-clock";
 import { daysIn, type SalesRange } from "./sales-logic";
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -28,12 +28,12 @@ export function previousRange(range: SalesRange): SalesRange | null {
   return { from: dayOf(new Date(y, m - 1, d - days)), to: dayOf(new Date(y, m - 1, d - 1)) };
 }
 
-/** A range as its button says it: "1 Sept – 19 Sept 2026", or "5 Oct 2026" for one day. */
+/** A range as its button says it: "1 Sep – 19 Sep 2026", or "5 Oct 2026" for one day. */
 export function rangeText(range: SalesRange): string {
   const year = range.to.slice(0, 4);
-  if (range.from === range.to) return `${dayText(range.to)} ${year}`;
+  if (range.from === range.to) return `${dayShort(range.to)} ${year}`;
   const fromYear = range.from.slice(0, 4);
-  return `${dayText(range.from)}${fromYear === year ? "" : ` ${fromYear}`} – ${dayText(range.to)} ${year}`;
+  return `${dayShort(range.from)}${fromYear === year ? "" : ` ${fromYear}`} – ${dayShort(range.to)} ${year}`;
 }
 
 /** The line under the title: "Insight into 19 days of trading". */

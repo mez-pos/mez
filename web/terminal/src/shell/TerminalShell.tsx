@@ -20,6 +20,7 @@ import { Logo } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { useRealtime } from "../../../shared/use-realtime";
 import { useServerVersion, useVenue } from "../../../shared/use-venue";
+import { venueClock } from "../../../shared/venue-clock";
 import { PrintQueueSheet } from "../print/PrintQueueSheet";
 import { trouble } from "../print/print-queue";
 import { usePrintJobs } from "../print/use-print-jobs";
@@ -133,7 +134,7 @@ export function TerminalShell({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main className="flex min-h-0 flex-1">{children}</main>
-      {!waiter && <StatusBar version={version} venueName={venue?.name ?? null} timezone={venue?.timezone ?? null} />}
+      {!waiter && <StatusBar version={version} venueName={venue?.name ?? null} clock={venueClock(venue)} />}
       {printOpen && <PrintQueueSheet queue={queue} onClose={() => setPrintOpen(false)} />}
       {requestsOpen && (
         <RequestsSheet

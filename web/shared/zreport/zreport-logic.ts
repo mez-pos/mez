@@ -3,6 +3,7 @@
 
 import type { Money, PaymentMethod, Tally, ZNameResponse } from "../api-types";
 import { formatMoney } from "../money";
+import { dayText, venueTime } from "../venue-clock";
 
 /**
  * The tips a manager let through over the venue's ceiling (ADR-261), or null
@@ -55,16 +56,15 @@ export function differenceWords(variance: Money): { text: string; tone: "success
   return { text: "Balanced", tone: "success" };
 }
 
-/** "18:02" in the device's zone: the till and the back office are at the venue. */
-export function clockText(iso: string): string {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "" : d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+/** "6:02 PM" on the venue's clock, whatever zone the device showing it is in (ADR-385). */
+export function clockText(iso: string, timezone: string | null): string {
+  return venueTime(iso, timezone);
 }
 
-/** A slip's date line: the trading day and when the shift closed, "2026-10-05 · 23:38". */
-export function stampText(tradingDay: string, closedAt: string): string {
-  const at = clockText(closedAt);
-  return at ? `${tradingDay} · ${at}` : tradingDay;
+/** A slip's date line: the trading day and when the shift closed, on the venue's clock, "5 Oct 2026 · 11:38 PM". */
+export function stampText(tradingDay: string, closedAt: string, timezone: string | null): string {
+  const at = clockText(closedAt, timezone);
+  return at ? `${dayText(tradingDay)} · ${at}` : dayText(tradingDay);
 }
 
 const services: Readonly<Record<string, string>> = { dine_in: "Dine-in", takeaway: "Takeaway", delivery: "Delivery" };

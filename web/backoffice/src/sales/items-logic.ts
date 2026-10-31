@@ -15,7 +15,7 @@ import type {
   WasteReasonTotal,
   WasteReport,
 } from "../../../shared/api-types";
-import { dayText } from "../audit/audit-logic";
+import { dayText } from "../../../shared/venue-clock";
 import { change, type Change } from "../dashboard/dashboard-logic";
 import { reasons } from "../stock/stock-logic";
 import type { SalesRange } from "./sales-logic";

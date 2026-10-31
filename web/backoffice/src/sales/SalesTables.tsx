@@ -7,6 +7,8 @@ import { useState, type ReactNode } from "react";
 import type { Group, SalesReport } from "../../../shared/api-types";
 import { Card, EmptyState, InboxIcon, Money } from "../../../shared/ui";
 import { DataTable, type Column } from "../../../shared/ui/DataTable";
+import { useVenueClock } from "../../../shared/use-venue";
+import { dayStartHour } from "../../../shared/venue-clock";
 import type { Sort } from "../../../shared/ui/table-state";
 import { Section, Share, count } from "./SalesSections";
 import { averageBill, cellText, defaultGroupSort, heatGrid, hourText, shares, sortGroups, tint, weekdayName } from "./sales-logic";
@@ -111,7 +113,7 @@ export function WhoSold({ report, csv }: { report: SalesReport; csv: ReactNode }
 }
 
 export function Heatmap({ report, csv }: { report: SalesReport; csv: ReactNode }) {
-  const grid = heatGrid(report.hours);
+  const grid = heatGrid(report.hours, dayStartHour(useVenueClock()));
   const top = grid.busiest?.total.minor ?? 0;
   return (
     <Section title="When it sold" csv={csv}>

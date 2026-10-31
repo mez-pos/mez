@@ -7,7 +7,8 @@
 import type { ReactNode } from "react";
 import type { Money as Amount, ZReportResponse } from "../api-types";
 import { Meta, Money } from "../ui";
-import { useVenue } from "../use-venue";
+import { useVenue, useVenueClock } from "../use-venue";
+import { dayText } from "../venue-clock";
 import { cx } from "../ui/cx";
 import { GroupTable, Pair, Row, Section } from "./ZTables";
 import { ZPaper } from "./ZPaper";
@@ -27,6 +28,7 @@ export function ZReportView({ z, actions }: ZReportViewProps) {
   const who = (id: number) => staffName(z.names, id);
   const diff = differenceWords(d.variance);
   const venue = useVenue();
+  const { timezone } = useVenueClock();
   // A report issued before these were counted has neither (ADR-184, ADR-188).
   const byService = r.by_service ?? [];
   const tipsBy = r.tips_by ?? [];
@@ -45,8 +47,8 @@ export function ZReportView({ z, actions }: ZReportViewProps) {
             <Meta
               className="mt-1"
               items={[
-                z.shift.trading_day,
-                `Opened ${clockText(z.shift.opened_at)}, closed ${clockText(z.shift.closed_at)}`,
+                dayText(z.shift.trading_day),
+                `Opened ${clockText(z.shift.opened_at, timezone)}, closed ${clockText(z.shift.closed_at, timezone)}`,
                 `Closed by ${who(z.shift.closed_by)}`,
               ]}
             />

@@ -19,8 +19,10 @@ Inside the frame (`backoffice-shell.md`).
 - **The head:** "Audit" in the serif, and under it "Every correction to a
   bill, from the record. Amounts are what the bill itself used." At the
   right, **the range** as one pill, as on the reports: the quick ranges,
-  From and To, and "Both are trading days. A trading day runs 04:00 to
-  04:00." The last seven days, today included, to start.
+  From and To, and "Both are trading days. A trading day runs 4:00 AM to
+  4:00 AM.", the venue's own day start (ADR-385). The last seven trading
+  days on the venue's clock, today included, to start; each row's time is
+  "31 Oct 2026, 10:58 AM" in the venue's zone.
 - **Person**, a select: Anyone, or someone on the staff. It finds what they
   did and what they authorised.
 - **Kinds**, a pill each, with its count in the numeral face: **Voids**,

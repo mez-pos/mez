@@ -8,7 +8,10 @@ import type { TunnelCloud, TunnelPairing } from "../../../shared/api-types";
 import { codeRefusal, possessive } from "../../../shared/cloud-pair";
 import type { Problem } from "../settings/problem";
 import { problemWith } from "../settings/problem";
+import { venueDate } from "../../../shared/venue-clock";
 import { dateText, timeText } from "./devices-logic";
+
+const dayMs = 24 * 60 * 60 * 1000;
 
 export { CODE_LENGTH, backOfficeAddress, cleanCode, pairedLines } from "../../../shared/cloud-pair";
 
@@ -25,27 +28,23 @@ export function codeProblem(typed: string): Problem<CloudField> | null {
 export const cloudProblemOf = (err: unknown): Problem<CloudField> => problemWith(err, cloudFields);
 
 /** "Paired to Priya Menon's mez Cloud account since 12 Oct 2026." */
-export function pairedLine(p: Pick<TunnelPairing, "owner" | "paired_at">): string {
-  return `Paired to ${possessive(p.owner)} mez Cloud account since ${dateText(p.paired_at)}.`;
+export function pairedLine(p: Pick<TunnelPairing, "owner" | "paired_at">, timezone: string | null): string {
+  return `Paired to ${possessive(p.owner)} mez Cloud account since ${dateText(p.paired_at, timezone)}.`;
 }
 
 /**
- * When the owner's last close-of-day message went (ADR-364): "Last report:
- * today 23:04", "yesterday 23:04", or "12 Oct 2026, 23:04". With none yet,
+ * When the owner's last close-of-day message went (ADR-364), on the venue's
+ * clock: "Last report: today 11:04 PM", "yesterday 11:04 PM", or "12 Oct
+ * 2026, 11:04 PM". With none yet,
  * "No close-of-day report has gone yet."; null when the cloud said nothing
  * of reports, as a relay of the venue's own does not.
  */
-export function lastReportLine(cloud: Pick<TunnelCloud, "last_report" | "messages_url"> | undefined, now: Date): string | null {
+export function lastReportLine(cloud: Pick<TunnelCloud, "last_report" | "messages_url"> | undefined, now: Date, timezone: string | null): string | null {
   if (!cloud || (!cloud.last_report && !cloud.messages_url)) return null;
   if (!cloud.last_report) return "No close-of-day report has gone yet.";
-  const at = new Date(cloud.last_report);
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
+  const day = dateText(cloud.last_report, timezone);
+  const time = timeText(cloud.last_report, timezone);
   const when =
-    at.toDateString() === now.toDateString()
-      ? `today ${timeText(cloud.last_report)}`
-      : at.toDateString() === yesterday.toDateString()
-        ? `yesterday ${timeText(cloud.last_report)}`
-        : `${dateText(cloud.last_report)}, ${timeText(cloud.last_report)}`;
+    day === venueDate(now, timezone) ? `today ${time}` : day === venueDate(new Date(now.getTime() - dayMs), timezone) ? `yesterday ${time}` : `${day}, ${time}`;
   return `Last report: ${when}.`;
 }

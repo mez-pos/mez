@@ -69,8 +69,10 @@ describe("reportProblem", () => {
 
 describe("a slip's words", () => {
   it("stamps the trading day and the close", () => {
-    expect(stampText("2026-10-05", "not a time")).toBe("2026-10-05");
-    expect(stampText("2026-10-05", "2026-10-05T18:02:00Z")).toMatch(/^2026-10-05 · \d{2}:\d{2}$/);
+    expect(stampText("2026-10-05", "not a time", "Asia/Kolkata")).toBe("5 Oct 2026");
+    // On the venue's clock, the twelve-hour way the status bar says it (ADR-385).
+    expect(stampText("2026-10-05", "2026-10-05T18:02:00Z", "Asia/Kolkata")).toBe("5 Oct 2026 · 11:32 PM");
+    expect(stampText("2026-10-05", "2026-10-05T18:02:00Z", "UTC")).toBe("5 Oct 2026 · 6:02 PM");
   });
   it("names how an order was served, and leaves another as it came", () => {
     expect(serviceName("dine_in")).toBe("Dine-in");

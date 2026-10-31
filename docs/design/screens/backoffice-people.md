@@ -25,7 +25,7 @@ table the rest; under 1280px the roles sit under the table.
 
   | Column | Shows |
   |---|---|
-  | Person | initials in a round mark, the name, "(you)" after your own, and "Since 2026-09-12" under it |
+  | Person | initials in a round mark, the name, "(you)" after your own, and "Since 12 Sep 2026" under it, on the venue's clock (BO-4) |
   | Role | the role's name |
   | State | a chip: **Active**, **Locked** (and under it "Too many wrong PINs, 12 min ago"), or **Deactivated** |
   | | **...**: Unlock for someone locked, Edit, New PIN, Deactivate, or Bring back for someone deactivated |
@@ -99,7 +99,7 @@ A venue paired to a mez Cloud account has one person the pairing made,
 named for the account, in the owner's role: who the account's owner is here
 when they come in from mez Cloud. `cloud: true` on the person.
 
-- Under the name: "Signs in from mez Cloud · Since 2026-10-12".
+- Under the name: "Signs in from mez Cloud · Since 12 Oct 2026".
 - The row's **...** has no **New PIN**. They have none and the server gives
   none; at a till the owner signs in as themselves.
 - **Edit** says first: "This is who your mez Cloud account signs in as. They

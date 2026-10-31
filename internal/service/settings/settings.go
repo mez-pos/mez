@@ -15,7 +15,9 @@ import (
 
 	"github.com/mez-pos/mez/internal/db"
 	"github.com/mez-pos/mez/internal/db/gen"
+	"github.com/mez-pos/mez/internal/domain/shift"
 	svcorder "github.com/mez-pos/mez/internal/service/order"
+	svcshift "github.com/mez-pos/mez/internal/service/shift"
 )
 
 // ErrNoVenue means the venue does not exist.
@@ -146,10 +148,13 @@ type Identity struct {
 	// TipsMaxPercent is the tip ceiling (ADR-261), so a till asks for a
 	// manager before the server has to refuse the payment.
 	TipsMaxPercent int
+	// DayStart is when the venue's trading day begins, its local time,
+	// "04:00": a screen's "today" is the trading day (ADR-385).
+	DayStart string
 }
 
-// Identity reads the venue's name, its timezone and its tip ceiling, and
-// nothing else: what any paired device may know.
+// Identity reads the venue's name, its timezone, its tip ceiling and when
+// its trading day begins, and nothing else: what any paired device may know.
 func (s *Service) Identity(ctx context.Context, venueID int64) (Identity, error) {
 	v, err := s.db.Queries().VenueByID(ctx, venueID)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -162,13 +167,23 @@ func (s *Service) Identity(ctx context.Context, venueID int64) (Identity, error)
 	if err != nil {
 		return Identity{}, fmt.Errorf("reading the settings of venue %d: %w", venueID, err)
 	}
-	tipMax := ""
+	tipMax, dayStart := "", shift.DefaultDayStart
 	for _, r := range rows {
-		if r.Key == svcorder.SettingTipMaxPercent {
+		switch r.Key {
+		case svcorder.SettingTipMaxPercent:
 			tipMax = r.Value
+		case svcshift.SettingDayStart:
+			// Checked as it is saved (timeOfDay); one that will not read is
+			// said, as the day's orders say it, not guessed at.
+			if dayStart, err = shift.ParseDayStart(strings.TrimSpace(r.Value)); err != nil {
+				return Identity{}, fmt.Errorf("venue %d's %s is %q: %w", venueID, svcshift.SettingDayStart, r.Value, err)
+			}
 		}
 	}
-	return Identity{Name: v.Name, Timezone: v.Timezone, TipsMaxPercent: svcorder.TipMaxPercentOf(tipMax)}, nil
+	return Identity{
+		Name: v.Name, Timezone: v.Timezone, TipsMaxPercent: svcorder.TipMaxPercentOf(tipMax),
+		DayStart: shift.FormatDayStart(dayStart),
+	}, nil
 }
 
 // clean trims the details and refuses what cannot be used.

@@ -44,9 +44,11 @@ describe("printersSummary", () => {
 describe("agoText", () => {
   const now = new Date("2026-09-25T10:00:00Z");
   it("says how long ago", () => {
-    expect(agoText("2026-09-25T09:59:30Z", now)).toBe("just now");
-    expect(agoText("2026-09-25T09:48:00Z", now)).toBe("12 min ago");
-    expect(agoText("2026-09-25T07:00:00Z", now)).toBe("3 h ago");
+    expect(agoText("2026-09-25T09:59:30Z", now, "Asia/Kolkata")).toBe("just now");
+    expect(agoText("2026-09-25T09:48:00Z", now, "Asia/Kolkata")).toBe("12 min ago");
+    expect(agoText("2026-09-25T07:00:00Z", now, "Asia/Kolkata")).toBe("3 h ago");
+    // Older than a day: the venue's date, not the browser's locale's (BO-4).
+    expect(agoText("2026-09-22T20:00:00Z", now, "Asia/Kolkata")).toBe("23 Sep 2026");
   });
 });
 

@@ -17,6 +17,8 @@ import { Button, Card, Money, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { OnAMirror } from "../../../shared/shell/OnAMirror";
 import { useOnMirror } from "../../../shared/use-mirror";
+import { useVenueClock } from "../../../shared/use-venue";
+import { venueDateTime } from "../../../shared/venue-clock";
 import { CheckField, Choice, Field, inputClass } from "../FormFields";
 import { groupsChanged } from "./group-logic";
 import { ItemGroupsField } from "./ItemGroupsField";
@@ -55,6 +57,7 @@ interface ItemEditorProps {
 }
 
 export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, onCancel, onSoldOut, onActive, busy }: ItemEditorProps) {
+  const { timezone } = useVenueClock();
   const [form, setForm] = useState(initial);
   const [groups, setGroups] = useState<number[]>(item?.modifier_groups ?? []);
   const [photo, setPhoto] = useState<PhotoChange>({ kind: "keep" });
@@ -113,7 +116,7 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
             <div className="flex flex-wrap items-center gap-3">
               <h2 className="font-serif text-xl">{readOnly ? "Menu item" : item ? "Edit menu item" : "Add menu item"}</h2>
               {state && <StatusChip status={{ kind: "menu", status: state }} />}
-              {state === "sold_out" && soldOutUntil && <span className="text-sm text-fg-muted">Back on sale {new Date(soldOutUntil).toLocaleString()}</span>}
+              {state === "sold_out" && soldOutUntil && <span className="text-sm text-fg-muted">Back on sale {venueDateTime(soldOutUntil, timezone)}</span>}
             </div>
             {item && state && !readOnly && (
               <div className="flex flex-wrap gap-tap-gap">

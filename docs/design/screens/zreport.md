@@ -29,8 +29,9 @@ width (`w-aside`: 307px at 1280, 328px at 1366, 380px from 1584; TECH-17),
 that stays in sight as the report scrolls. Under 1280px the slip sits under
 the report.
 
-- **The head:** "Z-report 12" in the serif; under it the trading day, "Opened
-  18:02, closed 01:47" in the venue's time, and "Closed by Priya". At the
+- **The head:** "Z-report 12" in the serif; under it the trading day, "5 Oct
+  2026", "Opened 6:02 PM, closed 1:47 AM" on the venue's clock (ADR-385), and
+  "Closed by Priya". At the
   right, the way back, **Print a copy**, and in the back office **Tips**.
 - A correction carries a warning band: "Corrects Z-report 11." and its
   reason.

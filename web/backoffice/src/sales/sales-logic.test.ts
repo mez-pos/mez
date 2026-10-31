@@ -24,8 +24,9 @@ import {
 } from "./sales-logic";
 
 const inr = (minor: number): Money => ({ minor, currency: "INR" });
-// Noon on Saturday 3 October 2026.
-const now = new Date(2026, 9, 3, 12, 0);
+// Noon on Saturday 3 October 2026, in Kolkata, whose day starts at 04:00.
+const now = new Date("2026-10-03T06:30:00Z");
+const clock = { timezone: "Asia/Kolkata", dayStart: 240 };
 
 describe("quick ranges", () => {
   const tests: { id: (typeof quickRanges)[number]["id"]; want: { from: string; to: string } }[] = [
@@ -36,16 +37,20 @@ describe("quick ranges", () => {
   ];
   for (const tt of tests) {
     it(`${tt.id} ends today`, () => {
-      expect(quickRange(tt.id, now)).toEqual(tt.want);
-      expect(quickRangeOf(tt.want, now)).toBe(tt.id);
+      expect(quickRange(tt.id, now, clock)).toEqual(tt.want);
+      expect(quickRangeOf(tt.want, now, clock)).toBe(tt.id);
     });
   }
-  it("counts the small hours as the day before", () => {
-    expect(quickRange("today", new Date(2026, 9, 1, 2, 0))).toEqual({ from: "2026-09-30", to: "2026-09-30" });
-    expect(quickRange("this_month", new Date(2026, 9, 1, 2, 0))).toEqual({ from: "2026-09-01", to: "2026-09-30" });
+  it("counts the small hours as the day before, by the venue's day start (BO-1)", () => {
+    // 02:00 on 1 Oct in Kolkata.
+    const small = new Date("2026-09-30T20:30:00Z");
+    expect(quickRange("today", small, clock)).toEqual({ from: "2026-09-30", to: "2026-09-30" });
+    expect(quickRange("this_month", small, clock)).toEqual({ from: "2026-09-01", to: "2026-09-30" });
+    // A venue whose day starts at 01:00 is on the 1st by then.
+    expect(quickRange("today", small, { ...clock, dayStart: 60 })).toEqual({ from: "2026-10-01", to: "2026-10-01" });
   });
   it("is none of them for a range typed by hand", () => {
-    expect(quickRangeOf({ from: "2026-08-01", to: "2026-08-15" }, now)).toBeNull();
+    expect(quickRangeOf({ from: "2026-08-01", to: "2026-08-15" }, now, clock)).toBeNull();
   });
 });
 
@@ -81,7 +86,7 @@ describe("the paths", () => {
 describe("periods", () => {
   it("words a day and a longer period", () => {
     expect(periodText({ start: "2026-10-01", end: "2026-10-01" })).toMatch(/^1 Oct$/);
-    expect(periodText({ start: "2026-09-28", end: "2026-10-04" })).toMatch(/^28 Sep\w* to 4 Oct$/);
+    expect(periodText({ start: "2026-09-28", end: "2026-10-04" })).toBe("28 Sep to 4 Oct");
   });
 });
 
@@ -148,7 +153,7 @@ describe("sorting a table of groups", () => {
 describe("the heatmap", () => {
   it("runs the hours as the trading day does, the small hours last", () => {
     // Monday lunch, Friday evening, and 01:00 of Friday night's trade.
-    const g = heatGrid([cell(1, 13, 2, 42000), cell(5, 22, 1, 20000), cell(5, 1, 3, 63000)]);
+    const g = heatGrid([cell(1, 13, 2, 42000), cell(5, 22, 1, 20000), cell(5, 1, 3, 63000)], 4);
     expect(g.hours).toEqual([13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0, 1]);
     expect(g.rows.map((r) => r.weekday)).toEqual([1, 2, 3, 4, 5, 6, 7]);
     expect(g.rows[0]?.cells[0]?.bills).toBe(2);
@@ -158,20 +163,22 @@ describe("the heatmap", () => {
     expect(g.busiest).toEqual(cell(5, 1, 3, 63000));
   });
   it("starts at 04:00 and ends at 03:00 at the widest", () => {
-    const g = heatGrid([cell(3, 4, 1, 100), cell(3, 3, 1, 100)]);
+    const g = heatGrid([cell(3, 4, 1, 100), cell(3, 3, 1, 100)], 4);
     expect(g.hours).toHaveLength(24);
     expect(g.hours[0]).toBe(4);
     expect(g.hours[23]).toBe(3);
   });
   it("is one column for one hour", () => {
-    expect(heatGrid([cell(7, 9, 1, 100)]).hours).toEqual([9]);
+    expect(heatGrid([cell(7, 9, 1, 100)], 4).hours).toEqual([9]);
+    // A venue whose day starts at 06:00 runs 05:00 at the end of its night (ADR-385).
+    expect(heatGrid([cell(1, 5, 1, 100), cell(1, 22, 1, 100)], 6).hours).toEqual([22, 23, 0, 1, 2, 3, 4, 5]);
   });
   it("keeps the earliest of two cells that tie as the busiest", () => {
-    expect(heatGrid([cell(2, 10, 1, 500), cell(1, 10, 1, 500)]).busiest?.weekday).toBe(1);
+    expect(heatGrid([cell(2, 10, 1, 500), cell(1, 10, 1, 500)], 4).busiest?.weekday).toBe(1);
   });
   it("is nothing with no bills", () => {
-    expect(heatGrid([])).toEqual({ hours: [], rows: [], busiest: null });
-    expect(heatGrid([cell(1, 9, 0, 0)])).toEqual({ hours: [], rows: [], busiest: null });
+    expect(heatGrid([], 4)).toEqual({ hours: [], rows: [], busiest: null });
+    expect(heatGrid([cell(1, 9, 0, 0)], 4)).toEqual({ hours: [], rows: [], busiest: null });
   });
   it("tints in four steps", () => {
     const tests: [number, number, number][] = [

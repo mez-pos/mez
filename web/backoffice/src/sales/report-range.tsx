@@ -4,6 +4,7 @@
 
 import { createContext, useContext, useState, type ReactNode } from "react";
 import type { ReportEvery } from "../../../shared/api-types";
+import { useVenueClock } from "../../../shared/use-venue";
 import { everyFor, quickRange, type SalesRange } from "./sales-logic";
 import { usable } from "./overview-logic";
 
@@ -20,7 +21,8 @@ export interface ReportRange {
 const Context = createContext<ReportRange | null>(null);
 
 export function ReportRangeProvider({ children }: { children: ReactNode }) {
-  const [range, setRange] = useState<SalesRange>(() => quickRange("week", new Date()));
+  const clock = useVenueClock();
+  const [range, setRange] = useState<SalesRange>(() => quickRange("week", new Date(), clock));
   // Null until chosen by hand: until then the cut follows the range.
   const [chosen, setEvery] = useState<ReportEvery | null>(null);
   const value: ReportRange = { range, setRange, every: chosen ?? everyFor(range), setEvery, picked: usable(range) };

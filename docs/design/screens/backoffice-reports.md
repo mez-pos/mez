@@ -36,7 +36,8 @@ whose numbers are the ones on the screen.
   - on Sales, **By**: Day, Week or Month, how the range is cut. It follows
     the range until it is chosen by hand;
   - "A sale counts on the trading day its bill was invoiced. A trading day
-    runs 04:00 to 04:00."
+    runs 4:00 AM to 4:00 AM.", the venue's own day start (ADR-385); the quick
+    ranges are trading days on the venue's clock."
 - **Export**, beside it: a menu, "Download as CSV", listing that tab's files.
 
 The range is shared by the three tabs and starts at the last seven days,
@@ -82,7 +83,7 @@ draw. Each card has its own **Download CSV**:
   its share; Channel, Bills, Total and its share.
 - **When it sold**, the heatmap: a row per weekday, Monday first; a column
   per hour from the first with a bill to the last, in the order the trading
-  day runs them (04:00 first), so 01:00 sits after the evening it belongs
+  day runs them (the venue's day start first), so 01:00 sits after the evening it belongs
   to. A cell shows its count over a green tint in four steps; the count is
   the figure, the tint only repeats it. Under it, "Busiest: Friday 13:00, 3
   bills, 630.00".

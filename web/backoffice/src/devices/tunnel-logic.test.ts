@@ -10,42 +10,42 @@ const states: readonly TunnelState[] = ["off", "connecting", "connected", "waiti
 
 describe("tunnelLine", () => {
   it.each(states)("has a sentence for %s", (state) => {
-    expect(tunnelLine({ state }, now).length).toBeGreaterThan(20);
+    expect(tunnelLine({ state }, now, "Asia/Kolkata").length).toBeGreaterThan(20);
   });
 
   it("says what guests can do when connected, and since when", () => {
-    expect(tunnelLine({ state: "connected", since: at(14, 2) }, now)).toBe("Guests can order from their phones. Connected since 14:02.");
-    expect(tunnelLine({ state: "connected" }, now)).toBe("Guests can order from their phones.");
+    expect(tunnelLine({ state: "connected", since: at(14, 2) }, now, "Asia/Kolkata")).toBe("Guests can order from their phones. Connected since 2:02 PM.");
+    expect(tunnelLine({ state: "connected" }, now, "Asia/Kolkata")).toBe("Guests can order from their phones.");
   });
 
   it.each(["connecting", "waiting", "refused", "not_entitled"] as const)("says guests cannot order while %s", (state) => {
-    expect(tunnelLine({ state }, now)).toMatch(/cannot order from their phones/);
+    expect(tunnelLine({ state }, now, "Asia/Kolkata")).toMatch(/cannot order from their phones/);
   });
 
   it("says the counter is not affected when the relay cannot be reached", () => {
-    expect(tunnelLine({ state: "waiting" }, now)).toMatch(/The counter is not affected\./);
+    expect(tunnelLine({ state: "waiting" }, now, "Asia/Kolkata")).toMatch(/The counter is not affected\./);
   });
 
   it("says what to do for the two states waiting will not mend", () => {
-    expect(tunnelLine({ state: "refused" }, now)).toMatch(/Check the relay key/);
+    expect(tunnelLine({ state: "refused" }, now, "Asia/Kolkata")).toMatch(/Check the relay key/);
     // A venue paired to mez Cloud whose key is refused pairs again (ADR-359).
     const paired = { owner: "Priya", hostname: "blue-tokai.mezpos.com", paired_at: "2026-10-15T04:00:00Z" };
-    expect(tunnelLine({ state: "refused", paired_to: paired }, now)).toMatch(/Pair this computer again with a new code/);
-    expect(tunnelLine({ state: "replaced" }, now)).toMatch(/stop the other, or give this one a key of its own/);
+    expect(tunnelLine({ state: "refused", paired_to: paired }, now, "Asia/Kolkata")).toMatch(/Pair this computer again with a new code/);
+    expect(tunnelLine({ state: "replaced" }, now, "Asia/Kolkata")).toMatch(/stop the other, or give this one a key of its own/);
   });
 
   it("says why the relay is not carrying the venue, and that it comes back by itself", () => {
-    const line = tunnelLine({ state: "not_entitled", cloud: { back_office: false, reason: "payment_failed" } }, now);
+    const line = tunnelLine({ state: "not_entitled", cloud: { back_office: false, reason: "payment_failed" } }, now, "Asia/Kolkata");
     expect(line).toMatch(/^The relay is not carrying this venue/);
     expect(line).toMatch(/The last payment for mez Cloud did not go through\./);
     expect(line).toMatch(/asks again every minute and comes back by itself/);
     expect(line).toMatch(/The counter is not affected\.$/);
     // With nothing said about why, it says who can.
-    expect(tunnelLine({ state: "not_entitled" }, now)).toMatch(/Whoever runs the relay can say why\./);
+    expect(tunnelLine({ state: "not_entitled" }, now, "Asia/Kolkata")).toMatch(/Whoever runs the relay can say why\./);
   });
 
   it("does not call a venue with no relay broken", () => {
-    const line = tunnelLine({ state: "off" }, now);
+    const line = tunnelLine({ state: "off" }, now, "Asia/Kolkata");
     expect(line).toMatch(/^Guests order at the counter\./);
     expect(line).not.toMatch(/cannot|fail|error/i);
   });
@@ -53,8 +53,8 @@ describe("tunnelLine", () => {
 
 describe("sinceText", () => {
   it("is a time for today and a date with it for any other day", () => {
-    expect(sinceText(at(9, 5), now)).toBe("09:05");
-    expect(sinceText(at(23, 40, 3), now)).toBe("3 Oct 2026, 23:40");
+    expect(sinceText(at(9, 5), now, "Asia/Kolkata")).toBe("9:05 AM");
+    expect(sinceText(at(23, 40, 3), now, "Asia/Kolkata")).toBe("3 Oct 2026, 11:40 PM");
   });
 });
 
@@ -149,33 +149,35 @@ describe("cloudLine", () => {
   const until = new Date(2026, 10, 19, 12, 0, 0).toISOString();
 
   it("is nothing when the relay said nothing, or nothing worth a line", () => {
-    expect(cloudLine(undefined, now)).toBeNull();
-    expect(cloudLine({ back_office: true }, now)).toBeNull();
-    expect(cloudLine({ back_office: false, reason: "never" }, now)).toBeNull();
+    expect(cloudLine(undefined, now, "Asia/Kolkata")).toBeNull();
+    expect(cloudLine({ back_office: true }, now, "Asia/Kolkata")).toBeNull();
+    expect(cloudLine({ back_office: false, reason: "never" }, now, "Asia/Kolkata")).toBeNull();
   });
 
   it("says what is paid for, and to when", () => {
-    expect(cloudLine({ state: "active", paid_until: paid, until, back_office: true }, now)).toBe("Cloud: paid until 12 Nov 2026.");
-    expect(cloudLine({ state: "active", back_office: true }, now)).toBe("Cloud: paid.");
-    expect(cloudLine({ state: "trial", paid_until: paid, until, back_office: true }, now)).toBe("Cloud: free trial until 12 Nov 2026.");
+    expect(cloudLine({ state: "active", paid_until: paid, until, back_office: true }, now, "Asia/Kolkata")).toBe("Cloud: paid until 12 Nov 2026.");
+    expect(cloudLine({ state: "active", back_office: true }, now, "Asia/Kolkata")).toBe("Cloud: paid.");
+    expect(cloudLine({ state: "trial", paid_until: paid, until, back_office: true }, now, "Asia/Kolkata")).toBe("Cloud: free trial until 12 Nov 2026.");
   });
 
   it("counts the days left once a payment has failed, from when the relay stops and not from what was paid", () => {
     const grace = { state: "grace", paid_until: inMs(-2 * 24 * 3600_000), until: inMs(5 * 24 * 3600_000), back_office: true };
-    expect(cloudLine({ ...grace, reason: "payment_failed" }, now)).toBe("Cloud: payment failed, 5 days left.");
-    expect(cloudLine({ ...grace, reason: "trial_ended" }, now)).toBe("Cloud: the free trial has ended, 5 days left.");
-    expect(cloudLine({ state: "grace", back_office: true, reason: "payment_failed" }, now)).toBe("Cloud: payment failed.");
+    expect(cloudLine({ ...grace, reason: "payment_failed" }, now, "Asia/Kolkata")).toBe("Cloud: payment failed, 5 days left.");
+    expect(cloudLine({ ...grace, reason: "trial_ended" }, now, "Asia/Kolkata")).toBe("Cloud: the free trial has ended, 5 days left.");
+    expect(cloudLine({ state: "grace", back_office: true, reason: "payment_failed" }, now, "Asia/Kolkata")).toBe("Cloud: payment failed.");
   });
 
   it("says a cancelled venue is carried to its date, and a stopped one what it was paid to", () => {
-    expect(cloudLine({ state: "cancelled", paid_until: paid, until: paid, back_office: true }, now)).toBe("Cloud: cancelled. Carried until 12 Nov 2026.");
-    expect(cloudLine({ state: "suspended", paid_until: paid, back_office: false, reason: "payment_failed" }, now)).toBe(
+    expect(cloudLine({ state: "cancelled", paid_until: paid, until: paid, back_office: true }, now, "Asia/Kolkata")).toBe(
+      "Cloud: cancelled. Carried until 12 Nov 2026.",
+    );
+    expect(cloudLine({ state: "suspended", paid_until: paid, back_office: false, reason: "payment_failed" }, now, "Asia/Kolkata")).toBe(
       "Cloud: stopped. It was paid until 12 Nov 2026.",
     );
-    expect(cloudLine({ state: "closed", back_office: false }, now)).toBe("Cloud: stopped.");
+    expect(cloudLine({ state: "closed", back_office: false }, now, "Asia/Kolkata")).toBe("Cloud: stopped.");
   });
 
   it("says only the date for a relay that keeps a file", () => {
-    expect(cloudLine({ until, back_office: true }, now)).toBe("The relay carries this venue until 19 Nov 2026.");
+    expect(cloudLine({ until, back_office: true }, now, "Asia/Kolkata")).toBe("The relay carries this venue until 19 Nov 2026.");
   });
 });

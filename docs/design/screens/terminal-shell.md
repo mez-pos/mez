@@ -47,7 +47,9 @@ middle and scrolls inside itself, so an order's total never leaves the screen.
 - **The screen.**
 - **Status bar, 40px:** the version ("mez v1.0.0"), the connection ("Online",
   or what is wrong and when the next try is), the venue's name, and at the
-  right the venue's date and time, to the second's tick, in the venue's zone.
+  right the venue's date and time, to the second's tick, in the venue's zone;
+  between midnight and the day start, "Trading day 31 Oct · 1:05 AM"
+  (ADR-385).
 
 **Waiter's frame** (T01), for a tablet in one hand:
 

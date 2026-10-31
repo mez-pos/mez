@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import type { ZSummary } from "../../../shared/api-types";
 import { Button, EmptyState, InboxIcon, Money } from "../../../shared/ui";
+import { dayText } from "../../../shared/venue-clock";
 import { reportProblem } from "../../../shared/zreport/zreport-logic";
 import { statusOf, useZReports } from "../../../shared/zreport/use-zreport";
 
@@ -81,7 +82,7 @@ function ReportRow({ z }: { z: ZSummary }) {
       <span className="font-mono text-lg tabular-nums">Z {z.number}</span>
       <span className="flex min-w-0 flex-col gap-1">
         <span className="flex items-center gap-2 text-base font-semibold">
-          {z.trading_day}
+          {dayText(z.trading_day)}
           {z.correction && <span className="rounded border border-warning px-2 py-0.5 text-meta font-semibold uppercase text-warning">Correction</span>}
         </span>
         <span className="truncate font-mono text-sm text-fg-muted">{z.shift_public_id}</span>

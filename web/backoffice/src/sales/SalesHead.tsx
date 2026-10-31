@@ -13,6 +13,8 @@ import type { ReportEvery, ReportSheet } from "../../../shared/api-types";
 import { useDisclosure } from "../../../shared/shell/use-disclosure";
 import { cx } from "../../../shared/ui/cx";
 import { pillClass } from "../../../shared/ui/pill";
+import { useVenueClock } from "../../../shared/use-venue";
+import { dayRunsText } from "../../../shared/venue-clock";
 import { insightText } from "./overview-logic";
 import { RangePill, headPanel, headPill } from "./RangePill";
 import { useReportRange } from "./report-range";
@@ -67,8 +69,9 @@ export function ReportHead({ tab, title, cut = false, children }: ReportHeadProp
 
 function RangeMenu({ cut }: { cut: boolean }) {
   const { range, setRange, every, setEvery } = useReportRange();
+  const clock = useVenueClock();
   return (
-    <RangePill range={range} onChange={setRange} note="A sale counts on the trading day its bill was invoiced. A trading day runs 04:00 to 04:00.">
+    <RangePill range={range} onChange={setRange} note={`A sale counts on the trading day its bill was invoiced. ${dayRunsText(clock)}`}>
       {cut && (
         <div role="group" aria-label="By" className="flex flex-col gap-1.5 text-sm font-semibold">
           By

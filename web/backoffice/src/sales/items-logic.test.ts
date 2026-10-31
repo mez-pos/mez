@@ -77,7 +77,7 @@ describe("cost and margin in words", () => {
   it("says how far the costs can be trusted", () => {
     expect(costingNote({ kept_from: "2026-10-05", short: false })).toBe("");
     expect(costingNote({ short: false })).toMatch(/^No dish has a cost yet\./);
-    expect(costingNote({ kept_from: "2026-10-05", short: true })).toMatch(/^Costs by dish are kept from 5 Oct\. .* margins are not shown\.$/);
+    expect(costingNote({ kept_from: "2026-10-05", short: true })).toMatch(/^Costs by dish are kept from 5 Oct 2026\. .* margins are not shown\.$/);
   });
   it("builds the path for a range", () => {
     expect(itemsPath({ from: "2026-10-01", to: "2026-10-05" })).toBe("/api/v1/reports/items?from=2026-10-01&to=2026-10-05");

@@ -19,6 +19,8 @@ import type { ShiftResponse } from "../../../shared/api-types";
 import { formatMoney } from "../../../shared/money";
 import { Button, Card, Confirm, Money, useToast } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { useVenueClock } from "../../../shared/use-venue";
+import { dayText, venueTime } from "../../../shared/venue-clock";
 import { useDayOrders } from "../bills/use-bills";
 import { ClosingStock } from "./ClosingStock";
 import { stockCountOwed } from "./closing-stock-logic";
@@ -50,6 +52,10 @@ export function CloseDayScreen({ shift, currency, commands, onBack, names, onSee
   const [error, setError] = useState<string | null>(null);
   const toast = useToast();
   const stock = useClosingStock(shift.id);
+  const { timezone } = useVenueClock();
+  // The venue's day and clock, not the tablet's, and no internal id (TBS-17, ADR-385).
+  const tradingDay = dayText(shift.trading_day);
+  const opened = venueTime(shift.opened_at, timezone);
   const day = useDayOrders();
   const open = day.data ? openOrders(day.data.orders) : null;
   const carry = carryWords(open ? open.length : null);
@@ -81,8 +87,8 @@ export function CloseDayScreen({ shift, currency, commands, onBack, names, onSee
             <p className="text-meta font-bold uppercase text-attention-text">Step {rec ? 2 : 1} of 2</p>
             <h1 className="mt-2 font-serif text-total short:mt-1">Close the day</h1>
             {/* The rail beside the steps holds the shift's facts; without room for it they are said here. */}
-            <p className="mt-1 font-mono text-sm tabular-nums text-fg-muted lg:hidden">
-              {shift.trading_day} · {shift.public_id}
+            <p className="mt-1 text-sm text-fg-muted lg:hidden">
+              {tradingDay} · Opened {opened}
             </p>
             <p className="mt-1 text-base text-fg-muted">
               {rec
@@ -144,9 +150,8 @@ export function CloseDayScreen({ shift, currency, commands, onBack, names, onSee
       <aside aria-label="The shift" className="hidden w-rail shrink-0 flex-col gap-4 border-l border-line bg-chrome p-5 lg:flex">
         <p className="text-meta font-bold uppercase text-fg-faint">The shift</p>
         <dl className="grid gap-3 text-base">
-          <Fact label="Trading day" value={shift.trading_day} />
-          <Fact label="Opened" value={new Date(shift.opened_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} />
-          <Fact label="Shift" value={shift.public_id} />
+          <Fact label="Trading day" value={tradingDay} />
+          <Fact label="Opened" value={opened} />
           <div className="flex items-baseline justify-between gap-3">
             <dt className="text-fg-2">Opening float</dt>
             <dd>

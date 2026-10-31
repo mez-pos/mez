@@ -102,6 +102,10 @@ request during service, because sqlc reads the migrations as its schema.
   struct. See "Generated API types" below.
 - Terminal and back office may use shadcn/ui. The guest app may not — it has a
   60 KB gzipped budget.
+- **Dates and times come from `web/shared/venue-clock.ts`** (ADR-385): "today"
+  is `tradingDay` on the venue's clock (`useVenueClock()`), never the browser's
+  date or a written-in 04:00; a date is "3 Oct 2026", a time "11:40 PM", read
+  in the venue's zone. Not `toLocaleString`, not an ISO date sliced for show.
 
 ## Terminal UI rules — these are hard constraints, not preferences
 

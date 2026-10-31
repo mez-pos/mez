@@ -208,9 +208,9 @@ export function staffStateOf(p: Pick<Person, "active" | "locked_at">): StaffStat
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Under a locked person's chip: why, and when. Null for someone not locked. */
-export function lockedNote(p: Pick<Person, "locked_at">, now: Date): string | null {
+export function lockedNote(p: Pick<Person, "locked_at">, now: Date, timezone: string | null): string | null {
   if (!p.locked_at) return null;
-  const when = now.getTime() - Date.parse(p.locked_at) >= DAY_MS ? `on ${dateText(p.locked_at)}` : agoText(p.locked_at, now);
+  const when = now.getTime() - Date.parse(p.locked_at) >= DAY_MS ? `on ${dateText(p.locked_at, timezone)}` : agoText(p.locked_at, now, timezone);
   return `Too many wrong PINs, ${when}`;
 }
 
@@ -239,9 +239,13 @@ export function staffActions(p: Pick<Person, "id" | "active" | "locked_at" | "cl
   ];
 }
 
-/** Under a person's name: since when, and for the one mez Cloud signs in as, that first. */
-export function sinceText(p: Pick<Person, "since" | "cloud">): string {
-  const since = `Since ${p.since.slice(0, 10)}`;
+/**
+ * Under a person's name: since when, on the venue's clock, and for the one mez
+ * Cloud signs in as, that first. The date in UTC said the day before for
+ * anyone added after midnight in Kolkata (BO-4).
+ */
+export function sinceText(p: Pick<Person, "since" | "cloud">, timezone: string | null): string {
+  const since = `Since ${dateText(p.since, timezone)}`;
   return p.cloud ? `Signs in from mez Cloud · ${since}` : since;
 }
 

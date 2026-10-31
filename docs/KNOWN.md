@@ -10,6 +10,20 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **One venue clock** (ADR-385, Phase 17 Task 14; 2026-10-31). Seen in a
+  scripted Chromium: the back office's bar at 1366 ("Sat, 31 Oct 2026 ·
+  12:24 PM"), at a faked 1:05 AM ("Trading day 31 Oct · 1:05 AM") and on a
+  390 phone ("31 Oct"); Sales, Audit, Staff, Devices, Printers, Z-reports
+  and a report with no ISO date left on screen but the exports' file
+  names; close of day's rail at 1024 and 1366 with the trading day and
+  "Opened 12:25 PM" and no shift id. **Not seen:** a venue with a day
+  start other than 04:00 (tested: the ranges, the heatmap's order and the
+  notes follow it); a laptop set to another zone (tested in the clock's
+  own tests). Left: the mirror note, the kitchen board's clock and the
+  sales heatmap's hour labels keep 24-hour times; a back office opened
+  straight onto Sales before the venue is read takes its first range on
+  the device's clock.
+
 - **Close of day says what is open; the Z-report what it carried**
   (ADR-384, Phase 17 Task 13; 2026-10-31). Seen in a scripted Chromium at
   1024x768 and 1366x768: the note over the counter with a saved counter

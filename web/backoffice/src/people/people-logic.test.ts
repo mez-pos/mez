@@ -207,11 +207,11 @@ describe("a hard lock (ADR-260)", () => {
     expect(staffStateOf({ ...base, active: false })).toBe("off");
   });
   it("says why and when", () => {
-    expect(lockedNote(base, now)).toBeNull();
-    expect(lockedNote(locked("2026-10-03T09:59:40Z"), now)).toBe("Too many wrong PINs, just now");
-    expect(lockedNote(locked("2026-10-03T09:48:00Z"), now)).toBe("Too many wrong PINs, 12 min ago");
-    expect(lockedNote(locked("2026-10-03T07:00:00Z"), now)).toBe("Too many wrong PINs, 3 h ago");
-    expect(lockedNote(locked("2026-10-01T12:00:00Z"), now)).toBe("Too many wrong PINs, on 1 Oct 2026");
+    expect(lockedNote(base, now, "Asia/Kolkata")).toBeNull();
+    expect(lockedNote(locked("2026-10-03T09:59:40Z"), now, "Asia/Kolkata")).toBe("Too many wrong PINs, just now");
+    expect(lockedNote(locked("2026-10-03T09:48:00Z"), now, "Asia/Kolkata")).toBe("Too many wrong PINs, 12 min ago");
+    expect(lockedNote(locked("2026-10-03T07:00:00Z"), now, "Asia/Kolkata")).toBe("Too many wrong PINs, 3 h ago");
+    expect(lockedNote(locked("2026-10-01T12:00:00Z"), now, "Asia/Kolkata")).toBe("Too many wrong PINs, on 1 Oct 2026");
   });
   it("offers Unlock for someone else who is locked", () => {
     expect(mayUnlock(locked("2026-10-03T09:48:00Z"), "b")).toBe(true);
@@ -235,8 +235,10 @@ describe("the person mez Cloud signs in as (ADR-323)", () => {
   const account: Person = { ...priya, id: "stf_2", name: "Priya Menon", since: "2026-10-12T06:17:21Z", cloud: true };
 
   it("is said to be that, under the name", () => {
-    expect(sinceText(account)).toBe("Signs in from mez Cloud · Since 2026-10-12");
-    expect(sinceText(priya)).toBe("Since 2026-09-01");
+    expect(sinceText(account, "Asia/Kolkata")).toBe("Signs in from mez Cloud · Since 12 Oct 2026");
+    expect(sinceText(priya, "Asia/Kolkata")).toBe("Since 1 Sep 2026");
+    // Added at 01:30 in Kolkata: that day, not the one before in UTC (BO-4).
+    expect(sinceText({ ...priya, since: "2026-10-01T20:00:00Z" }, "Asia/Kolkata")).toBe("Since 2 Oct 2026");
   });
 
   it("is offered no new PIN: they have none, and the server gives none", () => {
