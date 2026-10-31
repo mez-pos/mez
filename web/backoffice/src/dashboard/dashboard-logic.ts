@@ -198,6 +198,14 @@ export interface LowRow {
  * level (as the Inventory screen counts "out"), anything with none left
  * first; the rest in the server's order.
  */
+/**
+ * What the low-stock card says with nothing to list: that nothing is tracked,
+ * where no ingredient is, rather than that nothing is low (BO-10).
+ */
+export function lowStockEmpty(items: readonly Pick<StockItem, "active">[]): string {
+  return items.some((it) => it.active) ? "Nothing is low." : "No ingredients tracked.";
+}
+
 export function lowRows(items: readonly StockItem[], limit: number): { rows: LowRow[]; more: number } {
   const low = items
     .filter((it) => it.active && (it.low || it.on_hand <= 0))

@@ -4,10 +4,12 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import type { ZSummary } from "../../../shared/api-types";
+import { useAuth } from "../../../shared/auth/use-auth";
 import { Button, EmptyState, InboxIcon, Money } from "../../../shared/ui";
 import { dayText } from "../../../shared/venue-clock";
 import { reportProblem } from "../../../shared/zreport/zreport-logic";
 import { statusOf, useZReports } from "../../../shared/zreport/use-zreport";
+import { tillPath } from "../shell/nav-logic";
 
 export function ZReportsScreen() {
   // Each page's cursor; the first page is 0.
@@ -36,6 +38,9 @@ interface PageProps {
 
 function Page({ before, last, onMore }: PageProps) {
   const page = useZReports(before);
+  const auth = useAuth();
+  // A device that is a till can be sent to it to close the day.
+  const till = auth.kind === "signed_in" ? tillPath(auth.device) : null;
   if (page.isPending) return <li className="text-base text-fg-muted">Loading the reports</li>;
   if (page.isError) {
     const status = statusOf(page.error);
@@ -53,7 +58,12 @@ function Page({ before, last, onMore }: PageProps) {
   if (before === 0 && reports.length === 0) {
     return (
       <li>
-        <EmptyState icon={<InboxIcon />} line="No Z-reports yet. One is issued each time a shift closes." />
+        {/* The next step, and the way to it where this device is a till (BO-15). */}
+        <EmptyState
+          icon={<InboxIcon />}
+          line="No Z-reports yet. Close the day on the till, from its profile menu, to issue the first."
+          {...(till ? { action: { label: "Open the till", href: till } } : {})}
+        />
       </li>
     );
   }

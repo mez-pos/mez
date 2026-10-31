@@ -3,13 +3,14 @@
 // the screen it links to has the rest.
 
 import { PackageIcon } from "lucide-react";
+import { Link } from "wouter";
 import type { Group, LiveTableResponse, SalesReport, StockItem } from "../../../shared/api-types";
 import { initials, roleText } from "../../../shared/auth/format";
 import { formatQty } from "../../../shared/stock-qty";
 import { Money, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { tablePaid } from "../../../shared/ui/status";
-import { activeTables, guestsText, lowRows, staffRows, topItems } from "./dashboard-logic";
+import { activeTables, guestsText, lowRows, lowStockEmpty, staffRows, topItems } from "./dashboard-logic";
 import { Nothing } from "./Panel";
 
 /** How many rows a list has room for beside the chart. */
@@ -118,7 +119,23 @@ const inks = { ok: "text-fg-2", low: "text-warning", out: "text-danger" } as con
 
 export function LowStock({ items }: { items: readonly StockItem[] }) {
   const { rows, more } = lowRows(items, listRows);
-  if (rows.length === 0) return <Nothing>Nothing is low.</Nothing>;
+  if (rows.length === 0) {
+    // Nothing tracked is not "nothing is low" (BO-10): it says so, and where to start.
+    const tracked = items.some((it) => it.active);
+    return (
+      <Nothing>
+        {lowStockEmpty(items)}
+        {!tracked && (
+          <>
+            {" "}
+            <Link href="/stock" className="font-semibold text-attention-text underline underline-offset-2">
+              Add what you keep, in Inventory.
+            </Link>
+          </>
+        )}
+      </Nothing>
+    );
+  }
   return (
     <>
       <ul>

@@ -13,7 +13,7 @@ the UI audit (`docs/design/ui-audit-2026-10-31.md`). Tasks 1 and 4 to
 12 are done: at the human's word the device-fit pass came first, built
 and seen at 1024x768, 1366x768 and 1920x1080 on 2026-10-31 (ADR-381,
 ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s,
-Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 26 (ADR-384 to ADR-398). It runs before Phase 16, which is mostly
+Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 27 (ADR-384 to ADR-399). It runs before Phase 16, which is mostly
 `mez-cloud`'s.
 
 Before it, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
@@ -28,22 +28,27 @@ list below.
 
 ## Last completed task
 
-**Phase 17, Task 26: setup** (SET-1, SET-2, SET-5, SET-6, SET-8, SET-9,
-ADR-398), 2026-10-31. The device step offers `mez.local` first: `GET
-/api/v1/devices/addresses` answers `{named, addresses}` (Go, a test, and
-`api-types.ts` regenerated). A printer or mez Cloud step left without its
-thing done is marked Skipped in the row, not ticked. "Nothing came out,
-skip" once a test page is sent. The last step ends on "Add your menu" (the
-back office's Menu, same tab, still signed in) beside "Go to the till".
-The search says "this network", the time zone is a list in words, the
-Cloud step makes no claim about guests, and `CardChoice` has a radio's dot
-(mez-cloud's forms that use it get it too). Walked twice on a fresh venue
-at 1366 and 1024, with a stand-in printer on port 9100.
+**Phase 17, Task 27: back office onboarding** (BO-8, BO-9, BO-10, BO-11,
+BO-15, ADR-399), 2026-10-31. Missing setup is said in an owner's words,
+mez Cloud first: table codes, ordering from phones and the back office
+from away all point at Connect to mez Cloud on Devices; a relay or a
+payment gateway is "whoever installed mez"'s. Inventory: no "Items view",
+"No ingredients tracked" for an empty recipe, and the empty card says why
+Stock count and Log wastage are off, with Add ingredient in it. The
+dashboard says "No ingredients tracked." where none is, and shows a band
+to `settings.edit` while nothing is backed up or it fails; Off is a
+warning chip in Settings. Z-reports and Printers' empty cards give the
+next step, and Add a printer asks what it prints. **It also corrects
+Task 26:** the wizard's mez Cloud step says guests can order from their
+phones again (a table's code needs the public address Cloud gives).
+Walked on an empty venue and a demo venue at 1366.
 
 ## Next task
 
-**Here: Phase 17 Task 27, back office onboarding (BO-8, BO-9, BO-10, BO-11, BO-15)**,
-then Task 28 onward; Tasks 1 to 26 are done. Each screen is checked by eye at
+**Here: Phase 17 Task 28, GST composition scheme (SET-7)**, then Task 29
+onward; Tasks 1 to 27 are done. Task 28 is a product decision first, and
+its ADR: what a composition-scheme cafe's bill prints (its GSTIN and the
+composition line, no tax lines) is the human's to agree before any code. Each screen is checked by eye at
 1024x768 and 1366x768 before it is ticked: the audit's walk (a demo venue
 from `mez setup -demo-menu` in a scratch data directory, a scripted
 Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel

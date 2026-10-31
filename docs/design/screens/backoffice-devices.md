@@ -31,11 +31,11 @@ Inside the frame (`backoffice-shell.md`).
 
   | State | Chip | The sentence |
   |---|---|---|
-  | `off` | **Not set up**, neutral | "Guests order at the counter. Ordering from a phone needs a relay address and key in this venue's settings file." |
+  | `off` | **Not set up**, neutral | "Guests order at the counter. To let them order from their phones, use Connect to mez Cloud, below." (BO-8: mez Cloud first, and no key or file for the owner to read) |
   | `connecting` | **Connecting**, info | "Reaching the relay. Guests cannot order from their phones until it answers." |
   | `connected` | **Connected**, success | "Guests can order from their phones. Connected since 14:02." |
   | `waiting` | **Reconnecting**, warning | "The relay cannot be reached, so guests cannot order from their phones. The counter is not affected." |
-  | `refused` | **Key refused**, danger | "The relay does not accept this venue's key, ... Check the relay key in the settings file, or ask whoever runs the relay for a new one." |
+  | `refused` | **Key refused**, danger | "The relay does not accept this venue's key, ... Whoever runs the relay can give it a new key, or use Connect to mez Cloud, below, instead. The counter is not affected." |
   | `not_entitled` | **Not carried**, danger | "The relay is not carrying this venue, so guests cannot order from their phones." then why, from the relay's code ("The last payment for mez Cloud did not go through.", "The free trial has ended.", "Whoever runs the relay has not turned it on for this venue.", or "Whoever runs the relay can say why."), then "mez asks again every minute and comes back by itself once it is. The counter is not affected." |
   | `replaced` | **In use elsewhere**, danger | "Another computer is connected with this venue's key, and guests reach that one. Only one can be: stop the other, or give this one a key of its own." |
   | `stopped` | **Stopped**, neutral | "The link to the relay is stopped. It starts again when mez does." |
@@ -61,7 +61,7 @@ Inside the frame (`backoffice-shell.md`).
 
   | Case | Chip | The sentence | The list |
   |---|---|---|---|
-  | No relay | **Only at the venue**, neutral | "The back office opens only at the venue. Opening it from a phone or a computer elsewhere needs a relay first, which is also what lets guests order from their phones." | none |
+  | No relay | **Only at the venue**, neutral | "The back office opens only at the venue. To open it from a phone or a computer elsewhere, and let guests order from their phones, use Connect to mez Cloud, below." | none |
   | A relay, and off | **Only at the venue**, neutral | "The back office opens only at the venue. It can be opened from a phone or a computer elsewhere too: the menu, tables, stock, staff and reports, and nothing that takes money." | a key that allows it; `relay_key` and `remote_backoffice = true`; restart |
   | On, relay reached | **Open**, success | "The back office can be opened away from the venue, at this address." | open it; pair with a code made here, as a Back office; sign in, managers only |
   | On, relay not reached | **Not reachable**, warning | "It is turned on, but the relay is not reached right now, so the address opens nothing until it is. The counter is not affected." | the same three |

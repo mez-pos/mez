@@ -6,7 +6,18 @@ import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 import type { PrinterResponse } from "../../../shared/api-types";
 import { Button, Card, EmptyState, InboxIcon } from "../../../shared/ui";
-import { emptyForm, formFrom, printersSummary, problemOf, toSettings } from "./printers-logic";
+import {
+  addedPrinterId,
+  defaultPrints,
+  emptyForm,
+  formFrom,
+  printersSummary,
+  printsOptions,
+  problemOf,
+  toSettings,
+  type PrinterForm,
+  type PrintsFor,
+} from "./printers-logic";
 import { PrinterFormModal } from "./PrinterFormModal";
 import { AtTheVenue } from "../../../shared/shell/AtTheVenue";
 import { useAway } from "../../../shared/use-realtime";
@@ -26,6 +37,25 @@ export function PrintersScreen() {
   const open = (to: Editing) => {
     setProblem(null);
     setEditing(to);
+  };
+  // Adds the printer, then sets it to what it was said to print (BO-15). The
+  // printer is made either way: a failure to set it is said here, not in the
+  // form, where saving again would add a second.
+  const add = async (form: PrinterForm, prints: PrintsFor) => {
+    const after = await api.create(toSettings(form));
+    const id = addedPrinterId(data, after);
+    if (id === null || prints === "later") return;
+    const station = prints.startsWith("station:") ? prints.slice("station:".length) : null;
+    try {
+      if (station === null) await api.setReceipt(id);
+      else await api.setStation(station, id);
+    } catch (err) {
+      const what =
+        printsOptions(after.stations)
+          .find((o) => o.value === prints)
+          ?.label.toLowerCase() ?? "that";
+      setProblem(`The printer was added, and could not be set to print ${what}: ${problemOf(err).message} Pick it under Where things print.`);
+    }
   };
 
   return (
@@ -59,6 +89,7 @@ export function PrintersScreen() {
           <EmptyState
             icon={<InboxIcon />}
             line={away ? "No printers yet." : "No printers yet. Add the receipt printer first, then one for each station that needs tickets."}
+            {...(away ? {} : { action: { label: "Add a printer", onClick: () => open({ kind: "add" }) } })}
           />
         </Card>
       )}
@@ -79,7 +110,8 @@ export function PrintersScreen() {
         <PrinterFormModal
           title={editing.kind === "add" ? "Add a printer" : `Edit ${editing.printer.name}`}
           initial={editing.kind === "add" ? emptyForm() : formFrom(editing.printer)}
-          onSave={(form) => (editing.kind === "add" ? api.create(toSettings(form)) : api.update(editing.printer.id, toSettings(form)))}
+          prints={editing.kind === "add" && data ? { options: printsOptions(data.stations), initial: defaultPrints(data) } : undefined}
+          onSave={(form, prints) => (editing.kind === "add" ? add(form, prints) : api.update(editing.printer.id, toSettings(form)))}
           onClose={() => setEditing(null)}
         />
       )}

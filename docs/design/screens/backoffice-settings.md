@@ -268,7 +268,7 @@ seconds while the section is open.
 
   | State | Chip | Sentence |
   |---|---|---|
-  | `off` | **Off**, neutral | "Nothing is being backed up. If this computer's disk fails, the venue's sales, menu and settings go with it." |
+  | `off` | **Off**, warning (BO-11, ADR-381 item 7): it is a risk, and the dashboard says so too | "Nothing is being backed up. If this computer's disk fails, the venue's sales, menu and settings go with it." |
   | `starting` | **Starting**, info | "Reaching the destination for the first time since mez started." |
   | `ok` | **Backing up**, success | "Everything is at the destination, as of 14:02." (the venue's clock, from `last_synced_at`) |
   | `failing` | **Not backing up**, danger | "The backup is not reaching its destination. Sales carry on, and are copied when it does." Then the server's reason, in a sunken box, as it came. Then "It last had everything at 14:02." when it ever did. |

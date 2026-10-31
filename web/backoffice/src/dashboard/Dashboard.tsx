@@ -12,16 +12,19 @@ import { Card, Money } from "../../../shared/ui";
 import { useClock } from "../../../shared/use-clock";
 import { useVenueClock } from "../../../shared/use-venue";
 import { addDays, tradingDay } from "../../../shared/venue-clock";
+import { clockText } from "../../../shared/venue-text";
 import { averageBill } from "../sales/sales-logic";
+import { backupAlarm } from "../settings/backup-logic";
 import { usePermissions } from "../shell/BackOfficeShell";
 import { useStockItems } from "../stock/use-stock";
+import { BackupBand } from "./BackupBand";
 import { ActiveTables, LowStock, StaffPerformance, TopItems } from "./DashLists";
 import { change, occupancy } from "./dashboard-logic";
 import { Nothing, Panel, ReadState } from "./Panel";
 import { BrandCard, QuickActions, quickActions } from "./QuickActions";
 import { SalesOverview } from "./SalesOverview";
 import { ChangeNote, StatTile } from "./StatTile";
-import { useDaySales, useFloorNow } from "./use-dashboard";
+import { useBackupStatus, useDaySales, useFloorNow } from "./use-dashboard";
 
 // Three across from 1280px: the wide card, then two lists. From 1536px the
 // lists take the back office's side width (the design's 400px is 380 there)
@@ -44,11 +47,15 @@ export function Dashboard() {
   const canSales = held.includes("reports.view");
   const canFloor = held.includes("order.open");
   const canStock = held.includes("stock.manage");
+  // The backup is shown to whoever may change it (ADR-381 item 7).
+  const canBackup = held.includes("settings.edit");
 
   const sales = useDaySales(today, canSales);
   const before = useDaySales(yesterday, canSales);
   const floor = useFloorNow(canFloor);
   const stock = useStockItems(canStock);
+  const backup = useBackupStatus(canBackup);
+  const alarm = backup.data ? backupAlarm(backup.data.status, (at) => clockText(at, clock.timezone)) : null;
 
   if (!canSales && !canFloor && !canStock && quickActions(held).length === 0) {
     return (
@@ -69,6 +76,7 @@ export function Dashboard() {
   return (
     <div className="flex flex-col gap-4">
       <h1 className="sr-only">Dashboard{auth.kind === "signed_in" ? `, signed in as ${auth.staff.name}` : ""}</h1>
+      {alarm && <BackupBand standing={alarm} />}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {canSales && (

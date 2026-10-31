@@ -17,6 +17,15 @@ Inside the frame (`backoffice-shell.md`). Three rows of cards. Each card is
 for whoever may read what is in it, and a card nobody could fill is not
 drawn.
 
+- **The backup band**, over the figures, for whoever holds `settings.edit`,
+  only while nothing is being backed up or the backup is failing (BO-11,
+  ADR-381 item 7, ADR-399): a warning icon and the backup's own sentence,
+  "Nothing is being backed up. If this computer's disk fails, the venue's
+  sales, menu and settings go with it." in the warning tone, or "The backup
+  is not reaching its destination. ..." in the danger tone; and **Set up
+  the backup** or **See why**, to Settings, Backup. It is read every minute
+  (`GET /api/v1/settings/backup`, the key Settings reads too).
+
 - **Four figures**, four across from 1280px, two from 640px. Each is an icon
   in a tinted round, what it is, the figure in the serif, and a line under
   it:
@@ -46,7 +55,9 @@ drawn.
     Orders, Sales, for the five who opened the most in bills today.
   - **Low stock alerts** (`stock.manage`), with **View all**: up to five
     items at or under their level, each with what is left in the warning or
-    danger ink and a **Low** or **Out** chip; "2 more items are low".
+    danger ink and a **Low** or **Out** chip; "2 more items are low". With
+    no ingredient tracked it says "No ingredients tracked." and **Add what
+    you keep, in Inventory.**, never "Nothing is low." (BO-10).
   - **Quick actions**, two by two: **Edit the menu**, **Inventory**, **View
     reports**, **Manage staff**, each shown to whoever may open that
     section. Under it the brand's card, a leaf and a script line.
@@ -81,7 +92,9 @@ Nothing here changes anything.
   again**.
 - **Nothing yet:** "No bill has been paid yet today." under the bars;
   "Nothing has sold yet today."; "Every table is free."; "Nobody has a paid
-  bill yet today."; "Nothing is low."; "No tables on the floor plan".
+  bill yet today."; "Nothing is low." where ingredients are tracked and none
+  is low, "No ingredients tracked." where none is; "No tables on the floor
+  plan".
 - **A person gone from the staff:** their role reads "No longer on record".
 - **A role that opens nothing:** one card, "Your role opens no back office
   sections. Ask the owner if you need one."

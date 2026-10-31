@@ -216,11 +216,20 @@ export interface BackupStanding {
 }
 
 const words: Readonly<Record<BackupState, { tone: ChipTone; word: string }>> = {
-  off: { tone: "neutral", word: "Off" },
+  // A venue with no copy of its sales is at risk, and is told so in the warning tone (BO-11, ADR-381 item 7).
+  off: { tone: "warning", word: "Off" },
   starting: { tone: "info", word: "Starting" },
   ok: { tone: "success", word: "Backing up" },
   failing: { tone: "danger", word: "Not backing up" },
 };
+
+/**
+ * The dashboard's band: how the backup stands when nothing is being backed up
+ * or it is failing, and null when there is nothing to raise (BO-11).
+ */
+export function backupAlarm(status: BackupResponse["status"], when: (at: Date) => string): BackupStanding | null {
+  return status.state === "off" || status.state === "failing" ? backupStanding(status, when) : null;
+}
 
 /**
  * How the backup is doing, for the owner. `when` turns the time it last had

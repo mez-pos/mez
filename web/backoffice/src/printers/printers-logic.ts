@@ -3,7 +3,7 @@
 // the request the server checks.
 
 import { ApiError } from "../../../shared/api";
-import type { PrinterResponse, PrinterSettings, PrinterTransport, StationPrinterResponse } from "../../../shared/api-types";
+import type { PrinterResponse, PrinterSettings, PrintersResponse, PrinterTransport, StationPrinterResponse } from "../../../shared/api-types";
 import { venueDate } from "../../../shared/venue-clock";
 
 /** How the server reaches it: the address with its port, or the Windows printer's name. */
@@ -36,6 +36,37 @@ export function agoText(iso: string, now: Date, timezone: string | null): string
   if (minutes < 60) return `${minutes} min ago`;
   if (minutes < 24 * 60) return `${Math.floor(minutes / 60)} h ago`;
   return venueDate(iso, timezone);
+}
+
+/** What a new printer is for: receipts, one station's tickets, or nothing yet (BO-15). */
+export type PrintsFor = "receipts" | "later" | `station:${string}`;
+
+/** The choices for a new printer: receipts, each station's tickets, and deciding later. */
+export function printsOptions(stations: readonly Pick<StationPrinterResponse, "code" | "name">[]): { value: PrintsFor; label: string }[] {
+  return [
+    { value: "receipts", label: "Receipts" },
+    ...stations.map((s) => ({ value: `station:${s.code}` as const, label: `${s.name} tickets` })),
+    { value: "later", label: "Decide later" },
+  ];
+}
+
+/**
+ * What a new printer starts on: receipts while nothing prints them, then the
+ * first station with no printer, else nothing yet. A retired printer prints
+ * nothing.
+ */
+export function defaultPrints(data: Pick<PrintersResponse, "printers" | "stations">): PrintsFor {
+  const active = new Set(data.printers.filter((p) => p.active).map((p) => p.id));
+  if (!data.printers.some((p) => p.active && p.is_receipt)) return "receipts";
+  const bare = data.stations.find((s) => s.printer_id === undefined || !active.has(s.printer_id));
+  return bare ? `station:${bare.code}` : "later";
+}
+
+/** The printer an add made: the one in the answer that was not there before, or null. */
+export function addedPrinterId(before: PrintersResponse | undefined, after: PrintersResponse): number | null {
+  const had = new Set((before?.printers ?? []).map((p) => p.id));
+  const fresh = after.printers.filter((p) => !had.has(p.id)).map((p) => p.id);
+  return fresh.length === 0 ? null : Math.max(...fresh);
 }
 
 export interface PrinterForm {

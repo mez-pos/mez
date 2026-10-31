@@ -43,10 +43,11 @@ describe("a relay that does not carry the back office", () => {
 });
 
 describe("remoteWords", () => {
-  it("says a relay comes first when there is none", () => {
+  it("says mez Cloud is the way when there is no relay (BO-8)", () => {
     const w = remoteWords({ state: "off", back_office: false }, false);
     expect(w.line).toMatch(/only at the venue/);
-    expect(w.line).toMatch(/needs a relay first/);
+    expect(w.line).toMatch(/Connect to mez Cloud/);
+    expect(w.line).not.toMatch(/needs a relay/);
     expect(w.address).toBeNull();
     expect(w.steps).toEqual([]);
   });

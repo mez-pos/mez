@@ -8,6 +8,18 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 26: setup** (SET-1, SET-2, SET-5, SET-6, SET-8, SET-9,
+ADR-398), 2026-10-31. The device step offers `mez.local` first: `GET
+/api/v1/devices/addresses` answers `{named, addresses}` (Go, a test, and
+`api-types.ts` regenerated). A printer or mez Cloud step left without its
+thing done is marked Skipped in the row, not ticked. "Nothing came out,
+skip" once a test page is sent. The last step ends on "Add your menu" (the
+back office's Menu, same tab, still signed in) beside "Go to the till".
+The search says "this network", the time zone is a list in words, the
+Cloud step makes no claim about guests, and `CardChoice` has a radio's dot
+(mez-cloud's forms that use it get it too). Walked twice on a fresh venue
+at 1366 and 1024, with a stand-in printer on port 9100.
+
 **Phase 17, Task 25: the venue's menu, light on 3G** (GST-10, GST-11,
 TECH-18, ADR-397), 2026-10-31. The guest sees the venue's name: on the
 landing under "Welcome to", in the menu's bar and as the tab's title; mez

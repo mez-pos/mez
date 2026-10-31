@@ -6,17 +6,20 @@ import type { PrinterTransport } from "../../../shared/api-types";
 import { Button, Modal } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { Choice, Field, inputClass } from "../FormFields";
-import { problemOf, type PrinterForm, type Problem } from "./printers-logic";
+import { problemOf, type PrinterForm, type PrintsFor, type Problem } from "./printers-logic";
 
 interface PrinterFormModalProps {
   title: string;
   initial: PrinterForm;
-  onSave: (form: PrinterForm) => Promise<void>;
+  /** Asked when adding: what the new printer is for (BO-15). Editing leaves it to Where things print. */
+  prints?: { options: readonly { value: PrintsFor; label: string }[]; initial: PrintsFor } | undefined;
+  onSave: (form: PrinterForm, prints: PrintsFor) => Promise<void>;
   onClose: () => void;
 }
 
-export function PrinterFormModal({ title, initial, onSave, onClose }: PrinterFormModalProps) {
+export function PrinterFormModal({ title, initial, prints, onSave, onClose }: PrinterFormModalProps) {
   const [form, setForm] = useState(initial);
+  const [printsFor, setPrintsFor] = useState<PrintsFor>(prints?.initial ?? "later");
   const [problem, setProblem] = useState<Problem | null>(null);
   const [busy, setBusy] = useState(false);
   const set = (patch: Partial<PrinterForm>) => {
@@ -26,7 +29,7 @@ export function PrinterFormModal({ title, initial, onSave, onClose }: PrinterFor
   const save = async () => {
     setBusy(true);
     try {
-      await onSave(form);
+      await onSave(form, printsFor);
       onClose();
     } catch (err) {
       setProblem(problemOf(err));
@@ -98,6 +101,7 @@ export function PrinterFormModal({ title, initial, onSave, onClose }: PrinterFor
           onChange={(v: string) => set({ paperMM: v === "58" ? 58 : 80 })}
           error={on("paper_mm")}
         />
+        {prints && <Choice label="What it prints" value={printsFor} options={prints.options} onChange={(v: PrintsFor) => setPrintsFor(v)} error={null} />}
       </div>
     </Modal>
   );

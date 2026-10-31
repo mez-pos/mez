@@ -40,10 +40,11 @@ export function summary(items: readonly StockItem[]): StockSummary {
 
 /**
  * The line under the title: "55 tracked ingredients · 6 low · 1 out of stock".
- * With none, it says what to add, unless nothing can be added here: a mirror.
+ * With none, only that: what to add, and the button, are the empty card's
+ * (BO-15), and the page does not say it twice; the same on a mirror.
  */
-export function summaryText(s: StockSummary, readOnly = false): string {
-  if (s.tracked === 0) return readOnly ? "No ingredients yet." : "No ingredients yet. Add what you keep: beans, milk, batter.";
+export function summaryText(s: StockSummary): string {
+  if (s.tracked === 0) return "No ingredients yet.";
   const tracked = s.tracked === 1 ? "1 tracked ingredient" : `${s.tracked} tracked ingredients`;
   return `${tracked} · ${s.low} low · ${s.out} out of stock`;
 }

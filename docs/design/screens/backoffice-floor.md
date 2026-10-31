@@ -74,9 +74,12 @@ Inside the frame (`backoffice-shell.md`).
     "Scan to see the menu and order"; the QR, 44mm; "Table T4", large; and
     the venue's host, small, so a guest can see whose code it is. A table
     with no code has no card. Nothing else of the back office prints.
-  - With no `public_url`, in the warning tone: "The venue has not said
-    where guests reach it, so there is no address to print on a table. Set
-    public_url in the venue's configuration and restart mez."
+  - With no public address, in the warning tone: "Guests have no address
+    to reach this venue at yet, so there is nothing to print on a table.
+    Connect it to mez Cloud, on the Devices screen, and the address comes
+    with it. A venue on a relay of its own has it set up by whoever
+    installed mez." mez Cloud gives the address the moment it is paired
+    (ADR-320); the owner is never told a key or to restart (BO-8).
   - A table of the tables: the table's name; its code in groups of four,
     "sptd em4x 7abc", or "No code: no orders by phone", muted; the address
     on its sticker, small; and a "..." with what can be done:
@@ -107,9 +110,10 @@ Inside the frame (`backoffice-shell.md`).
       (not with no `public_url`), **Renew the code**, **Turn the code off**.
     - Where guests cannot pay online (`ordering` false), with a code, in
       the warning tone: "Guests cannot pay online here, so this code leads
-      to a page that says the venue is not taking orders to collect. Set a
-      payment gateway in the venue's configuration and restart mez. Until
-      then it is not on the sheet to print."
+      to a page that says the venue is not taking orders to collect. Paying
+      online needs the venue's own account with a payment gateway, which
+      whoever installed mez sets up. Until then it is not on the sheet to
+      print." (BO-8)
     - **Renew**, behind a confirm in the danger tone: "Renew the code for
       ordering to collect? The code on the door stops working at once, and
       so does any photo of it. A guest in the middle of ordering loses

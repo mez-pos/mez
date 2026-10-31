@@ -333,8 +333,10 @@ PIN is in memory until the wizard is left.
 - **It ends on the menu** (SET-6, ADR-398): "Start selling", on a till
   with nothing to sell, is "Add your menu", with "Go to the till" beside
   it.
-- **The mez Cloud step makes no claim about guests:** they order from
-  their phones on the venue's wifi without it (SET-8).
+- **The mez Cloud step says guests can order from their phones**, as it
+  did: a table's code prints only with the public address mez Cloud gives
+  (ADR-320). SET-8's "Cloud claim guests do not need" was a false reading;
+  ADR-399 corrects ADR-398 on it.
 
 - **No preview of the first invoice number.** The pattern differs by tax
   profile and the server that knows it cannot be asked before there is a

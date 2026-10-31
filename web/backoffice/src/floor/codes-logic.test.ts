@@ -85,7 +85,9 @@ describe("the confirm", () => {
 describe("codesProblem", () => {
   it("says what to set when the venue has no public address", () => {
     expect(codesProblem(new ApiError("no_public_url", "x", 409))).toBe(noAddressWords);
-    expect(noAddressWords).toContain("public_url");
+    // mez Cloud first, in an owner's words: no key to set and no restart (BO-8).
+    expect(noAddressWords).toMatch(/Connect it to mez Cloud/);
+    expect(noAddressWords).not.toMatch(/public_url|restart/);
   });
   it("says a table has gone, a role cannot, and the server was not reached", () => {
     expect(codesProblem(new ApiError("table_not_found", "x", 404))).toContain("no longer on the floor");
@@ -156,6 +158,7 @@ describe("the venue's pickup code", () => {
   it("says what to set where guests cannot pay online", () => {
     expect(pickupOffWords).toContain("payment gateway");
     expect(pickupOffWords).toContain("not taking orders");
+    expect(pickupOffWords).not.toMatch(/configuration|restart/);
   });
 
   it("counts the door's card on the sheet, and says it is there", () => {

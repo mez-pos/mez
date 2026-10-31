@@ -11,6 +11,7 @@ import {
   newRecipeRow,
   problemOf,
   recipeRowsFrom,
+  recipeLine,
   recipeText,
   toItemInput,
   toMovementInput,
@@ -130,6 +131,10 @@ describe("recipes", () => {
       ),
     ).toBe("Beans 18 g, Milk 200 ml");
     expect(recipeText([], stock)).toBe("");
+  });
+  it('says a recipe with nothing in it tracks no ingredients, never "Nothing" (BO-9)', () => {
+    expect(recipeLine([], stock)).toBe("No ingredients tracked");
+    expect(recipeLine([{ stock_item_id: 1, qty: 18_000 }], stock)).toBe(recipeText([{ stock_item_id: 1, qty: 18_000 }], stock));
   });
   it("reads a recipe into rows and back", () => {
     const rows = recipeRowsFrom([{ stock_item_id: 1, qty: 18_500 }]);

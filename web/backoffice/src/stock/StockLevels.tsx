@@ -21,6 +21,8 @@ interface StockLevelsProps {
   rows: readonly StockItem[];
   /** Ingredients exist but none is shown: they are all retired and hidden. */
   allRetired: boolean;
+  /** Adds an ingredient: the empty card's next step (BO-15). Left out on a mirror. */
+  onAdd?: (() => void) | undefined;
   onAction: (item: StockItem, action: RowAction) => void;
   /** Stock is read and not moved: a row's menu is its history alone. */
   readOnly?: boolean;
@@ -29,7 +31,7 @@ interface StockLevelsProps {
 const head = "pb-3 text-meta font-bold uppercase text-fg-muted";
 const fills = { ok: "bg-accent", low: "bg-highlight", out: "bg-danger-fill" } as const;
 
-export function StockLevels({ rows, allRetired, onAction, readOnly = false }: StockLevelsProps) {
+export function StockLevels({ rows, allRetired, onAction, onAdd, readOnly = false }: StockLevelsProps) {
   if (rows.length === 0) {
     return (
       <Card>
@@ -40,8 +42,10 @@ export function StockLevels({ rows, allRetired, onAction, readOnly = false }: St
               ? "Every ingredient is retired. Tick the box below to show them."
               : readOnly
                 ? "No ingredients yet."
-                : "No ingredients yet. Add what you keep: beans, milk, batter."
+                : // Why Stock count and Log wastage are off, and the way on (BO-9, BO-15).
+                  "No ingredients yet. Stock count and Log wastage open once there is one."
           }
+          {...(onAdd && !allRetired && !readOnly ? { action: { label: "Add ingredient", onClick: onAdd } } : {})}
         />
       </Card>
     );

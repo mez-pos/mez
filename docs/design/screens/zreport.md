@@ -116,8 +116,9 @@ closed shows the card; the back office has every report.
 
 - **Loading:** "Loading the report", "Loading the reports", "Loading the
   files".
-- **No reports yet:** "No Z-reports yet. One is issued each time a shift
-  closes."
+- **No reports yet:** "No Z-reports yet. Close the day on the till, from
+  its profile menu, to issue the first." and, on a device that is a till,
+  **Open the till** (BO-15).
 - **No payments:** "No payments in this shift."
 - **No exports:** "This shift has no export files. Shifts closed before
   exports existed have none."

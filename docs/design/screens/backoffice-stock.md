@@ -141,10 +141,12 @@ order screen's menu, read from `GET /api/v1/menu`, so a manager without
 - "A dish takes its own recipe plus each chosen choice's. Put milk on the
   milk choices, not on the latte."
 - A row per menu item: its name, what it takes ("Beans 18 g, Milk 200 ml")
-  or "Nothing" muted, and **Edit**. Then each group of choices, a row per
+  or "No ingredients tracked" muted (BO-9), and **Edit**. Then each group of choices, a row per
   choice.
 - **The recipe form**, "What one Latte takes": a row per ingredient (a
-  select, the amount in its unit, Remove), **Add a stock item**, **Save**.
+  select, the amount in its unit, Remove), **Add an ingredient**, **Save**. With no ingredient yet the
+  button is off and says why: "Add an ingredient first, with Add ingredient
+  at the top of Inventory." (BO-9).
 
 ## Data
 
@@ -173,8 +175,10 @@ order screen's menu, read from `GET /api/v1/menu`, so a manager without
 ## States
 
 - **Loading:** "Reading the stock" under the title; "Loading the stock".
-- **No ingredients:** "No ingredients yet. Add what you keep: beans, milk,
-  batter."; with only retired ones, "Every ingredient is retired. Tick the
+- **No ingredients:** the line under the title is "No ingredients yet.";
+  the card says "No ingredients yet. Stock count and Log wastage open once
+  there is one." with **Add ingredient** in it, since those two buttons are
+  off until then (BO-9, BO-15); with only retired ones, "Every ingredient is retired. Tick the
   box below to show them."
 - **Error:** the server's words, with **Try again**.
 - **Nothing written off:** "Nothing was written off in the last seven

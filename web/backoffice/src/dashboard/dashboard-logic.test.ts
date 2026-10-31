@@ -10,6 +10,7 @@ import {
   hourChart,
   hourLabel,
   lowRows,
+  lowStockEmpty,
   occupancy,
   sinceText,
   staffRows,
@@ -249,5 +250,27 @@ describe("lowRows", () => {
     const got = lowRows([item(1, 1), item(2, 1), item(3, 1)], 2);
     expect(got.rows).toHaveLength(2);
     expect(got.more).toBe(1);
+  });
+});
+
+describe("lowStockEmpty", () => {
+  const item = (active: boolean): StockItem => ({
+    id: 1,
+    name: "Beans",
+    unit: "g",
+    low_level: 1000,
+    active,
+    on_hand: 5000,
+    count_at_close: false,
+    low: false,
+    cost: inr(0),
+  });
+
+  it("says nothing is tracked where nothing is, never that nothing is low (BO-10)", () => {
+    expect(lowStockEmpty([])).toBe("No ingredients tracked.");
+    expect(lowStockEmpty([item(false)])).toBe("No ingredients tracked.");
+  });
+  it("says nothing is low where something is tracked and nothing is", () => {
+    expect(lowStockEmpty([item(true)])).toBe("Nothing is low.");
   });
 });

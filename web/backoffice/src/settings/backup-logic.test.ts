@@ -4,6 +4,7 @@ import type { BackupResponse } from "../../../shared/api-types";
 import {
   BACKUP_KINDS,
   backUpNowProblem,
+  backupAlarm,
   backupChanged,
   backupFormFrom,
   backupProblem,
@@ -230,7 +231,8 @@ describe("where it goes, in one line", () => {
 
 describe("how it is doing", () => {
   it("is a word and a colour for every state", () => {
-    expect(backupStanding({ state: "off" }, when)).toMatchObject({ tone: "neutral", word: "Off", reason: null });
+    // Off is a risk, in the warning tone (BO-11, ADR-381 item 7).
+    expect(backupStanding({ state: "off" }, when)).toMatchObject({ tone: "warning", word: "Off", reason: null });
     expect(backupStanding({ state: "starting" }, when)).toMatchObject({ tone: "info", word: "Starting" });
     expect(backupStanding({ state: "ok" }, when)).toMatchObject({ tone: "success", word: "Backing up" });
     expect(backupStanding({ state: "failing" }, when)).toMatchObject({ tone: "danger", word: "Not backing up" });
@@ -238,6 +240,13 @@ describe("how it is doing", () => {
 
   it("says off as what it risks", () => {
     expect(backupStanding({ state: "off" }, when).sentence).toContain("disk fails");
+  });
+
+  it("raises the dashboard's band for nothing backed up and for a backup failing, and for nothing else (BO-11)", () => {
+    expect(backupAlarm({ state: "off" }, when)).toMatchObject({ tone: "warning", sentence: expect.stringContaining("disk fails") });
+    expect(backupAlarm({ state: "failing" }, when)).toMatchObject({ tone: "danger" });
+    expect(backupAlarm({ state: "starting" }, when)).toBeNull();
+    expect(backupAlarm({ state: "ok" }, when)).toBeNull();
   });
 
   it("says when everything was last there", () => {

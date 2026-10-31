@@ -7,7 +7,7 @@ import type { MenuResponse, RecipePart, StockItem } from "../../../shared/api-ty
 import { Button, Card, Modal } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { inputClass } from "../FormFields";
-import { newRecipeRow, problemOf, recipeRowsFrom, recipeText, toParts, type Problem, type RecipeRow } from "./stock-logic";
+import { newRecipeRow, problemOf, recipeLine, recipeRowsFrom, toParts, type Problem, type RecipeRow } from "./stock-logic";
 import type { StockApi } from "./use-stock";
 
 interface Target {
@@ -33,12 +33,13 @@ export function RecipesView({ menu, stock, api, onSaved, readOnly = false }: Rec
     (t.kind === "item" ? book?.items : book?.modifiers)?.find((r) => r.id === t.id)?.parts ?? [];
 
   const row = (t: Target) => {
-    const text = recipeText(partsOf(t), byId);
+    const text = recipeLine(partsOf(t), byId);
+    const tracked = partsOf(t).length > 0;
     return (
       <li key={`${t.kind}-${t.id}`} className="flex min-h-tap items-center justify-between gap-4 border-b border-line-soft px-4 py-1.5 last:border-b-0">
         <span className="min-w-0 text-sm">
           <span className="font-semibold">{t.name}</span>
-          <span className={cx("block", text ? "text-fg-2" : "text-fg-muted")}>{text || "Nothing"}</span>
+          <span className={cx("block", tracked ? "text-fg-2" : "text-fg-muted")}>{text}</span>
         </span>
         {!readOnly && (
           <Button aria-label={`Edit the recipe of ${t.name}`} onClick={() => setEditing(t)}>
@@ -189,9 +190,10 @@ function RecipeModal({ target, parts, stock, onSave, onDone, onClose }: RecipeMo
           })}
         </ol>
         <Button className="self-start" disabled={usable.length === 0} onClick={() => set([...rows, newRecipeRow()])}>
-          Add a stock item
+          Add an ingredient
         </Button>
-        {usable.length === 0 && <p className="text-sm text-fg-muted">Add stock items on the Items view first.</p>}
+        {/* There is no "Items view": the way is the screen's own button (BO-9). */}
+        {usable.length === 0 && <p className="text-sm text-fg-muted">Add an ingredient first, with Add ingredient at the top of Inventory.</p>}
       </div>
     </Modal>
   );

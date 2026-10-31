@@ -3,7 +3,7 @@
 // office, and nothing here is worth a live stream of its own.
 
 import { useQuery } from "@tanstack/react-query";
-import type { LiveFloorResponse, SalesReport } from "../../../shared/api-types";
+import type { BackupResponse, LiveFloorResponse, SalesReport } from "../../../shared/api-types";
 import { useAuthStore } from "../../../shared/auth/use-auth";
 import { salesPath } from "../sales/sales-logic";
 
@@ -23,6 +23,20 @@ export function useDaySales(day: string, enabled: boolean) {
 }
 
 /** The floor in service: every table and where it is in its turn. */
+/**
+ * How the backup stands, for the dashboard's band (BO-11). Settings reads the
+ * same key, so a change made there is seen here at once. Needs settings.edit.
+ */
+export function useBackupStatus(enabled: boolean) {
+  const store = useAuthStore();
+  return useQuery({
+    queryKey: ["settings", "backup"],
+    queryFn: ({ signal }) => store.api.get<BackupResponse>("/api/v1/settings/backup", { signal }),
+    enabled,
+    refetchInterval: everyMinute,
+  });
+}
+
 export function useFloorNow(enabled: boolean) {
   const store = useAuthStore();
   return useQuery({

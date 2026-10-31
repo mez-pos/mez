@@ -25,9 +25,13 @@ export function canPrint(list: Pick<TableCodesResponse, "address">): boolean {
   return list.address !== "";
 }
 
-/** What the card says when the venue has no public address. */
+/**
+ * What the card says when the venue has no public address: mez Cloud gives
+ * one the moment it is paired (ADR-320), so that is said first; a relay of
+ * the venue's own is set up by whoever installed mez (BO-8).
+ */
 export const noAddressWords =
-  "The venue has not said where guests reach it, so there is no address to print on a table. Set public_url in the venue's configuration and restart mez.";
+  "Guests have no address to reach this venue at yet, so there is nothing to print on a table. Connect it to mez Cloud, on the Devices screen, and the address comes with it. A venue on a relay of its own has it set up by whoever installed mez.";
 
 /**
  * A code as it is read out or checked against a sticker: in three groups of
@@ -85,7 +89,7 @@ export function pickupState(pickup: Pick<PickupCodeResponse, "code" | "ordering"
 
 /** What the card says of a pickup code at a venue with no way to pay online. */
 export const pickupOffWords =
-  "Guests cannot pay online here, so this code leads to a page that says the venue is not taking orders to collect. Set a payment gateway in the venue's configuration and restart mez. Until then it is not on the sheet to print.";
+  "Guests cannot pay online here, so this code leads to a page that says the venue is not taking orders to collect. Paying online needs the venue's own account with a payment gateway, which whoever installed mez sets up. Until then it is not on the sheet to print.";
 
 /**
  * What renewing or turning off the pickup code asks first. It stops the code

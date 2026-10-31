@@ -28,7 +28,8 @@ export function refreshMs(state: TunnelState | undefined): number {
 export function tunnelLine(t: Pick<TunnelResponse, "state" | "since" | "cloud" | "paired_to">, now: Date, timezone: string | null): string {
   switch (t.state) {
     case "off":
-      return "Guests order at the counter. Ordering from a phone needs a relay address and key in this venue's settings file.";
+      // mez Cloud is how a venue gets there; a relay of its own is whoever installed mez's to set up (BO-8).
+      return "Guests order at the counter. To let them order from their phones, use Connect to mez Cloud, below.";
     case "connecting":
       return "Reaching the relay. Guests cannot order from their phones until it answers.";
     case "connected":
@@ -41,7 +42,7 @@ export function tunnelLine(t: Pick<TunnelResponse, "state" | "since" | "cloud" |
       if (t.paired_to) {
         return "mez Cloud no longer accepts this venue's key, so guests cannot order from their phones and the back office cannot be opened from away. Pair this computer again with a new code from the owner's mez Cloud account. The counter is not affected.";
       }
-      return "The relay does not accept this venue's key, so guests cannot order from their phones. Check the relay key in the settings file, or ask whoever runs the relay for a new one.";
+      return "The relay does not accept this venue's key, so guests cannot order from their phones. Whoever runs the relay can give it a new key, or use Connect to mez Cloud, below, instead. The counter is not affected.";
     case "not_entitled":
       return `The relay is not carrying this venue, so guests cannot order from their phones. ${whyNotCarried(t.cloud?.reason)} mez asks again every minute and comes back by itself once it is. The counter is not affected.`;
     case "replaced":

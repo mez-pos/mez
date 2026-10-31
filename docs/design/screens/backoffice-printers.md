@@ -40,7 +40,10 @@ Inside the frame (`backoffice-shell.md`).
 - **Add, Edit** (a modal): **Name**; **How it connects**, "Network (IP
   address)" or "USB, on this computer (Windows)"; the **IP address** ("Like
   192.168.1.50. Port 9100 unless you add another.") or **The printer's name
-  in Windows**; **Paper**, 80mm or 58mm; **Save**. Errors under their field.
+  in Windows**; **Paper**, 80mm or 58mm; and, when adding, **What it
+  prints**: Receipts, each station's tickets, or Decide later, starting on
+  what nothing prints yet (receipts, then the first station with no
+  printer) (BO-15); **Save**. Errors under their field.
 
 ## Data
 
@@ -59,7 +62,7 @@ Inside the frame (`backoffice-shell.md`).
 
 | Action | Does | Then |
 |---|---|---|
-| Add a printer, Save | Creates it | Its row appears; set what it prints beside |
+| Add a printer, Save | Creates it, then sets it to what it prints | Its row appears, and Where things print shows it. If setting it fails, the printer is kept and the screen says so: pick it under Where things print |
 | Edit, Save | Changes its name, connection or paper | Jobs already queued keep their bytes (ADR-080) |
 | Test page | Queues one | A toast, "Test page queued. Check the printer."; Last print follows it |
 | Retire | Stops sending to it | "Counter retired." Its queued jobs are given up on; it stops printing receipts; its stations print nowhere until given another |
@@ -70,7 +73,8 @@ Inside the frame (`backoffice-shell.md`).
 
 - **Loading:** "Loading the printers".
 - **None:** "No printers yet. Add the receipt printer first, then one for
-  each station that needs tickets."
+  each station that needs tickets." and **Add a printer** in the card, at
+  the venue (BO-15).
 - **Error:** the server's words, with **Try again**.
 - **Refused:** a line over the table, or under the field in the form.
 - **Not allowed:** the frame's "That is not yours to open".

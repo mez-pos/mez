@@ -1,7 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../../shared/api";
 import type { PrinterResponse } from "../../../shared/api-types";
-import { agoText, connectionText, emptyForm, formFrom, printersSummary, printsText, problemOf, toSettings } from "./printers-logic";
+import {
+  addedPrinterId,
+  agoText,
+  connectionText,
+  defaultPrints,
+  emptyForm,
+  formFrom,
+  printersSummary,
+  printsOptions,
+  printsText,
+  problemOf,
+  toSettings,
+} from "./printers-logic";
 
 const printer = (extra: Partial<PrinterResponse> = {}): PrinterResponse => ({
   id: 1,
@@ -87,5 +99,35 @@ describe("printsText", () => {
   ];
   it.each(cases)("%o prints %s", (extra, want) => {
     expect(printsText(printer(extra), stations)).toBe(want);
+  });
+});
+
+describe("what a new printer prints (BO-15)", () => {
+  const stations = [
+    { code: "kitchen", name: "Kitchen" },
+    { code: "bar", name: "Bar", printer_id: 2 },
+  ];
+
+  it("offers receipts, each station's tickets, and deciding later", () => {
+    expect(printsOptions(stations).map((o) => o.label)).toEqual(["Receipts", "Kitchen tickets", "Bar tickets", "Decide later"]);
+  });
+
+  it("starts on what nothing prints yet: receipts first, then a station with no printer, else later", () => {
+    expect(defaultPrints({ printers: [], stations })).toBe("receipts");
+    expect(defaultPrints({ printers: [printer({ id: 1, is_receipt: true }), printer({ id: 2 })], stations })).toBe("station:kitchen");
+    expect(
+      defaultPrints({ printers: [printer({ id: 1, is_receipt: true }), printer({ id: 3 })], stations: [{ code: "bar", name: "Bar", printer_id: 3 }] }),
+    ).toBe("later");
+  });
+
+  it("counts a retired printer as printing nothing", () => {
+    expect(defaultPrints({ printers: [printer({ id: 1, is_receipt: true, active: false })], stations: [] })).toBe("receipts");
+    expect(defaultPrints({ printers: [printer({ id: 1, is_receipt: true }), printer({ id: 2, active: false })], stations })).toBe("station:kitchen");
+  });
+
+  it("finds the printer an add made", () => {
+    expect(addedPrinterId({ printers: [printer({ id: 1 })], stations: [] }, { printers: [printer({ id: 1 }), printer({ id: 7 })], stations: [] })).toBe(7);
+    expect(addedPrinterId(undefined, { printers: [printer({ id: 4 })], stations: [] })).toBe(4);
+    expect(addedPrinterId({ printers: [printer({ id: 1 })], stations: [] }, { printers: [printer({ id: 1 })], stations: [] })).toBeNull();
   });
 });

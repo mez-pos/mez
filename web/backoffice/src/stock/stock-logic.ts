@@ -127,6 +127,11 @@ export function recipeText(parts: readonly RecipePart[], stock: ReadonlyMap<numb
     .join(", ");
 }
 
+/** A recipe as its row says it: what it uses, or that it tracks no ingredients, never "Nothing" (BO-9). */
+export function recipeLine(parts: readonly RecipePart[], stock: ReadonlyMap<number, StockItem>): string {
+  return recipeText(parts, stock) || "No ingredients tracked";
+}
+
 export interface RecipeRow {
   key: string;
   stockItemId: number;

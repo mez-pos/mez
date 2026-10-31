@@ -180,8 +180,12 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
   2026-10-31 (ADR-398): `mez.local` first on the device step, skipped steps
   marked skipped, "Nothing came out, skip", "Add your menu" at the end, the
   time zone and the search in plain words, and a radio's dot on choice cards.
-- [ ] **Task 27 - Back office onboarding (BO-8, BO-9, BO-10, BO-11,
-  BO-15).**
+- [x] **Task 27 - Back office onboarding (BO-8, BO-9, BO-10, BO-11,
+  BO-15).** Done 2026-10-31 (ADR-399): mez Cloud first in an owner's words,
+  Inventory's empty states and "No ingredients tracked", the backup a
+  warning and on the dashboard, next steps in empty cards, and Add a
+  printer asks what it prints. ADR-399 also corrects ADR-398: the wizard's
+  Cloud step says guests can order from their phones again.
 - [ ] **Task 28 - GST composition scheme (SET-7).** A product decision
   and its ADR first.
 

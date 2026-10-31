@@ -65,7 +65,7 @@ export function StockScreen() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-serif text-total">Inventory</h1>
-          <p className="mt-1 text-base text-fg-muted">{items ? summaryText(summary(items), mirror) : "Reading the stock"}</p>
+          <p className="mt-1 text-base text-fg-muted">{items ? summaryText(summary(items)) : "Reading the stock"}</p>
         </div>
         {mirror && <OnAMirror />}
         <div hidden={mirror} className="flex flex-wrap gap-2.5">
@@ -108,6 +108,7 @@ export function StockScreen() {
               rows={tableRows(items, showRetired)}
               allRetired={items.length > 0 && !hasActive}
               readOnly={mirror}
+              onAdd={() => setOpen({ kind: "add" })}
               onAction={(item, action) => setOpen(action.kind === "move" ? { kind: "move", item, move: action.move } : { kind: action.kind, item })}
             />
             {retiredCount(items) > 0 && (

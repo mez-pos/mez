@@ -14,7 +14,8 @@ export interface PrinterSettingsApi {
   loading: boolean;
   error: unknown;
   refetch: () => void;
-  create: (s: PrinterSettings) => Promise<void>;
+  /** Resolves with the printers as they now are, so the one just made can be found. */
+  create: (s: PrinterSettings) => Promise<PrintersResponse>;
   update: (id: number, s: PrinterSettings) => Promise<void>;
   retire: (id: number) => Promise<void>;
   restore: (id: number) => Promise<void>;
@@ -45,7 +46,11 @@ export function usePrinters(): PrinterSettingsApi {
     loading: query.isPending,
     error: query.error,
     refetch: () => void query.refetch(),
-    create: (s) => store.api.post<PrintersResponse>("/api/v1/printers", s).then(keep),
+    create: (s) =>
+      store.api.post<PrintersResponse>("/api/v1/printers", s).then((next) => {
+        keep(next);
+        return next;
+      }),
     update: (id, s) => store.api.put<PrintersResponse>(`/api/v1/printers/${id}`, s).then(keep),
     retire: (id) => store.api.post<PrintersResponse>(`/api/v1/printers/${id}/retire`).then(keep),
     restore: (id) => store.api.post<PrintersResponse>(`/api/v1/printers/${id}/restore`).then(keep),

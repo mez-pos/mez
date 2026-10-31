@@ -49,7 +49,7 @@ export function remoteWords(t: Remote, away: boolean): RemoteWords {
   if (!t.back_office) {
     if (t.state === "off") {
       return {
-        line: "The back office opens only at the venue. Opening it from a phone or a computer elsewhere needs a relay first, which is also what lets guests order from their phones.",
+        line: "The back office opens only at the venue. To open it from a phone or a computer elsewhere, and let guests order from their phones, use Connect to mez Cloud, below.",
         address: null,
         steps: [],
       };

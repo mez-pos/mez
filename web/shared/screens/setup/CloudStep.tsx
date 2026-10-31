@@ -65,8 +65,8 @@ export function CloudStep({ api, onDone }: { api: ApiClient; onDone: (paired: bo
     <form onSubmit={(event) => void connect(event)} noValidate className="flex flex-1 flex-col">
       <h2 className="font-serif text-xl">Connect to mez Cloud</h2>
       <p className="mt-1 text-sm text-fg-muted">
-        If you have a mez Cloud account, a code from it joins this venue to it: the back office opens from anywhere, and a backup is kept away from this
-        computer. The till works the same without it, and you can do this any time later, in the back office under Devices.
+        If you have a mez Cloud account, a code from it joins this venue to it: the back office opens from anywhere, guests can order from their phones, and a
+        backup is kept away from this computer. The till works the same without it, and you can do this any time later, in the back office under Devices.
       </p>
       <div className="mt-5 max-w-md">
         <TextField

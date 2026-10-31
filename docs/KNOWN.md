@@ -10,6 +10,22 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The back office for a venue with nothing in it yet** (ADR-399, Phase 17
+  Task 27; 2026-10-31). Seen in a scripted Chromium at 1366x768 on the
+  empty venue from Task 26's walk, paired as a till: the dashboard's backup
+  band ("Nothing is being backed up..." and Set up the backup) and "No
+  ingredients tracked. Add what you keep, in Inventory."; Inventory's empty
+  card with Add ingredient; Z-reports' empty card with Open the till; Add a
+  printer's "What it prints" on Receipts, and the new printer printing
+  them; Devices' and the floor's mez Cloud lines; Settings' Off chip in the
+  warning tone. On a demo venue (`mez setup -demo-menu`): 36 recipes, each
+  "No ingredients tracked". **Not seen:** Printers' empty card and its
+  button (the walk's venue had a retired printer, so its list was not
+  empty); the danger band for a failing backup (tested); a printer set to a
+  station's tickets, and a failure to set one (tested by their logic only);
+  the reworded Devices and Z-reports lines after their last change (tested
+  as words).
+
 - **Setup says what happened, offers the name, ends on the menu** (ADR-398,
   Phase 17 Task 26; 2026-10-31). Seen in a scripted Chromium on two fresh
   venues at 1366x768, the device step at 1024 too: the time zone chosen as

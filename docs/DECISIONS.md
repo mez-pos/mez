@@ -15305,3 +15305,56 @@ that was not, leave them stuck when a printer stays silent, make them find a num
 computer already knows a name for, or send them to sell from an empty till.
 Cost: one more field in the addresses answer (a list of three); the device step is a band
 taller where the name is announced.
+
+## ADR-399 - The back office for a venue with nothing in it yet; and a correction to ADR-398
+2026-10 · Status: accepted. Phase 17 Task 27 (BO-8, BO-9, BO-10, BO-11, BO-15). Carries out
+ADR-381's item 7 (the backup). Corrects ADR-398 on mez Cloud and guests.
+Context: a new venue's back office explained what it lacked in an installer's words: "Set
+public_url in the venue's configuration and restart mez", "a relay address and key in this
+venue's settings file", "a payment gateway in the venue's configuration". Inventory pointed at
+an "Items view" that does not exist, left Stock count and Log wastage off with no word why,
+and every recipe read "Nothing". The dashboard said "Nothing is low." of a venue that tracks
+nothing. "Nothing is being backed up" was said only in Settings, in a neutral chip. The empty
+Z-reports, Printers and Inventory cards gave a fact and no next step, and Add a printer never
+asked what the printer was for.
+Decision:
+  - **mez Cloud first, in an owner's words** (BO-8). Where guests have no address (no table
+    code can print), "Connect it to mez Cloud, on the Devices screen, and the address comes
+    with it" (ADR-320); where phones cannot order, or the back office opens only at the venue,
+    "use Connect to mez Cloud, below". A relay of the venue's own is "set up by whoever
+    installed mez", and a refused key is "whoever runs the relay can give it a new key". Paying
+    online is "the venue's own account with a payment gateway, which whoever installed mez sets
+    up": mez Cloud does not take a venue's payments, so it is not offered there. No line names a
+    config key or says to restart.
+  - **Inventory says what is missing and the way on** (BO-9, BO-15): "Add an ingredient first,
+    with Add ingredient at the top of Inventory."; the recipe modal's button is "Add an
+    ingredient"; an empty recipe reads "No ingredients tracked"; the empty stock card says
+    "Stock count and Log wastage open once there is one." with **Add ingredient** in it, and the
+    line under the title says only "No ingredients yet."
+  - **The dashboard tells tracked from untracked** (BO-10): "No ingredients tracked." with a
+    link to Inventory, and "Nothing is low." only where something is tracked.
+  - **The backup is a warning, and on the dashboard** (BO-11): Off takes the warning tone in
+    Settings; the dashboard shows a band, to whoever holds `settings.edit`, while nothing is
+    backed up (warning, **Set up the backup**) or it is failing (danger, **See why**).
+  - **Empty cards give the next step** (BO-15): Z-reports, "Close the day on the till, from
+    its profile menu, to issue the first.", with **Open the till** on a till; Printers, **Add a
+    printer** in the card. **Add a printer asks "What it prints"**: Receipts, each station's
+    tickets, or Decide later, starting on what nothing prints yet. The printer is made, then
+    set; a failure to set it is said on the screen, not in the form, where saving again would
+    make a second printer.
+  - **A correction to ADR-398.** It took "guests can order from their phones" out of the
+    wizard's mez Cloud step, as a claim guests did not need, "since they order on the venue's
+    wifi without it". They do not: a table's code prints only with a public address, and a
+    venue with neither mez Cloud nor a relay of its own has none, so its guests order at the
+    counter. The line is back, and the setup spec says so. SET-8's "Cloud claim" was a false
+    reading.
+Rejected: a payment gateway form in Settings (keys and a webhook secret are an installer's, and
+a form for them is a feature, not words); the backup band to everyone (only `settings.edit` can
+act on it); the band for "Starting" (it mends itself in seconds); asking what a printer prints
+on Edit too (Where things print does it beside the table); deleting the printer when setting
+it fails (it is there and works; only where it prints is missing).
+Because: the person who opens a new venue's back office is its owner, not its installer, and an
+empty screen is where they decide what to do next. Each should say what is missing in their
+words and hand them the way to it.
+Cost: the dashboard reads the backup every minute for those who may change it. The words a
+self-hoster used to find on screen (`public_url`, `relay_key`) are in `docs/running.md` only.
