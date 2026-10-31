@@ -270,7 +270,9 @@ Minimum mark size 20px. The mono files are for thermal printers.
 ## Icons
 
 Line icons in `currentColor`, 1.75px stroke, round caps and joins, on a
-24px grid. Never filled, except status dots and the veg marker.
+24px grid. Never filled, except status dots and the diet mark: a square with
+a dot for veg and vegan, a square with a triangle for non-veg, as FSSAI marks
+them, so shape tells them apart as well as colour (ADR-389).
 
 ## Implementation
 

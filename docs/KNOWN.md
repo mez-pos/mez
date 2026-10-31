@@ -10,6 +10,12 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Diet marks by shape** (ADR-389, Phase 17 Task 18; 2026-10-31). Seen in a
+  scripted Chromium with two demo dishes marked non-veg: the till's cards at
+  1024 (triangles and dots, "GF" beside the wheat) and the guest's menu at
+  390. **Not seen:** the till's line rail and item modal, the guest's cart
+  and the back office's item sales, which draw the same component.
+
 - **The quiet inks and terracotta text** (ADR-388, Phase 17 Task 17;
   2026-10-31). Seen in a scripted Chromium: muted and faint rendering as
   `#6E6359` on the dashboard at 1920x1080 and the till's pay screen at

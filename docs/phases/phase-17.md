@@ -120,7 +120,9 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
 - [x] **Task 17 - Contrast tokens (TECH-5, TECH-6, TECH-7, TILL-7, BO-14).** Done
   2026-10-31 (ADR-388): `--muted` `#6E6359`, faint drawn in it, terracotta text
   the pressed shade, the key letters explained, and a test on tokens.css.
-- [ ] **Task 18 - Diet marks by shape (GST-1, TILL-15).**
+- [x] **Task 18 - Diet marks by shape (GST-1, TILL-15).** Done 2026-10-31
+  (ADR-389): non-veg is a triangle in its square, veg a dot; the till's
+  gluten-free mark says "GF".
 - [ ] **Task 19 - Sold out without opacity; warning toasts as chips
   (TECH-13).**
 

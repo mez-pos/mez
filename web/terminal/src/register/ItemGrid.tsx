@@ -71,8 +71,15 @@ export function ItemGrid({ items, groupsFor, iconFor, onTap, soldOut, dense = fa
                   <DietMark diet={item.diet} />
                   <span className={cx("font-serif text-lg leading-snug text-fg-heading", gone && "line-through")}>{item.name}</span>
                   {item.gluten_free && (
-                    <span role="img" aria-label="Gluten free" title="Gluten free" className="mt-1 shrink-0 text-chip-warning-fg">
+                    // The icon alone was a guess; "GF" says it at a glance (TILL-15, ADR-389).
+                    <span
+                      role="img"
+                      aria-label="Gluten free"
+                      title="Gluten free"
+                      className="mt-0.5 inline-flex shrink-0 items-center gap-0.5 text-sm font-bold text-chip-warning-fg"
+                    >
                       <WheatOffIcon aria-hidden="true" size={15} />
+                      GF
                     </span>
                   )}
                 </span>

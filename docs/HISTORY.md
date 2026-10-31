@@ -8,6 +8,17 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 17: contrast tokens** (TECH-5, TECH-6, TECH-7, TILL-7,
+BO-14, ADR-388), 2026-10-31. `--muted` is `#6E6359` (5.3:1 on parchment,
+4.5:1 or more on every light fill); `fg-faint` is drawn in it on paper and
+the `--faint` primitive is gone; the three sentences in faint are muted;
+`--attention-text` is the pressed terracotta, so every ghost, pill and
+link holds AA. The sidebar's key letters say what they are on hover, and
+at the foot where the screen is tall. `web/shared/tokens.test.ts` reads
+tokens.css and holds the quiet inks to 4.5:1 (vitest lets tokens.css
+through as text). Seen in a browser at 1920x1080, 1366x768 and 1024x768.
+mez-cloud's account area takes the inks when it is next built.
+
 **Phase 17, Task 16: no silent loss of work** (BO-2, BO-5, TECH-9, BO-6,
 ADR-387), 2026-10-31. The back office's shell has one leave guard
 (`shell/leave-guard.tsx`): a form says it holds a draft with

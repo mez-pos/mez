@@ -40,7 +40,8 @@ below.
   - **The cards**, `repeat(auto-fill, minmax(12.5rem, 1fr))` (14rem from
     `2xl`), gap 12px (16px from `2xl`). A card has a 112px block on top, the
     photo or, with none, its category's icon on the sunken ground. Under it:
-    the diet mark, the name in the serif, a gluten-free mark, up to two lines
+    the diet mark (a dot or a triangle, ADR-389), the name in the serif, the
+    gluten-free mark (the wheat icon and "GF"), up to two lines
     of description, "6 choices" when it has any, then the price with a crown
     beside it when popular, and a round terracotta **+**, 48px, bottom right.
 - **The order rail, `w-rail`, chrome:**

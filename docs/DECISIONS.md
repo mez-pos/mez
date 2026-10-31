@@ -14928,3 +14928,26 @@ Cost: muted and faint are one colour on paper, so the small-caps metadata is no 
 a note. Terracotta links are a shade deeper than the terracotta fills beside them. The night
 surface is not changed: its own inks are checked when the kitchen's tokens are next touched.
 mez-cloud's account area reads tokens.css and takes the new inks when it is next built.
+
+## ADR-389 - Diet marks by shape, and gluten free in a word on the till
+2026-10 · Status: accepted. Phase 17 Task 18 (GST-1, TILL-15).
+Context: the mark beside a dish's name was one square with a dot, green for veg and vegan
+and brick for non-veg: the two differed only by colour, which about one man in twelve cannot
+rely on, and a guest choosing for a vegetarian cannot afford to misread. India's packaging
+already answers this: FSSAI marks veg with a dot in a square and non-veg with a triangle in a
+square. The till's gluten-free mark was a crossed-out wheat icon alone.
+Decision:
+  - **`DietMark` draws the shape as well as the colour**: a square with a dot for veg and
+    vegan, a square with a filled triangle for non-veg, as an SVG at 16px so both stay crisp.
+    Its word ("Non-vegetarian") stays its label and its title. Every screen that shows a diet
+    takes it: the till's cards, its line rail and item modal, the guest's menu and cart, and
+    the back office's item sales.
+  - **The till's gluten-free mark says "GF"** beside the wheat icon, in the warning ink. The
+    guest's menu already says "Gluten free" in words.
+Rejected: the FSSAI brown for non-veg (mez's brick is the danger ink, already brownish, and a
+third red-brown would be one more colour to learn); a separate vegan mark (a vegan dish is
+vegetarian, and India marks it so); "Gluten free" in full on the till's card (the card's
+first line is the dish's name, and two words would push it to a third line at 1024).
+Because: a mark that carries meaning carries it in shape, not colour alone (WCAG 1.4.1), and
+this shape is the one an Indian guest already reads off a packet.
+Cost: none known.

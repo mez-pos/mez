@@ -32,7 +32,8 @@ One column, at most a phone and a half wide.
     has a photo, so the grid is even; a dish without one has the frame
     empty. A menu with no photos at all has no frames;
   - **Popular**, a mustard pill, when it is and is not sold out;
-  - the diet mark and the name in the serif;
+  - the diet mark (a dot in a square for veg, a triangle for non-veg, as
+    FSSAI marks them, GST-1) and the name in the serif;
   - the description, two lines at most;
   - "Gluten free" when it is;
   - the price in the serif, in full ("₹60.00");
