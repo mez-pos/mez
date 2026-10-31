@@ -72,7 +72,7 @@ export function CategoryRail({ menu, scope, onScope, api, onAdd, onRename, onPro
                 className={cx(row, on ? "bg-attention-tint font-bold text-attention-text" : "hover:bg-raised-high")}
               >
                 <Icon aria-hidden="true" size={18} className="shrink-0" />
-                <span className={cx("min-w-0 flex-1 break-words", r.retired && !on && "text-fg-muted line-through")}>{r.name}</span>
+                <span className={cx("min-w-0 flex-1 wrap-break-word", r.retired && !on && "text-fg-muted line-through")}>{r.name}</span>
                 {r.retired && <span className="text-meta font-semibold uppercase text-fg-faint">Retired</span>}
                 <span className={cx("font-mono tabular-nums", !on && "text-fg-muted")}>{r.count}</span>
               </button>

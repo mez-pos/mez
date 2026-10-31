@@ -98,7 +98,7 @@ export function RailFooter({ order, currency, sendPlan, chargeBlock, chargeLabel
         {sendInRow && (
           // A wrapper, so the button's own inline-flex does not fight `hidden`.
           <div className="hidden short:contents">
-            <Button size="charge" className="min-w-0 flex-[2] px-3" aria-label={sendLabel(sendPlan)} onClick={onSend}>
+            <Button size="charge" className="min-w-0 flex-2 px-3" aria-label={sendLabel(sendPlan)} onClick={onSend}>
               <SendIcon aria-hidden="true" size={17} className="hidden shrink-0 xl:block" />
               Send
             </Button>
@@ -110,7 +110,7 @@ export function RailFooter({ order, currency, sendPlan, chargeBlock, chargeLabel
           disabled={chargeBlock !== null}
           onClick={onPay}
           aria-describedby={chargeBlock ? "pay-block" : undefined}
-          className={cx("min-w-0 flex-1 px-4 2xl:px-6", sendInRow && "short:flex-[3]")}
+          className={cx("min-w-0 flex-1 px-4 2xl:px-6", sendInRow && "short:flex-3")}
         >
           {chargeLabel}
           {charging && <Money amount={owed} className={cx("text-lg", sendInRow && "short:hidden")} />}

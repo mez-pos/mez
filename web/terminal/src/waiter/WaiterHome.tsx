@@ -120,7 +120,7 @@ export function WaiterHome() {
               <LeafIcon size={30} strokeWidth={1.5} />
             </span>
           </div>
-          <SearchField label="Search table number" onSearch={setQuery} debounceMs={100} className="order-3 ml-auto w-64 self-center short:order-none" />
+          <SearchField label="Search table number" onSearch={setQuery} debounceMs={100} className="order-3 ml-auto w-64 self-center short:order-0" />
           <div aria-hidden="true" className="order-1 basis-full" />
           <div role="group" aria-label="Show tables" className="order-2 flex flex-wrap gap-2.5">
             <FilterPill pressed={filter === "all"} count={counts.all} onPick={() => setFilter("all")}>

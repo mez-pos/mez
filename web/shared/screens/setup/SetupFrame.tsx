@@ -49,8 +49,8 @@ export function SetupFrame({ lead, leadWhenShort = true, steps, current = 0, onS
 
   return (
     <main ref={page} className="relative h-screen overflow-y-auto overflow-x-hidden scroll-pb-28 bg-sunken text-fg">
-      <div aria-hidden="true" className="absolute -right-20 -top-14 size-[26rem] rounded-round bg-line opacity-60" />
-      <div className="relative mx-auto flex min-h-screen w-full max-w-[58rem] flex-col gap-6 p-6 short:gap-4 short:p-4 md:p-8">
+      <div aria-hidden="true" className="absolute -right-20 -top-14 size-104 rounded-round bg-line opacity-60" />
+      <div className="relative mx-auto flex min-h-screen w-full max-w-232 flex-col gap-6 p-6 short:gap-4 short:p-4 md:p-8">
         <header>
           <Logo className="h-12 short:h-9" />
           <p className="mt-2 text-meta font-bold uppercase tracking-[.2em] text-fg-muted short:hidden">Good food brings people together</p>
@@ -103,7 +103,7 @@ function Steps({ steps, current, onStep }: { steps: readonly FrameStep[]; curren
               ) : (
                 <span className={round}>{done ? <CheckIcon aria-hidden="true" size={20} strokeWidth={3} /> : i + 1}</span>
               )}
-              {!last && <span aria-hidden="true" className={cx("h-[3px] flex-1", done ? "bg-accent" : "bg-line-strong")} />}
+              {!last && <span aria-hidden="true" className={cx("h-0.75 flex-1", done ? "bg-accent" : "bg-line-strong")} />}
             </div>
             <span className={cx("pr-3 text-sm", here ? "font-bold text-accent-text" : "font-semibold text-fg-2")}>
               <span className="sr-only">{done ? "Done: " : here ? "Now: " : ""}</span>
