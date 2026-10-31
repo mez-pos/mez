@@ -120,6 +120,17 @@ func VenueTaxes(ctx context.Context, q *gen.Queries, venueID int64) (order.Taxes
 	return v.Taxes, nil
 }
 
+// TaxAdded reports whether the venue's bills add tax to its menu prices
+// (ADR-386): what a guest's cart and the till's list of requests say of a
+// total before a bill is made. It reads the venue as every command does.
+func (s *Service) TaxAdded(ctx context.Context, venueID int64) (bool, error) {
+	v, err := loadVenue(ctx, s.db.Queries(), venueID)
+	if err != nil {
+		return false, err
+	}
+	return v.Taxes.AddedOnTop(), nil
+}
+
 // loadVenue reads a venue and its settings. It runs on every command: two
 // indexed reads against a local file, cheaper than keeping a cache coherent
 // with the back office.

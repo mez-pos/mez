@@ -16,8 +16,9 @@ not a second working-out of the bill.
 - **The bar,** stuck to the top: back to the bill, "Your receipt" in the
   serif, and the table at the right.
 - **The invoice,** a card, centred: the venue's name in the serif; its legal
-  name under it, small, when it is another name; "Tax registration" and the
-  number in the mono. Then, under a hairline, two rows: "Invoice" and its
+  name under it, small, when it is another name; "GSTIN" ("VAT number";
+  "Tax registration" under a profile with no name for it, as the invoice's
+  profile names it, GST-15) and the number in the mono. Then, under a hairline, two rows: "Invoice" and its
   number in the mono; "Issued" and when, as "Tue, 6 Oct 2026 · 1:17 PM".
 - **The lines,** a card: each line's count and dish, its choices in small
   print, and what it comes to. Only what was charged: a dish given away or

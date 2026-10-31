@@ -195,7 +195,7 @@ export function countOf(cart: Cart): number {
   return cart.reduce((sum, l) => sum + l.qty, 0);
 }
 
-/** What the dishes come to. Before any tax, which the venue works out on the bill. */
+/** What the dishes come to at the menu's prices. Any tax the bill adds is not in it (totalNote). */
 export function totalOf(lines: readonly PricedLine[], currency: string): Money {
   return { currency, minor: lines.reduce((sum, l) => sum + l.total.minor, 0) };
 }
@@ -203,6 +203,34 @@ export function totalOf(lines: readonly PricedLine[], currency: string): Money {
 /** "3 items", "1 item". */
 export function itemsText(count: number): string {
   return count === 1 ? "1 item" : `${count} items`;
+}
+
+/**
+ * Where a total's tax is: on a table's bill, added before an order to
+ * collect is paid, or in what was paid for one already.
+ */
+export type TaxWhen = "bill" | "pay" | "paid";
+
+/**
+ * The line under a total of dishes at the menu's prices (ADR-386, GST-2).
+ * "Before tax" only where the bill adds it: where the prices hold the tax,
+ * or the venue charges none, the total is what the guest pays.
+ */
+export function totalNote(taxAdded: boolean, when: TaxWhen): string {
+  if (!taxAdded) return "Prices include any taxes.";
+  switch (when) {
+    case "pay":
+      return "Before tax, which is added before you pay.";
+    case "paid":
+      return "Before tax, which was in what you paid.";
+    default:
+      return "Before tax, which is added on the bill.";
+  }
+}
+
+/** What an unpaid order to collect asks for, the server's figure: "with tax" only where tax was added to it. */
+export function toPayLabel(taxAdded: boolean): string {
+  return taxAdded ? "To pay, with tax" : "To pay";
 }
 
 /** "Flat white was", "Flat white and Latte were", "Flat white, Latte and Idli were", for the notice. */

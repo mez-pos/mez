@@ -96,6 +96,7 @@ function Table({ code, collect }: { code: string; collect: boolean }) {
           onPlaced={() => go("order")}
           onBill={collect ? undefined : () => go("bill")}
           collect={collect}
+          taxAdded={table.data.venue.tax_added}
         />
       </>
     );

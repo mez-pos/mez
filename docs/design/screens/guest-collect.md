@@ -25,8 +25,9 @@ Each screen is as its own spec draws it, with these differences.
   and pay here. We give you a code, and call it at the counter when your
   order is ready."
 - **The menu** and **the order's bar:** "To collect" where the table is named.
-- **The cart:** under the total, "Before any taxes and charges, which are
-  added before you pay." No "See the table's bill".
+- **The cart:** under the total, "Before tax, which is added before you
+  pay." where the venue adds tax, or "Prices include any taxes." (ADR-386).
+  No "See the table's bill".
 - **The order placed** is always held for its payment (ADR-248): it opens on
   "Pay to send your order", with **Pay ₹378.00**, as a table's order paid
   first does.
@@ -40,8 +41,8 @@ Each screen is as its own spec draws it, with these differences.
     at arm's length and said aloud.
   - under it, small and muted: "Your code is called at the counter when your
     order is ready."
-  - the total says "Before any taxes and charges, which were in what you
-    paid."
+  - the total says "Before tax, which was in what you paid." where the
+    venue adds tax, or "Prices include any taxes."
   - at the foot: **Order something else**, the primary, and **Order this
     again**. No bill.
 - **The strip** over the menu and the cart ends with the code: "Your order:

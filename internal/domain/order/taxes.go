@@ -40,6 +40,14 @@ func SnapshotTaxes(code string, t Taxes) *TaxSnapshot {
 	}
 }
 
+// AddedOnTop reports whether a bill adds tax to the menu's prices: a taxed
+// venue that prices exclusive (ADR-386). An inclusive venue has the tax in
+// its prices already, and an untaxed one adds none. It is what a total read
+// before the bill is made, a guest's cart or a table's request, says of tax.
+func (t Taxes) AddedOnTop() bool {
+	return t.Profile != nil && t.Venue.Pricing == tax.Exclusive
+}
+
 // Taxes is the snapshot as the projection uses it. A code this build does
 // not know is ErrTaxConfig: an order from a newer build than this one.
 func (s *TaxSnapshot) Taxes() (Taxes, error) {

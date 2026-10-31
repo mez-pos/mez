@@ -145,6 +145,10 @@ func (s *Server) mountGuests(mux *http.ServeMux) {
 type guestVenueResponse struct {
 	Name     string `json:"name"`
 	Currency string `json:"currency"`
+	// TaxAdded is whether the bill adds tax to the menu's prices (ADR-386):
+	// a cart's total is "before tax" only where it is. False where the
+	// prices hold the tax, and where the venue charges none.
+	TaxAdded bool `json:"tax_added"`
 }
 
 // guestTableNameResponse is the table the guest is sitting at.
@@ -264,7 +268,7 @@ func (s *Server) guestTable(w http.ResponseWriter, r *http.Request) {
 	// A code can be turned off at any moment: never from a cache.
 	w.Header().Set("Cache-Control", "no-store")
 	resp := guestTableResponse{
-		Venue: guestVenueResponse{Name: table.VenueName, Currency: table.Currency},
+		Venue: guestVenueResponse{Name: table.VenueName, Currency: table.Currency, TaxAdded: s.guestTaxAdded(r, table.VenueID)},
 		Table: guestTableNameResponse{Name: table.TableName},
 	}
 	session, ok := s.guestOpenSession(w, r, table)
@@ -273,6 +277,22 @@ func (s *Server) guestTable(w http.ResponseWriter, r *http.Request) {
 	}
 	resp.Session = session
 	writeJSON(w, s.log, http.StatusOK, resp)
+}
+
+// guestTaxAdded is whether the venue's bills add tax to its prices. Where
+// that cannot be read the landing still opens, and says what it said before
+// ADR-386: a total before tax, which never promises a guest less than the
+// bill. A venue that cannot be read takes no orders either.
+func (s *Server) guestTaxAdded(r *http.Request, venueID int64) bool {
+	if s.guestOrders == nil {
+		return true
+	}
+	added, err := s.guestOrders.TaxAdded(r.Context(), venueID)
+	if err != nil {
+		s.log.Error("reading whether a venue adds tax failed", "venue_id", venueID, "err", err)
+		return true
+	}
+	return added
 }
 
 // guestOpenSession hands the phone a session for the sitting when it has

@@ -80,6 +80,16 @@ export function dishCount(request: Pick<GuestRequestResponse, "lines">): number 
 }
 
 /**
+ * The words by a request's subtotal (ADR-386, TILL-18): "3 dishes, before
+ * tax" only where the venue's bills add tax to its prices. Where the prices
+ * hold it, or the venue charges none, the subtotal is what the dishes cost.
+ */
+export function dishesText(dishes: number, taxAdded: boolean): string {
+  const count = `${dishes} ${dishes === 1 ? "dish" : "dishes"}`;
+  return taxAdded ? `${count}, before tax` : count;
+}
+
+/**
  * A request's heading, and when the table already has a ticket open, why
  * staff are asked (ADR-262): a phone with no session for that sitting asks to
  * join it, and accepting is saying it is with that party.

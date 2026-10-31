@@ -3,6 +3,7 @@ import {
   arrived,
   choicesOf,
   dishCount,
+  dishesText,
   gatewayName,
   methodWord,
   owesOtherwise,
@@ -85,6 +86,12 @@ describe("choicesOf and dishCount", () => {
         ],
       }),
     ).toBe(3);
+  });
+  it("says before tax only where the venue adds it (TILL-18)", () => {
+    expect(dishesText(3, true)).toBe("3 dishes, before tax");
+    expect(dishesText(1, true)).toBe("1 dish, before tax");
+    expect(dishesText(3, false)).toBe("3 dishes");
+    expect(dishesText(1, false)).toBe("1 dish");
   });
 });
 

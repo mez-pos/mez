@@ -8,6 +8,19 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 14: one venue clock** (BO-1, BO-3, BO-4, TBS-17,
+ADR-385), 2026-10-31. `GET /api/v1/venue` carries `day_start`, and
+`web/shared/venue-clock.ts` is the one clock: the trading day from the
+venue's day start and zone, and one way to write a date, "3 Oct 2026",
+and a time, "11:40 PM". The back office's "today" (dashboard, sales
+ranges, audit, wastage, the hour charts) is the venue's trading day, not
+a written-in 04:00 on the browser's clock; both status bars say "Trading
+day 31 Oct · 1:05 AM" between midnight and the day start, and a phone
+shows the day. Staff, devices, printers, stock, the item editor, the
+audit, Z-reports and close of day write dates one way on the venue's
+clock; close of day drops the shift id. Seen in a browser at 1366, 1024
+and 390, and at a faked 1:05 AM.
+
 **Phase 17, Task 13: close of day knows what is open** (TBS-2, ADR-384),
 2026-10-31. Counting the drawer holds every till at the close, so its
 first step now says what is still open, above the counter: "2 orders are

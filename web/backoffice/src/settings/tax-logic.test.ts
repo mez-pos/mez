@@ -13,7 +13,6 @@ import {
   parsePercent,
   percentInput,
   percentText,
-  registrationLabel,
   showWithoutHSN,
   taxChanged,
   taxFormFrom,
@@ -77,12 +76,6 @@ describe("percentages", () => {
 describe("the profiles", () => {
   it("are the four the server takes", () => {
     expect(PROFILES.map((p) => p.value)).toEqual(["none", "gst_in", "vat_uk", "sales_tax_us"]);
-  });
-  it("name the registration number each uses", () => {
-    expect(registrationLabel("gst_in")).toBe("GSTIN");
-    expect(registrationLabel("vat_uk")).toBe("VAT number");
-    expect(registrationLabel("none")).toBeNull();
-    expect(registrationLabel("sales_tax_us")).toBeNull();
   });
 });
 

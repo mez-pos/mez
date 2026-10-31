@@ -5,7 +5,11 @@
 // No React in this file, so all of it is tested directly.
 
 import type { JurisdictionRate, TaxClassRequest, TaxClassResponse, TaxSettingsRequest, TaxSettingsResponse } from "../../../shared/api-types";
+import { registrationLabel } from "../../../shared/tax-words";
 import { problemWith, type Problem } from "./problem";
+
+/** Named in web/shared, where the guest's receipt reads it too (GST-15). */
+export { registrationLabel };
 
 export type ProfileId = "none" | "gst_in" | "vat_uk" | "sales_tax_us";
 
@@ -22,18 +26,6 @@ export const PRICINGS: readonly { value: Pricing; label: string }[] = [
   { value: "inclusive", label: "Prices include tax" },
   { value: "exclusive", label: "Tax is added on top" },
 ];
-
-/** What the registration number is called under a profile, or null when it has none. */
-export function registrationLabel(profile: ProfileId): string | null {
-  switch (profile) {
-    case "gst_in":
-      return "GSTIN";
-    case "vat_uk":
-      return "VAT number";
-    default:
-      return null;
-  }
-}
 
 /** A tax rate is thousandths of a percent (5000 is 5%); the owner types percent. */
 export const MAX_RATE = 100_000;

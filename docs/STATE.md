@@ -13,7 +13,7 @@ the UI audit (`docs/design/ui-audit-2026-10-31.md`). Tasks 1 and 4 to
 12 are done: at the human's word the device-fit pass came first, built
 and seen at 1024x768, 1366x768 and 1920x1080 on 2026-10-31 (ADR-381,
 ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s,
-Tasks 2 and 3, are done too (ADR-383), and Tasks 13 and 14 (ADR-384, ADR-385). It runs before Phase 16, which is mostly
+Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 15 (ADR-384 to ADR-386). It runs before Phase 16, which is mostly
 `mez-cloud`'s.
 
 Before it, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
@@ -28,23 +28,22 @@ list below.
 
 ## Last completed task
 
-**Phase 17, Task 14: one venue clock** (BO-1, BO-3, BO-4, TBS-17,
-ADR-385), 2026-10-31. `GET /api/v1/venue` carries `day_start`, and
-`web/shared/venue-clock.ts` is the one clock: the trading day from the
-venue's day start and zone, and one way to write a date, "3 Oct 2026",
-and a time, "11:40 PM". The back office's "today" (dashboard, sales
-ranges, audit, wastage, the hour charts) is the venue's trading day, not
-a written-in 04:00 on the browser's clock; both status bars say "Trading
-day 31 Oct · 1:05 AM" between midnight and the day start, and a phone
-shows the day. Staff, devices, printers, stock, the item editor, the
-audit, Z-reports and close of day write dates one way on the venue's
-clock; close of day drops the shift id. Seen in a browser at 1366, 1024
-and 390, and at a faked 1:05 AM.
+**Phase 17, Task 15: tax words** (GST-2, TILL-18, GST-15, ADR-386),
+2026-10-31. The guest's venue (the table code's landing and the pickup
+code's) and the till's list of requests carry `tax_added`, from
+`order.Taxes.AddedOnTop()`: only a taxed venue pricing exclusive adds tax.
+The guest's cart and order say "Before tax, which is added on the bill."
+only there, and "Prices include any taxes." elsewhere; the till's request
+says "3 dishes, before tax" or "3 dishes". The guest's receipt says
+"GSTIN" (or "VAT number"), from the invoice's `tax_profile` and
+`registrationLabel`, now in `web/shared/tax-words.ts`. Seen in a browser:
+the cart and order at 390 and the requests at 1024 and 1366, inclusive and
+exclusive, and a paid table's receipt.
 
 ## Next task
 
-**Here: Phase 17 Task 15, tax words (GST-2, TILL-18, GST-15)**,
-then Task 16 onward; Tasks 1 to 14 are done. Each screen is checked by eye at
+**Here: Phase 17 Task 16, no silent loss of work (BO-2, BO-5, TECH-9, BO-6)**,
+then Task 17 onward; Tasks 1 to 15 are done. Each screen is checked by eye at
 1024x768 and 1366x768 before it is ticked: the audit's walk (a demo venue
 from `mez setup -demo-menu` in a scratch data directory, a scripted
 Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel

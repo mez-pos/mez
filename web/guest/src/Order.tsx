@@ -13,7 +13,7 @@ import { formatMoney } from "../../shared/money";
 import { Button } from "../../shared/ui/Button";
 import { cx } from "../../shared/ui/cx";
 import { chargeTones } from "./Bill";
-import { itemsText } from "./cart-logic";
+import { itemsText, toPayLabel, totalNote } from "./cart-logic";
 import { canPayRound, chargeOpen, checkoutUrlOf, paymentStuck, roundChargeWords, stuckWords } from "./charge-logic";
 import { tableLabel } from "./Landing";
 import { dueOf, kitchenSteps, orderWords, pickupCodeOf, sentNote, stepIndex, type Placed } from "./order-logic";
@@ -119,12 +119,10 @@ export function Order({ code, table, placed, onRefresh, onMenu, onBill, onAgain,
             <p className="font-serif text-xl">{formatMoney(round.subtotal)}</p>
           </div>
           {due === null ? (
-            <p className="mt-1 text-sm text-fg-muted">
-              {collect ? "Before any taxes and charges, which were in what you paid." : "Before any taxes and charges, which are on the bill."}
-            </p>
+            <p className="mt-1 text-sm text-fg-muted">{totalNote(table.venue.tax_added, collect ? "paid" : "bill")}</p>
           ) : (
             <div className="mt-2 flex items-baseline justify-between gap-3 border-t border-line-soft pt-2">
-              <p className="text-base">To pay, with taxes and charges</p>
+              <p className="text-base">{toPayLabel(table.venue.tax_added)}</p>
               <p className="font-mono text-base font-semibold tabular-nums">{formatMoney(due)}</p>
             </div>
           )}

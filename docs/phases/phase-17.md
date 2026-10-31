@@ -106,8 +106,10 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
 - [x] **Task 14 - One venue clock (BO-1, BO-3, BO-4, TBS-17).** Shared
   `tradingDay`, `venueDate`, `venueDateTime` from `day_start` and the
   venue's zone, at every site the audit lists. Done 2026-10-31 (ADR-385).
-- [ ] **Task 15 - Tax words (GST-2, TILL-18, GST-15).** `tax_included` on
-  the guest table response; "before tax" only when prices exclude it.
+- [x] **Task 15 - Tax words (GST-2, TILL-18, GST-15).** `tax_included` on
+  the guest table response; "before tax" only when prices exclude it. Done
+  2026-10-31 (ADR-386): the field is `tax_added`, on the guest's venue and
+  the till's list of requests; the guest's receipt says "GSTIN".
 - [ ] **Task 16 - No silent loss of work (BO-2, BO-5, TECH-9, BO-6).**
 
 ### Readable for everyone

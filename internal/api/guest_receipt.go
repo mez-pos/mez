@@ -30,6 +30,9 @@ type guestReceiptSellerResponse struct {
 	LegalName string `json:"legal_name,omitempty"`
 	// Registration is the seller's tax number: a GSTIN, a VAT number.
 	Registration string `json:"registration,omitempty"`
+	// TaxProfile is the profile the invoice was issued under ("gst_in",
+	// "vat_uk"), so the receipt calls the number what it is (GST-15).
+	TaxProfile string `json:"tax_profile,omitempty"`
 }
 
 // guestReceiptLineResponse is one line as it was billed.
@@ -98,8 +101,10 @@ func (s *Server) guestReceipt(w http.ResponseWriter, r *http.Request) {
 func toGuestReceiptResponse(rc svcorder.Receipt) guestReceiptResponse {
 	out := guestReceiptResponse{
 		Bill: rc.Bill, InvoiceNo: rc.InvoiceNo, IssuedAt: rc.IssuedAt.UTC(), TimeZone: rc.TimeZone,
-		Seller: guestReceiptSellerResponse{Name: rc.Seller.Name, LegalName: rc.Seller.LegalName, Registration: rc.Seller.Registration},
-		Lines:  make([]guestReceiptLineResponse, len(rc.Lines)), Taxes: make([]guestBillTaxResponse, len(rc.Taxes)),
+		Seller: guestReceiptSellerResponse{
+			Name: rc.Seller.Name, LegalName: rc.Seller.LegalName, Registration: rc.Seller.Registration, TaxProfile: rc.Seller.TaxProfile,
+		},
+		Lines: make([]guestReceiptLineResponse, len(rc.Lines)), Taxes: make([]guestBillTaxResponse, len(rc.Taxes)),
 		Items: rc.Items, Discounts: rc.Discounts, TaxIncluded: rc.TaxIncluded, Total: rc.Total,
 		Payments: make([]guestReceiptPaymentResponse, len(rc.Payments)),
 		Credited: rc.Credited, Refunded: rc.Refunded,

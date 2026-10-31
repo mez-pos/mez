@@ -10,6 +10,19 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Tax words that match the venue** (ADR-386, Phase 17 Task 15;
+  2026-10-31). Seen in a scripted Chromium on the demo venue (GST): with
+  prices that hold the tax, the cart and the order placed at 390 say
+  "Prices include any taxes." and the till's requests at 1024 and 1366 "1
+  dish"; with `tax.pricing` exclusive, "Before tax, which is added on the
+  bill." and "1 dish, before tax"; a paid table's receipt at 390 says
+  "GSTIN 29ABCDE1234F1Z5". **Not seen:** the words to collect ("added
+  before you pay", "which was in what you paid", "To pay, with tax"),
+  which need a payment gateway (tested in vitest and the API's tests); a
+  VAT venue's "VAT number" (tested); the landing where the venue's taxes
+  cannot be read (tested in Go: it opens and says "before tax"). Left: the
+  menu's prices themselves say nothing of tax.
+
 - **One venue clock** (ADR-385, Phase 17 Task 14; 2026-10-31). Seen in a
   scripted Chromium: the back office's bar at 1366 ("Sat, 31 Oct 2026 ·
   12:24 PM"), at a faked 1:05 AM ("Trading day 31 Oct · 1:05 AM") and on a

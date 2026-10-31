@@ -990,6 +990,7 @@ export interface GuestTableResponse {
 export interface GuestVenueResponse {
   name: string;
   currency: string;
+  tax_added: boolean;
 }
 
 export interface GuestTableNameResponse {
@@ -1168,6 +1169,7 @@ export interface GuestReceiptSellerResponse {
   name: string;
   legal_name?: string;
   registration?: string;
+  tax_profile?: string;
 }
 
 export interface GuestReceiptLineResponse {
@@ -1367,6 +1369,7 @@ export interface GuestRequestsResponse {
   requests: GuestRequestResponse[];
   paid: PaidNoticeResponse[];
   unapplied: UnappliedChargeResponse[];
+  tax_added: boolean;
 }
 
 export interface GuestRequestResponse {

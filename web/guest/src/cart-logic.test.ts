@@ -17,6 +17,8 @@ import {
   serialize,
   setQty,
   storageKey,
+  toPayLabel,
+  totalNote,
   totalOf,
   type Cart,
   type CartLine,
@@ -205,6 +207,16 @@ describe("the figures", () => {
   it("says how many in words", () => {
     expect(itemsText(1)).toBe("1 item");
     expect(itemsText(3)).toBe("3 items");
+  });
+
+  it("says a total is before tax only where the bill adds it (GST-2)", () => {
+    expect(totalNote(true, "bill")).toBe("Before tax, which is added on the bill.");
+    expect(totalNote(true, "pay")).toBe("Before tax, which is added before you pay.");
+    expect(totalNote(true, "paid")).toBe("Before tax, which was in what you paid.");
+    // Prices that hold the tax, or a venue that charges none: the total is the price.
+    for (const when of ["bill", "pay", "paid"] as const) expect(totalNote(false, when)).toBe("Prices include any taxes.");
+    expect(toPayLabel(true)).toBe("To pay, with tax");
+    expect(toPayLabel(false)).toBe("To pay");
   });
 
   it("names what was taken out", () => {

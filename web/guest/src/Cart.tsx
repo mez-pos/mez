@@ -8,7 +8,7 @@ import { formatMoney } from "../../shared/money";
 import { Button } from "../../shared/ui/Button";
 import { DietMark } from "../../shared/ui/DietMark";
 import { Qty } from "../../shared/ui/Qty";
-import { MAX_QTY, itemsText } from "./cart-logic";
+import { MAX_QTY, itemsText, totalNote } from "./cart-logic";
 import { Notice } from "./Notice";
 import type { CartApi } from "./use-cart";
 import type { OrderApi } from "./use-order";
@@ -23,9 +23,11 @@ interface CartProps {
   onBill?: (() => void) | undefined;
   /** Ordering to collect: there is no bill, and it is paid for before it is sent. */
   collect?: boolean;
+  /** The bill adds tax to the menu's prices (the venue's tax_added, ADR-386). */
+  taxAdded: boolean;
 }
 
-export function Cart({ cart, order, onBack, onPlaced, onBill, collect = false }: CartProps) {
+export function Cart({ cart, order, onBack, onPlaced, onBill, collect = false, taxAdded }: CartProps) {
   const place = () => {
     void order.place().then((ok) => {
       if (ok) onPlaced();
@@ -117,9 +119,7 @@ export function Cart({ cart, order, onBack, onPlaced, onBill, collect = false }:
                 </h2>
                 <p className="font-serif text-xl">{formatMoney(cart.total)}</p>
               </div>
-              <p className="mt-1 text-sm text-fg-muted">
-                {collect ? "Before any taxes and charges, which are added before you pay." : "Before any taxes and charges, which are on the bill."}
-              </p>
+              <p className="mt-1 text-sm text-fg-muted">{totalNote(taxAdded, collect ? "pay" : "bill")}</p>
             </section>
 
             <p className="mt-4 text-center text-sm text-fg-muted">Allergies or a special request? Please tell a member of staff.</p>

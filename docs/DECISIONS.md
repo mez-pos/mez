@@ -14798,3 +14798,45 @@ Cost: a back office opened straight onto Sales before the venue is read takes it
 on the device's clock (the bar's read of the venue is usually first). The mirror note
 ("Mirror, as of 23:10"), the kitchen board's clock and the sales heatmap's hour labels keep
 their 24-hour times; the export files keep their dated names.
+
+## ADR-386 - Tax words that match the venue: "before tax" only where the bill adds it
+2026-10 · Status: accepted. Phase 17 Task 15 (GST-2, TILL-18, GST-15).
+Context: the guest's cart and order said "Before any taxes and charges, which are on the
+bill." under every total, and the till's list of table requests "3 dishes, before tax", at
+every venue. Most Indian cafes price with GST in (the default, `tax.pricing`), and a venue
+under the GST threshold charges none: there the words told a guest a bill would add to a
+total it never adds to. The phone could not know better: the guest's landing carried the
+venue's name and currency and nothing of its tax. And the guest's receipt called the venue's
+GSTIN "Tax registration", where the printed receipt says "GSTIN".
+Decision:
+  - **`order.Taxes.AddedOnTop()`**: a bill adds tax to the menu's prices only at a taxed
+    venue that prices exclusive. `svcorder.Service.TaxAdded(venue)` reads it as every
+    command reads the venue.
+  - **The guest's venue carries `tax_added`**, on the table code's landing and the pickup
+    code's alike (`guestVenueResponse`), and **the till's list of requests carries it**
+    (`GET /api/v1/guest-requests`). The phase file named the field `tax_included`; it is
+    `tax_added` because an untaxed venue includes no tax and adds none, and the one question
+    the words answer is whether the bill adds any.
+  - **The words** (`totalNote`, `toPayLabel`, `dishesText`): where tax is added, "Before tax,
+    which is added on the bill." (a table), "... added before you pay." and "... which was in
+    what you paid." (to collect), "To pay, with tax", and "3 dishes, before tax". Where it is
+    not, "Prices include any taxes.", "To pay" and "3 dishes". "And charges" goes: mez adds
+    no service charge.
+  - **Where the venue's taxes cannot be read**, the landing still opens and says "before
+    tax", the old words, which never promise a guest less than the bill (and such a venue
+    takes no orders); the till's list answers `venue_not_configured`, as its other reads do.
+  - **The receipt names the number as the invoice's profile does** (GST-15): the guest's
+    receipt carries the seller's `tax_profile`, and "GSTIN" or "VAT number" is
+    `registrationLabel`, moved to `web/shared/tax-words.ts` from the back office's tax card,
+    which reads it from there. A profile with no name for it keeps "Tax registration".
+Rejected: a three-way field (inclusive, exclusive, untaxed) for words that only need to know
+whether anything is added; leaving the words out where nothing is added (a guest in India
+reads a menu price and asks whether GST comes on top, and "Prices include any taxes."
+answers it); the server sending the words (the guest bundle owns its copy, as every screen
+does); the menu carrying the flag (the landing is read first, on both codes, and the cart and
+order already hold it).
+Because: a total a guest is about to commit to must say what the bill will do to it, and only
+the venue's own tax settings know.
+Cost: two indexed reads more on each landing and each read of the till's list. A request
+waiting while the owner changes the venue's pricing reads under the new pricing, which is the
+one its bill will be made under.

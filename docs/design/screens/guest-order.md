@@ -51,10 +51,11 @@ guess at how long, and never "being made" before a cook has started it.
     Please show this to a member of staff."
 - **What was ordered,** a card: each line's count and dish, its choices in
   small print, and what it comes to.
-- **The total,** a card: "Total (3 items)", the figure, and "Before any
-  taxes and charges, which are on the bill."
-- **To pay,** on an unpaid order: under the total, "To pay, with taxes and
-  charges" and the server's figure. Then a card with **Pay ₹360.00**, the
+- **The total,** a card: "Total (3 items)", the figure, and "Before tax,
+  which is added on the bill." where the venue adds tax, or "Prices include
+  any taxes." (GST-2, ADR-386).
+- **To pay,** on an unpaid order: under the total, "To pay, with tax" ("To
+  pay" where no tax is added) and the server's figure. Then a card with **Pay ₹360.00**, the
   primary, and "Card, UPI and more, on the payment provider's own page. Your
   order is sent as soon as it is paid." Above the button, once this phone
   has started a payment, how it stands, with its amount:

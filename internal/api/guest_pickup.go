@@ -194,7 +194,7 @@ func (s *Server) guestPickupVenue(w http.ResponseWriter, r *http.Request) {
 	// A code can be turned off at any moment: never from a cache.
 	w.Header().Set("Cache-Control", "no-store")
 	writeJSON(w, s.log, http.StatusOK, guestPickupResponse{
-		Venue:    guestVenueResponse{Name: venue.VenueName, Currency: venue.Currency},
+		Venue:    guestVenueResponse{Name: venue.VenueName, Currency: venue.Currency, TaxAdded: s.guestTaxAdded(r, venue.VenueID)},
 		Ordering: s.pickupOn(),
 	})
 }

@@ -34,6 +34,7 @@ type GuestRequests interface {
 	DeclineRound(ctx context.Context, meta svcorder.Meta, publicID string) (svcorder.Decision, error)
 	PaidNotices(ctx context.Context, venueID int64) ([]svcorder.PaidNotice, error)
 	SeePaidNotice(ctx context.Context, meta svcorder.Meta, publicID string) error
+	TaxAdded(ctx context.Context, venueID int64) (bool, error)
 }
 
 // WithGuestRequests lets staff see and answer guests' requests.
@@ -65,7 +66,9 @@ type guestRequestResponse struct {
 	TableName string                   `json:"table_name"`
 	PlacedAt  time.Time                `json:"placed_at"`
 	Lines     []guestRoundLineResponse `json:"lines"`
-	// Subtotal is before tax: the ticket works the bill out once accepted.
+	// Subtotal is what the lines come to at the menu's prices: before tax
+	// where the venue adds it (the list's TaxAdded), and with the tax in it
+	// where the prices hold it. The ticket works the bill out once accepted.
 	Subtotal money.Amount `json:"subtotal"`
 	// JoinsOpenTicket is true when the table has a ticket open already: a
 	// phone not yet of that party asks to join it (ADR-262). Accepted, its
@@ -83,6 +86,9 @@ type guestRequestsResponse struct {
 	// Unapplied is money a payment gateway took that no bill could, and
 	// nobody has dealt with (ADR-223). Empty at a venue with no gateway.
 	Unapplied []unappliedChargeResponse `json:"unapplied"`
+	// TaxAdded is whether the venue's bills add tax to its prices, so
+	// whether a request's subtotal is before tax (ADR-386, TILL-18).
+	TaxAdded bool `json:"tax_added"`
 }
 
 // guestDecisionResponse is a request once answered. OrderID is the ticket
@@ -118,6 +124,11 @@ func (s *Server) listGuestRequests(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out.Paid = toPaidNoticeResponses(notices)
+	out.TaxAdded, err = s.guestRequests.TaxAdded(r.Context(), Meta(r).VenueID)
+	if err != nil {
+		s.writeOrderError(w, r, err)
+		return
+	}
 	out.Unapplied = []unappliedChargeResponse{}
 	if s.charges != nil {
 		waiting, err := s.charges.Waiting(r.Context(), Meta(r).VenueID)

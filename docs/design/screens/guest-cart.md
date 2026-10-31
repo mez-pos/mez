@@ -22,7 +22,9 @@ each, how many, and the total.
   count with − and +.
 - **Add more dishes,** a green-tint row back to the menu.
 - **The total,** a card: "Total (3 items)", the figure in the serif, and
-  "Before any taxes and charges, which are on the bill."
+  "Before tax, which is added on the bill." where the venue adds tax to its
+  prices (the landing's `tax_added`), or "Prices include any taxes." where
+  the prices hold it or the venue charges none (GST-2, ADR-386).
 - "Allergies or a special request? Please tell a member of staff."
 - **Why it was not placed,** when it was not, in the danger tint.
 - **Place Order · ₹530.00**, the primary button, 58px, full width. While it
@@ -76,8 +78,9 @@ added; with other choices it is another.
 - Money is integer minor units from the menu to the total, never a float.
 - What is in storage is not trusted: anything that is not a line is left
   out, a count is held to 20 and a cart to 50 lines.
-- The total is before tax, and says so. The guest's menu carries no tax
-  rates; the bill is the venue's to work out.
+- The total is the dishes at the menu's prices. The guest's menu carries
+  no tax rates; the bill is the venue's to work out. Whether it adds tax is
+  the venue's `tax_added`, and the total says "before tax" only then.
 - A notice does not fade. A toast that fades is how someone finds out at
   the counter.
 

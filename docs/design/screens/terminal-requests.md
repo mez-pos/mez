@@ -61,7 +61,9 @@ it.
     phone order straight through from then on; declining leaves it out.
   - each line: the count, the dish, its choices in small print under it, and
     what the line comes to
-  - "3 dishes, before tax" and the subtotal
+  - "3 dishes, before tax" and the subtotal where the venue adds tax to its
+    prices; "3 dishes" where they hold it or it charges none (TILL-18,
+    ADR-386)
   - **Accept and send**, the primary, and **Decline**
   - an error line when the server refused
 - **On the floor:** a table with a request waiting shows a terracotta mark,

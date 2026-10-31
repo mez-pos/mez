@@ -12,6 +12,7 @@ import {
   problemWords,
   receiptProblem,
   receiptRows,
+  registrationName,
 } from "./receipt-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
@@ -88,6 +89,13 @@ describe("offersReceipt", () => {
 });
 
 describe("the receipt in words", () => {
+  it("calls the seller's number what the invoice's profile calls it (GST-15)", () => {
+    expect(registrationName({ tax_profile: "gst_in" })).toBe("GSTIN");
+    expect(registrationName({ tax_profile: "vat_uk" })).toBe("VAT number");
+    expect(registrationName({})).toBe("Tax registration");
+    expect(registrationName({ tax_profile: "sales_tax_us" })).toBe("Tax registration");
+  });
+
   it("says when it was issued in the venue's time, whatever the phone's", () => {
     expect(issuedText(receipt)).toBe("Tue, 6 Oct 2026 · 1:00 PM");
     expect(issuedText({ issued_at: "not a time", time_zone: "Asia/Kolkata" })).toBe("");

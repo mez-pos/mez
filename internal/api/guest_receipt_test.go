@@ -122,3 +122,27 @@ func TestAReceiptIsItsTablesOwn(t *testing.T) {
 		})
 	}
 }
+
+// TestGuestReceiptNamesTheRegistration: the receipt carries the profile its
+// invoice was issued under, so the phone says "GSTIN" as the paper one does
+// (GST-15).
+func TestGuestReceiptNamesTheRegistration(t *testing.T) {
+	o := newOrderingWorld(t)
+	o.giveGST(t, "inclusive")
+	seated := o.seat(t)
+	decodeRound(t, o.place("k1", 1))
+	bill, _ := o.bill(t)
+	if _, err := o.orders.TenderPayment(context.Background(), counterStaff, seated.OrderID, svcorder.TenderPayment{
+		Method: order.PaymentUPI, Amount: bill.BalanceDue, Reference: "upi-ref-15",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	rec := o.receipt(o.code, bill.Bill)
+	var got guestReceiptResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); rec.Code != http.StatusOK || err != nil {
+		t.Fatalf("the receipt: %d %s", rec.Code, rec.Body)
+	}
+	if got.Seller.TaxProfile != "gst_in" || got.Seller.Registration != "29ABCDE1234F1Z5" {
+		t.Errorf("seller = %+v, want gst_in and its GSTIN", got.Seller)
+	}
+}

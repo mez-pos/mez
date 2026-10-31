@@ -25,6 +25,8 @@ export interface GuestRequests {
   paid: readonly PaidNoticeResponse[];
   /** Money a gateway took that no bill could, and nobody has dealt with (ADR-223). */
   unapplied: readonly UnappliedChargeResponse[];
+  /** The venue's bills add tax to its prices, so a request's subtotal is before tax (ADR-386). */
+  taxAdded: boolean;
   /** Undefined until the list has been read once. */
   loaded: boolean;
   error: string | null;
@@ -77,6 +79,7 @@ export function useGuestRequests(): GuestRequests {
     requests: query.data?.requests ?? none,
     paid: query.data?.paid ?? nonePaid,
     unapplied: query.data?.unapplied ?? noneUnapplied,
+    taxAdded: query.data?.tax_added ?? true,
     loaded: query.data !== undefined,
     error: query.isError ? failureOf(query.error) : null,
     accept: (id) => answer(id, "accept"),

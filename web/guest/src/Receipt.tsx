@@ -9,7 +9,7 @@ import { Button } from "../../shared/ui/Button";
 import { cx } from "../../shared/ui/cx";
 import type { BillRow } from "./bill-logic";
 import { tableLabel } from "./Landing";
-import { issuedText, paidRows, problemWords, receiptProblem, receiptRows } from "./receipt-logic";
+import { issuedText, paidRows, problemWords, receiptProblem, receiptRows, registrationName } from "./receipt-logic";
 import { useReceipt } from "./use-receipt";
 
 interface ReceiptProps {
@@ -88,7 +88,7 @@ function Paper({ receipt }: { receipt: GuestReceiptResponse }) {
         {seller.legal_name && seller.legal_name !== seller.name && <p className="text-sm text-fg-muted">{seller.legal_name}</p>}
         {seller.registration && (
           <p className="mt-1 text-sm text-fg-muted">
-            Tax registration <span className="font-mono break-all">{seller.registration}</span>
+            {registrationName(seller)} <span className="font-mono break-all">{seller.registration}</span>
           </p>
         )}
         <dl className="mt-3 border-t border-line-soft pt-3 text-left">

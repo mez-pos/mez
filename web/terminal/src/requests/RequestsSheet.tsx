@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import type { ChargeResolution, GuestRequestResponse, PaidNoticeResponse, UnappliedChargeResponse } from "../../../shared/api-types";
 import { Button, EmptyState, InboxIcon, Money, Sheet } from "../../../shared/ui";
 import { useClock } from "../../../shared/use-clock";
-import { choicesOf, dishCount, gatewayName, methodWord, owesOtherwise, requestHeading, saidAgo, waited } from "./request-logic";
+import { choicesOf, dishCount, dishesText, gatewayName, methodWord, owesOtherwise, requestHeading, saidAgo, waited } from "./request-logic";
 import type { GuestRequests } from "./use-guest-requests";
 
 interface RequestsSheetProps {
@@ -88,7 +88,6 @@ function RequestRow({ request, now, guests }: { request: GuestRequestResponse; n
       .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)))
       .finally(() => setBusy(false));
   };
-  const dishes = dishCount(request);
   const heading = requestHeading(request);
 
   return (
@@ -112,9 +111,7 @@ function RequestRow({ request, now, guests }: { request: GuestRequestResponse; n
         ))}
       </ul>
       <div className="mt-2 flex items-baseline justify-between gap-3 text-base font-semibold">
-        <span>
-          {dishes} {dishes === 1 ? "dish" : "dishes"}, before tax
-        </span>
+        <span>{dishesText(dishCount(request), guests.taxAdded)}</span>
         <Money amount={request.subtotal} />
       </div>
       <div className="mt-3 flex gap-tap-gap">
