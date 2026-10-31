@@ -12,6 +12,8 @@
 import { ArrowRightIcon, PrinterIcon } from "lucide-react";
 import type { Money as Amount, OrderResponse } from "../../../shared/api-types";
 import { Button, Money } from "../../../shared/ui";
+import { useVenueClock } from "../../../shared/use-venue";
+import { ticketName } from "../bills/orders-logic";
 import { serviceLabels } from "../register/rail-logic";
 import { methodNames } from "./tender-logic";
 import { UnsentNote } from "./UnsentNote";
@@ -32,6 +34,7 @@ interface PaidPanelProps {
 }
 
 export function PaidPanel({ order, title, change, busy, message, onPrint, unsent, onNewOrder }: PaidPanelProps) {
+  const { timezone } = useVenueClock();
   const methods = [...new Set(order.tenders.filter((t) => t.status !== "voided").map((t) => methodNames[t.method]))].join(" + ");
   return (
     <aside
@@ -42,7 +45,7 @@ export function PaidPanel({ order, title, change, busy, message, onPrint, unsent
         <h2 className="font-serif text-total leading-tight">Payment successful</h2>
         <Money amount={order.totals.net_paid} variant="display" tone="accent" className="mt-5 block text-center leading-tight short:mt-3" />
         <p className="mt-2 text-base text-fg-2">
-          Paid for <span className="font-mono">{order.id}</span>
+          Paid for {ticketName(order, timezone)}
           <br />
           {[...new Set([title, serviceLabels[order.service], methods])].filter(Boolean).join(" · ")}
         </p>

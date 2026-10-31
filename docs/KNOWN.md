@@ -10,6 +10,17 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The till's words** (ADR-393, Phase 17 Task 22a; 2026-10-31). Seen in a
+  scripted Chromium at 1366x768: "Tap your name first." from a key before a
+  name; the pill **Till**; a dish card's name read first; "More actions, 12
+  open orders" and the menu's **Open orders**, **This order's history**,
+  **Today's orders**; the open orders sheet's "Opened 8:48 AM"; the tender's
+  head "5:48 PM · Masala dosa"; "Guest pays by UPI"; "Paid for
+  INV/26-27/000005"; Today's orders' title; **Close the day** in the profile
+  menu. **Not seen:** "Send to Kitchen" on an empty table order (tested); the
+  waiter's tablet, which keeps its own **Orders** tile (its place is its own
+  orders). Left: a short daily order number, which the server does not have.
+
 - **The kitchen display says what changed** (ADR-392, Phase 17 Task 21;
   2026-10-31). Seen in a scripted Chromium at 1366x768: a second send of a
   counter order marked Add-on; a line voided on the till (reason, Arjun's

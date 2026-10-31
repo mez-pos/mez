@@ -5,6 +5,8 @@
 
 import { useState } from "react";
 import { useClock } from "../../../shared/use-clock";
+import { useVenueClock } from "../../../shared/use-venue";
+import { venueTime } from "../../../shared/venue-clock";
 import type { OpenOrder, OpenTicketsResponse, TicketSummary } from "../../../shared/api-types";
 import { Button, Money, Sheet, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
@@ -31,6 +33,7 @@ interface TicketsSheetProps {
 
 export function TicketsSheet({ open, currentId, names, onPick, onNew, onPastBills, onFloor, onClose, openError, onRetryOpen }: TicketsSheetProps) {
   const now = useClock(15_000);
+  const { timezone } = useVenueClock();
   const [error, setError] = useState<string | null>(null);
   const lateAfter = open?.late_after_minutes ?? 20;
 
@@ -49,7 +52,7 @@ export function TicketsSheet({ open, currentId, names, onPick, onNew, onPastBill
   };
 
   return (
-    <Sheet open onClose={onClose} title="Orders">
+    <Sheet open onClose={onClose} title="Open orders">
       <div className="flex flex-col gap-6">
         {error && (
           <p role="alert" className="text-sm text-danger">
@@ -88,7 +91,8 @@ export function TicketsSheet({ open, currentId, names, onPick, onNew, onPastBill
                         {here && <span className="text-meta uppercase text-fg-faint">On screen</span>}
                       </span>
                       <span className="flex items-center gap-2 text-sm text-fg-muted">
-                        <span className="font-mono">{t.id}</span>
+                        {/* When it was opened, not its ord_ id: the system's name, not staff's (TILL-8). */}
+                        <span>Opened {venueTime(t.opened_at, timezone)}</span>
                         <span>·</span>
                         <span>
                           {t.lines} {t.lines === 1 ? "item" : "items"}
@@ -109,7 +113,7 @@ export function TicketsSheet({ open, currentId, names, onPick, onNew, onPastBill
           </ul>
         )}
 
-        <section aria-label="Past bills" className="flex flex-col gap-2 border-t border-line pt-6">
+        <section aria-label="Today's orders" className="flex flex-col gap-2 border-t border-line pt-6">
           <Button
             onClick={() => {
               onPastBills();

@@ -16,7 +16,7 @@ does hold. A closing takes a manager under three minutes with a full drawer.
 
 ## Layout
 
-Reached from **Close the shift** under the profile, for someone with
+Reached from **Close the day** under the profile, for someone with
 `shift.manage` while a shift is open. Inside the frame, in two steps. A rail
 on the right from 1024px; under that the rail's facts are one line under the
 title.
@@ -114,7 +114,7 @@ total as the one total on the screen; a script line at the foot.
 | Pad keys | Set the picked row's count | The row's value and the total redraw |
 | Next | Picks the row below | At the last row, stays |
 | Back to the order screen | Leaves, nothing recorded | Selling goes on |
-| See open orders | Leaves for `/orders?tab=open`, nothing recorded | The open orders, to settle; Close the shift brings the manager back |
+| See open orders | Leaves for `/orders?tab=open`, nothing recorded | The open orders, to settle; Close the day brings the manager back |
 | Submit count | Asks first: "2 orders are still open. They carry into the next shift." when any are, then "The count can't be changed once it's in. Submit ₹9,520.00?" | On yes, `shift.counted`; step 2. The gate now holds every path here |
 | Save note | Records the reason | The quote; Close the day no longer waits for it |
 | Save the stock count | Records the counts as stock movements | What each moved |
@@ -131,7 +131,7 @@ total as the one total on the screen; a script line at the foot.
   pad.", and the pad types one total.
 - **A report that cannot be built:** the close is refused and says why; the
   shift stays open (ADR-097).
-- **Permission denied:** Close the shift is not in the profile menu without
+- **Permission denied:** Close the day is not in the profile menu without
   `shift.manage`; the server refuses the close as well.
 
 ## Constraints

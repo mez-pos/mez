@@ -1,5 +1,5 @@
 // The sidebar of the tables screen (D05, the `side` width): Floor Plan and Table List, the
-// two ways to look at the same tables, and Order History. The one chosen is
+// two ways to look at the same tables, and Today's orders. The one chosen is
 // terracotta, as the order screen's categories are. The design also lists
 // Reservations, Waitlist, Customers and Settings: none exists in v1, and a
 // control that does nothing is not drawn (rebuild.md, rule 3).
@@ -43,7 +43,7 @@ export function TablesSidebar({ view, onView }: TablesSidebarProps) {
       })}
       <Link href={route.orders} className={cx(entry, "text-fg hover:bg-raised-high")}>
         <HistoryIcon aria-hidden="true" size={19} className="shrink-0" />
-        Order History
+        Today&apos;s orders
       </Link>
     </nav>
   );

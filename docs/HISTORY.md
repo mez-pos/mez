@@ -8,6 +8,18 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 21: the kitchen display says what changed** (KDS-12,
+KDS-13, KDS-16, KDS-17, KDS-18, TECH-19, ADR-392), 2026-10-31. A ticket's
+`round` (`State.TicketRound`) gives its card a chip: the later course, or
+Add-on. A void of a sent line names its station (`LineVoided.Station`, set
+by the service), so the stream brings it at once; the card strikes the dish
+and says **Void** in a danger chip, and the board chimes falling notes.
+Sound is a switch; **Skip preparing**, a new switch, makes New Orders' button
+Mark ready. The station picker keeps the night surface on /pass. Cards are
+memo'd and their clocks are leaves. Seen in a browser at 1366: Add-on on a
+second send, a void on the board 248 ms after Void it, Skip preparing, the
+picker on ink.
+
 **Phase 17, Task 20: the kitchen display, heard and trusted** (KDS-1,
 KDS-2, KDS-3, KDS-14, KDS-15, KDS-9, ADR-391), 2026-10-31. Sound is on by
 default (older kept choices take it once); while the browser holds it back

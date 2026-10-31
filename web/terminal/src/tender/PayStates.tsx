@@ -8,7 +8,7 @@
 // what records it. So there is no QR, no terminal name and no "Retry
 // terminal" here, and a refusal is the server's, not a bank's.
 
-import { ArrowRightIcon, CheckIcon, CreditCardIcon, QrCodeIcon, RefreshCwIcon, XIcon } from "lucide-react";
+import { ArrowRightIcon, CheckIcon, CreditCardIcon, RefreshCwIcon, SmartphoneIcon, XIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import type { Money as Amount, PaymentMethod } from "../../../shared/api-types";
 import { Button, Money } from "../../../shared/ui";
@@ -36,13 +36,14 @@ interface WaitingCardProps {
 export function WaitingCard({ method, charge, tip, reference, since, busy, onReference, onCancel, onPaid }: WaitingCardProps) {
   const now = useClock(1000);
   const byCard = method === "card";
-  const Icon = byCard ? CreditCardIcon : QrCodeIcon;
+  const Icon = byCard ? CreditCardIcon : SmartphoneIcon;
   return (
     <section aria-label="Waiting for payment" className={cx(card, "flex flex-col border-line bg-raised text-center")}>
       <p className={cx(eyebrow, "text-attention-text")}>
         {methodNames[method]} · {byCard ? "Waiting on the card machine" : "Waiting"}
       </p>
-      <h2 className="mt-2.5 font-serif text-xl">{byCard ? "Insert or tap card" : "Scan to pay"}</h2>
+      {/* The guest scans the venue's own UPI code, not this screen: the icon is a phone, not a code (TILL-23). */}
+      <h2 className="mt-2.5 font-serif text-xl">{byCard ? "Insert or tap card" : "Guest pays by UPI"}</h2>
       <span
         aria-hidden="true"
         className="mx-auto my-5 flex size-32 items-center justify-center rounded-round border-8 border-chip-success-bg bg-accent-tint text-accent-text short:my-3 short:size-24"

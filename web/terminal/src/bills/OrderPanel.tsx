@@ -18,6 +18,7 @@ import { useState, type ReactNode } from "react";
 import type { GuestRoundProgress, Money as Amount, OrderResponse, TenderResponse } from "../../../shared/api-types";
 import { Button, Money, StatusChip, useToast } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { useVenueClock } from "../../../shared/use-venue";
 import { HistorySheet } from "../register/HistorySheet";
 import { failureOf } from "../register/order-messages";
 import { taxRows } from "../register/rail-logic";
@@ -26,7 +27,7 @@ import { methodNames } from "../tender/tender-logic";
 import { anythingLeft, refundReasonText } from "./bills-logic";
 import { BillMore } from "./BillMore";
 import { InvoiceSheet, PickPaymentSheet, VoidSheet } from "./BillSheets";
-import { billActions, collectWords, paymentText, standing, statusOf, timeText, voidableTenders, whereText } from "./orders-logic";
+import { billActions, collectWords, paymentText, standing, statusOf, ticketName, timeText, voidableTenders, whereText } from "./orders-logic";
 import { RefundSheet } from "./RefundSheet";
 import { useBill } from "./use-bills";
 
@@ -55,6 +56,7 @@ export function OrderPanel({ orderId, names, pickupCode, progress, onOpenOrder, 
   const [open, setOpen] = useState<Open>(null);
   const [handing, setHanding] = useState(false);
   const toast = useToast();
+  const { timezone } = useVenueClock();
 
   if (!order) {
     return (
@@ -100,7 +102,7 @@ export function OrderPanel({ orderId, names, pickupCode, progress, onOpenOrder, 
       <div className="min-h-0 flex-1 overflow-y-auto p-4 xl:p-5 2xl:p-6">
         <header className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="wrap-break-word font-serif text-xl 2xl:text-total">{invoice?.invoice_no ?? order.id}</h2>
+            <h2 className="wrap-break-word font-serif text-xl 2xl:text-total">{invoice?.invoice_no ?? ticketName(order, timezone)}</h2>
             <p className="mt-1 text-sm text-fg-muted">
               {whereText(order, names, pickupCode)} · {timeText(order.closed_at ?? order.opened_at, new Date())}
             </p>

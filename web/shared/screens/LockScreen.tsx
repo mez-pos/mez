@@ -22,6 +22,8 @@ import { ProfileTiles } from "./login/ProfileTiles";
 import { minPin } from "./PinDots";
 
 const maxPin = 8;
+/** What a key pressed before a name says (TILL-22). */
+const chooseFirst = "Tap your name first.";
 
 export function LockScreen() {
   const status = useAuth();
@@ -86,11 +88,17 @@ export function LockScreen() {
 
   const key = useCallback(
     (k: NumKey) => {
+      // The pad is live before a name is chosen, and says what to do first:
+      // dimmed and silent, it looked broken (TILL-22, ADR-381, ADR-393).
+      if (selected === null && !locked && !busy) {
+        setError(chooseFirst);
+        return;
+      }
       if (!canType) return;
       setError((e) => (locked ? e : null));
       setPin((p) => applyPinKey(p, k, maxPin));
     },
-    [canType, locked],
+    [canType, locked, busy, selected],
   );
 
   // A keyboard anywhere on the screen types into the PIN. Enter signs in, except
@@ -166,7 +174,7 @@ export function LockScreen() {
         <LoginPad
           name={selected?.name ?? null}
           length={pin.length}
-          disabled={!canType}
+          disabled={locked || busy}
           canSubmit={canSubmit}
           busy={busy}
           onKey={key}

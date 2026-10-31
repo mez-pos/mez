@@ -165,7 +165,7 @@ cannot be moved from here.
 | Join, then free tables | | `order.tables_joined` | "Table T4 + T7" |
 | A joined table, in Join or Part | Lets it go | `order.tables_parted` | |
 | Order history | Opens the order's history sheet | | |
-| Order History (sidebar) | Opens `/orders` | | |
+| Today's orders (sidebar) | Opens `/orders` | | |
 
 The lines are read here and changed on the order screen, where Add Items
 goes.

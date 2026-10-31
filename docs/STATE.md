@@ -13,7 +13,7 @@ the UI audit (`docs/design/ui-audit-2026-10-31.md`). Tasks 1 and 4 to
 12 are done: at the human's word the device-fit pass came first, built
 and seen at 1024x768, 1366x768 and 1920x1080 on 2026-10-31 (ADR-381,
 ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s,
-Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 21 (ADR-384 to ADR-392). It runs before Phase 16, which is mostly
+Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 21 and 22a (ADR-384 to ADR-393). It runs before Phase 16, which is mostly
 `mez-cloud`'s.
 
 Before it, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
@@ -28,22 +28,21 @@ list below.
 
 ## Last completed task
 
-**Phase 17, Task 21: the kitchen display says what changed** (KDS-12,
-KDS-13, KDS-16, KDS-17, KDS-18, TECH-19, ADR-392), 2026-10-31. A ticket's
-`round` (`State.TicketRound`) gives its card a chip: the later course, or
-Add-on. A void of a sent line names its station (`LineVoided.Station`, set
-by the service), so the stream brings it at once; the card strikes the dish
-and says **Void** in a danger chip, and the board chimes falling notes.
-Sound is a switch; **Skip preparing**, a new switch, makes New Orders' button
-Mark ready. The station picker keeps the night surface on /pass. Cards are
-memo'd and their clocks are leaves. Seen in a browser at 1366: Add-on on a
-second send, a void on the board 248 ms after Void it, Skip preparing, the
-picker on ink.
+**Phase 17, Task 22a: the till's words** (TILL-8, TBS-7, TILL-9, TBS-8,
+TBS-10, TBS-18, TILL-20, TILL-14, TILL-22, TILL-23, ADR-393), 2026-10-31.
+Task 22 was split in two. An order is called by its invoice number, or its
+time and first dish ("12:40 PM · Masala dosa", `orderName`, `ticketName`),
+never its `ord_` id. The register's pill is **Till**, the sheet **Open
+orders** (its count on the "..." button too), the day's list **Today's
+orders**. "Sent" only once something was; "Close the day" in the profile
+menu; "1 choice"; dish cards announced name first; the PIN pad says "Tap
+your name first."; the UPI wait says "Guest pays by UPI" over a phone. Seen
+in a browser at 1366.
 
 ## Next task
 
-**Here: Phase 17 Task 22, names and labels (TILL-8, TBS-7, TILL-9 and the rest the phase file lists)**,
-then Task 23 onward; Tasks 1 to 21 are done. Each screen is checked by eye at
+**Here: Phase 17 Task 22b, tables and follow-ups (TBS-9, TBS-11, TBS-19, TBS-14, TILL-17, TILL-19)**,
+then Task 23 onward; Tasks 1 to 21 and 22a are done. Each screen is checked by eye at
 1024x768 and 1366x768 before it is ticked: the audit's walk (a demo venue
 from `mez setup -demo-menu` in a scratch data directory, a scripted
 Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel

@@ -1,7 +1,8 @@
 // The rail's "..." (D03's More Actions): what the order screen can do that the
-// design does not draw a button for. Orders (every open order, the way to bring
-// another to the front or start one), the history of this order, a discount on
-// the whole of it, firing the next course, and past bills (ADR-151).
+// design does not draw a button for. Open orders (every open order, the way to
+// bring another to the front or start one), this order's history, a discount
+// on the whole of it, firing the next course, and today's orders (ADR-151).
+// How many orders are open is on the button itself, not only inside (TILL-9).
 
 import { ClockIcon, EllipsisIcon, ListOrderedIcon, PercentIcon, ReceiptTextIcon, FlameIcon, WalletIcon, type LucideIcon } from "lucide-react";
 import { cx } from "../../../shared/ui/cx";
@@ -36,16 +37,24 @@ export function MoreActions({ orderCount, hasOrder, canDiscount, nextCourse, onO
       <button
         ref={trigger}
         type="button"
-        aria-label="More actions"
+        aria-label={orderCount > 0 ? `More actions, ${orderCount} open ${orderCount === 1 ? "order" : "orders"}` : "More actions"}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={toggle}
         className={cx(
-          "flex size-tap items-center justify-center rounded-round border border-line-strong outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2",
+          "relative flex size-tap items-center justify-center rounded-round border border-line-strong outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2",
           open && "bg-raised-high",
         )}
       >
         <EllipsisIcon aria-hidden="true" size={18} />
+        {orderCount > 0 && (
+          <span
+            aria-hidden="true"
+            className="absolute -right-1.5 -top-1.5 flex min-w-6 items-center justify-center rounded-pill bg-attention px-1.5 font-mono text-sm font-bold tabular-nums text-attention-fg"
+          >
+            {orderCount}
+          </span>
+        )}
       </button>
       {open && (
         <div
@@ -64,10 +73,10 @@ export function MoreActions({ orderCount, hasOrder, canDiscount, nextCourse, onO
               onClick={pick(pay.onPay)}
             />
           )}
-          <ActionItem icon={ListOrderedIcon} label="Orders" detail={String(orderCount)} onClick={pick(onOrders)} />
+          <ActionItem icon={ListOrderedIcon} label="Open orders" detail={String(orderCount)} onClick={pick(onOrders)} />
           <ActionItem
             icon={ClockIcon}
-            label="Order history"
+            label="This order's history"
             disabled={!hasOrder}
             hint={hasOrder ? undefined : "Nothing on the order yet."}
             onClick={pick(onHistory)}
@@ -80,7 +89,7 @@ export function MoreActions({ orderCount, hasOrder, canDiscount, nextCourse, onO
             onClick={pick(onDiscount)}
           />
           {nextCourse !== null && <ActionItem icon={FlameIcon} label={`Fire course ${nextCourse}`} onClick={pick(() => onFire(nextCourse))} />}
-          <ActionItem icon={ReceiptTextIcon} label="Past bills" onClick={pick(onPastBills)} />
+          <ActionItem icon={ReceiptTextIcon} label="Today's orders" onClick={pick(onPastBills)} />
         </div>
       )}
     </div>

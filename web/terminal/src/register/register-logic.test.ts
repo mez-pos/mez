@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import type { MenuItemResponse, ModifierGroupResponse } from "../../../shared/api-types";
 import {
   addLineFor,
+  cardLabel,
   categoryIconKey,
   choiceCount,
+  choicesText,
   defaultModifiers,
   dietFilterActive,
   dietSummary,
@@ -240,5 +242,18 @@ describe("sidebarEntries and itemsForView", () => {
     expect(itemsForView("popular", menu).map((i) => i.id)).toEqual([1]);
     expect(itemsForView(1, menu).map((i) => i.id)).toEqual([1, 3]);
     expect(itemsForView(9, menu)).toEqual([]);
+  });
+});
+
+describe("the words on a dish card", () => {
+  it("counts its choices in English (TILL-20)", () => {
+    expect(choicesText(1)).toBe("1 choice");
+    expect(choicesText(5)).toBe("5 choices");
+  });
+  it("names the dish first for a screen reader, then its price and marks (TILL-14)", () => {
+    const coffee = { name: "Filter coffee", diet: "veg" as const, gluten_free: true, popular: true };
+    expect(cardLabel(coffee, "₹60.00", 5, false)).toBe("Filter coffee, ₹60.00, vegetarian, gluten free, popular, 5 choices");
+    expect(cardLabel({ name: "Upma", diet: "" as const, gluten_free: false, popular: false }, "₹90.00", 0, false)).toBe("Upma, ₹90.00");
+    expect(cardLabel(coffee, "₹60.00", 5, true)).toBe("Filter coffee, sold out");
   });
 });

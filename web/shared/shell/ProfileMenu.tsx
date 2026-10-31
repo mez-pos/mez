@@ -1,6 +1,6 @@
 // Who is signed in, and what they may do about it. The avatar and name are the
 // button; the choices open under it, as a disclosure (use-disclosure.ts). The
-// terminal gives it Lock, Close the shift and Print queue (flow map); the back
+// terminal gives it Lock, Close the day and Print queue (flow map); the back
 // office gives it Sign out (D12).
 
 import { ChevronDownIcon, type LucideIcon } from "lucide-react";

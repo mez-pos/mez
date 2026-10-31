@@ -14,6 +14,7 @@ import type {
   TenderResponse,
   TotalsResponse,
 } from "../../../shared/api-types";
+import { venueTime } from "../../../shared/venue-clock";
 import { serviceLabels } from "../register/rail-logic";
 import { methodNames } from "../tender/tender-logic";
 import { voidable } from "./bills-logic";
@@ -80,9 +81,33 @@ export function collectWords(progress: GuestRoundProgress | undefined): { label:
   }
 }
 
-/** What a row is called: its invoice number once it has one, else its order id. */
-export function orderNumber(o: Pick<DayOrderResponse, "id" | "invoice_no">): string {
-  return o.invoice_no || o.id;
+/**
+ * A row's number: its invoice number once it has one, else a dash. Its time
+ * and its items are columns of their own, and its `ord_` id is the system's,
+ * not a name staff use (TILL-8, TBS-7, ADR-393).
+ */
+export function orderNumber(o: Pick<DayOrderResponse, "invoice_no">): string {
+  return o.invoice_no || "–";
+}
+
+/**
+ * What staff call an order where it stands alone (TILL-8, TBS-7, ADR-393):
+ * its invoice number once it has one; before that, when it was opened, on
+ * the venue's clock, and its first dish: "12:40 PM · Masala dosa". Never its
+ * `ord_` id.
+ */
+export function orderName(o: { invoiceNo?: string | undefined; openedAt: string; firstItem?: string | undefined }, timezone: string | null): string {
+  if (o.invoiceNo) return o.invoiceNo;
+  const opened = venueTime(o.openedAt, timezone);
+  return o.firstItem ? `${opened} · ${o.firstItem}` : opened;
+}
+
+/** The name of an order as the till holds it: its first invoice, when it was opened, its first dish still on it. */
+export function ticketName(order: Pick<OrderResponse, "invoices" | "opened_at" | "lines">, timezone: string | null): string {
+  return orderName(
+    { invoiceNo: order.invoices[0]?.invoice_no, openedAt: order.opened_at, firstItem: order.lines.find((l) => l.status !== "voided")?.name },
+    timezone,
+  );
 }
 
 /** A row's table, by the floor's name for it; an order to collect's code; a dash when it has neither. */

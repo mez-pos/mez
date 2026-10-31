@@ -50,9 +50,13 @@ export function readyLines(order: OrderResponse | undefined): ReadonlySet<number
   return ready;
 }
 
-/** "Send to Kitchen", or "Sent" when nothing is waiting. */
-export function sendLabel(plan: SendPlan): string {
-  return plan.waiting > 0 ? "Send to Kitchen" : "Sent";
+/**
+ * "Send to Kitchen", or "Sent" once everything on the order has gone. An
+ * order with nothing on it has sent nothing: it says Send to Kitchen, shut
+ * (TBS-10, ADR-393).
+ */
+export function sendLabel(plan: SendPlan, live = true): string {
+  return plan.waiting > 0 || !live ? "Send to Kitchen" : "Sent";
 }
 
 /** What one Send would do, line by line, for the waiter to read before it goes (T04). */

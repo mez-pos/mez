@@ -10,11 +10,12 @@
 import { CrownIcon, PlusIcon, WheatOffIcon } from "lucide-react";
 import type { MenuItemResponse, ModifierGroupResponse } from "../../../shared/api-types";
 import { photoUrl } from "../../../shared/menu";
+import { formatMoney } from "../../../shared/money";
 import { Money, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { DietMark } from "../../../shared/ui/DietMark";
 import { CategoryIcon } from "./CategoryIcon";
-import { choiceCount, type CardTap, type CategoryIconKey } from "./register-logic";
+import { cardLabel, choiceCount, choicesText, type CardTap, type CategoryIconKey } from "./register-logic";
 
 interface ItemGridProps {
   items: readonly MenuItemResponse[];
@@ -51,7 +52,8 @@ export function ItemGrid({ items, groupsFor, iconFor, onTap, soldOut, dense = fa
               type="button"
               onClick={() => onTap(item, "card")}
               disabled={gone}
-              aria-label={gone ? `${item.name}, sold out` : undefined}
+              // Its name first: read in order, the card began "Popular Vegetarian" (TILL-14).
+              aria-label={cardLabel(item, formatMoney(item.price), choices, gone)}
               className={cx(
                 "flex h-full w-full flex-col overflow-hidden rounded-card border border-line text-left",
                 "outline-offset-2 outline-line-focus focus-visible:outline-2",
@@ -86,7 +88,7 @@ export function ItemGrid({ items, groupsFor, iconFor, onTap, soldOut, dense = fa
                 </span>
                 {item.description && <span className="line-clamp-2 text-sm text-fg-muted short:line-clamp-1">{item.description}</span>}
                 {gone && <StatusChip status={{ kind: "menu", status: "sold_out" }} className="self-start px-2 py-0" />}
-                {choices > 0 && !gone && <span className="text-sm text-fg-muted">{choices} choices</span>}
+                {choices > 0 && !gone && <span className="text-sm text-fg-muted">{choicesText(choices)}</span>}
                 <span className="mt-auto flex items-center gap-2 pt-2">
                   <Money amount={item.price} className={cx("text-lg font-semibold", gone ? "text-fg-muted" : "text-fg-heading")} />
                   {item.popular && (

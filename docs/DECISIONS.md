@@ -15065,3 +15065,42 @@ what it is, a void that arrives as it happens and is not struck out of sight, an
 that says what it is.
 Cost: a void of a line never sent still names no station (nothing on a board shows it). A
 ticket whose only line is voided stays in New Orders with Start preparing until it is moved.
+
+## ADR-393 - The till's words: what an order is called, and one name for each place
+2026-10 · Status: accepted. Phase 17 Task 22a (TILL-8, TBS-7, TILL-9, TBS-8, TBS-10, TBS-18,
+TILL-20, TILL-14, TILL-22, TILL-23); Task 22 split in two on 2026-10-31.
+Context: staff saw orders named by the system's ids: "Paid for ord_Z2ZE58WG" beside the
+invoice number, `ord_` under the table name in the open orders, at the head of the tender
+and of a bill without an invoice. "Orders" named three places: the register's pill, the
+sheet of open orders, and today's list; the open count hid inside "...". An order with
+nothing on it said "Sent". The profile menu said "Close the shift" and opened "Close the
+day". A dish with one group of choices said "1 choices", and a card was read out "Popular
+Vegetarian Filter coffee". The PIN pad was dimmed and silent until a name was chosen. The
+UPI wait said "Scan to pay" over a QR-like icon that was not a code.
+Decision:
+  - **An order is called by its invoice number** once it has one, and before that by when it
+    was opened and its first dish, on the venue's clock: "12:40 PM · Masala dosa"
+    (`orderName`, `ticketName`). Never its `ord_` id, which stays in the bill's facts as a
+    reference. In today's list, whose time and items are columns, a row with no invoice
+    says "–" for its number.
+  - **One name for each place**: the register's pill is **Till**; the sheet of open orders
+    is **Open orders**, with its count on the "..." button as well as inside; the day's list
+    is **Today's orders**, from Tables, the "..." and the open orders sheet alike; this
+    order's timeline is **This order's history**. The plan said "Past bills" for the day's
+    list; it lists today's open orders too, and close of day sends you to its Open tab, so
+    it is named for what it holds.
+  - **"Sent" only once something was**: an order with nothing on it says Send to Kitchen,
+    shut. **"Close the day"** in the profile menu, the name of what it opens.
+  - **"1 choice"**; a dish card is announced name first: "Filter coffee, ₹60.00,
+    vegetarian, gluten free, popular, 5 choices".
+  - **The pad is live before a name is chosen**: a key pressed says "Tap your name first."
+    (ADR-056's dots stand, as ADR-381 said).
+  - **The UPI wait says "Guest pays by UPI"** over a phone, not a code: the guest scans the
+    venue's own code, not the till.
+Rejected: a short daily order number ("#14") now (the server has none; the time and first
+dish name an order well enough until one is added); "Orders" kept for the register with the
+other two renamed (the pill is the place staff go to sell, and they call it the till).
+Because: staff name an order by what they can see, a table, a time, a dish, a receipt's
+number, and a place by what it is for; one word for three places sends them to the wrong one.
+Cost: an order's name before payment changes once it is invoiced. Task 22b (the table
+words, one free count, the requests sheet, a receipt not printed) is next.

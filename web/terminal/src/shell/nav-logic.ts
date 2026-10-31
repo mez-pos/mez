@@ -22,7 +22,8 @@ export const backOffice = { menu: "/backoffice/menu", reports: "/backoffice/sale
 
 export function navItems(permissions: readonly Permission[]): NavItem[] {
   const items: NavItem[] = [
-    { id: "orders", label: "Orders", href: route.order, external: false },
+    // The order screen is the Till: "Orders" also named the open orders and today's list (TILL-9).
+    { id: "orders", label: "Till", href: route.order, external: false },
     { id: "tables", label: "Tables", href: route.tables, external: false },
   ];
   if (permissions.includes("menu.edit")) items.push({ id: "menu", label: "Menu", href: backOffice.menu, external: true });
@@ -30,7 +31,7 @@ export function navItems(permissions: readonly Permission[]): NavItem[] {
   return items;
 }
 
-/** The pill to show pressed for a path: Orders covers the order screen, its history and paying. */
+/** The pill to show pressed for a path: Till covers the order screen, today's orders and paying. */
 export function activeNav(path: string): NavId | null {
   if (path === route.order || path === route.orders || path.startsWith(`${route.orders}/`) || path.startsWith("/pay/")) return "orders";
   if (path === route.tables) return "tables";

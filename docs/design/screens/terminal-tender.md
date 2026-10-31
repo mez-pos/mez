@@ -75,7 +75,8 @@ then two); at 1366 one row.
 **After Collect, for card and UPI** (D08b), one card in the middle:
 
 - **Waiting:** "Card · Waiting on the card machine" and "Insert or tap card",
-  or "UPI · Waiting" and "Scan to pay"; the amount; what to do ("Key this
+  or "UPI · Waiting" and "Guest pays by UPI" over a phone, not a code: the
+  guest scans the venue's own code (TILL-23, ADR-393); the amount; what to do ("Key this
   amount on the card machine.", and that it has a tip in it); "Waiting for
   payment · 0:24"; a field for the slip reference or the UPI transaction ID,
   optional; **Cancel** and **Mark as paid**.
@@ -133,7 +134,8 @@ cards are under them, one across at 1024 and two at 1366.
   number."
 - **Right, `w-rail`, on the sunken ground:** **Payment successful** in the
   serif's heading ink (ADR-381: terracotta asks for attention a paid bill
-  does not need), the amount paid large, "Paid for ord_..." with where, how
+  does not need), the amount paid large, "Paid for INV/26-27/000041" (the
+  order's name: its invoice number, never its `ord_` id, TILL-8) with where, how
   served and by what; tips, apart; **Change to return** when cash is owed
   back; a script thank-you; a table's lines the kitchen has not seen, as a
   warning with **Send now** (TILL-1); **Print receipt**; and **Next order**

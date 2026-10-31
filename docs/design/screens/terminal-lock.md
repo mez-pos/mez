@@ -45,7 +45,9 @@ scrolls at 1024x768 or 1366x768:
   - **The pad** (`LoginPad`), 30rem at most: a well with the chosen person's
     name at its left ("Choose a profile" before anyone is) and the PIN dots in
     its middle; under it a 3 by 4 grid of keys: 1 to 9, delete, 0, and the
-    green **Login** with its arrow as the twelfth key.
+    green **Login** with its arrow as the twelfth key. The keys are live
+    before a name is chosen: one pressed says "Tap your name first." on the
+    error line (TILL-22, ADR-381, ADR-393).
   - The error line, always reserved.
   - "Forgot your PIN? Ask a manager to reset it."
   - **The foot:** the venue's name, the connection indicator, and the venue's

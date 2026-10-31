@@ -77,6 +77,23 @@ export function addLineFor(item: MenuItemResponse, modifiers: readonly LineModif
 }
 
 /** How many choices an item offers, for its tile. */
+/** "1 choice", "5 choices" (TILL-20). */
+export function choicesText(n: number): string {
+  return n === 1 ? "1 choice" : `${n} choices`;
+}
+
+/**
+ * What a dish card is called for a screen reader: its name first, then its
+ * price and what marks it, "Filter coffee, ₹60.00, vegetarian, gluten free,
+ * popular, 5 choices", where reading the card out began with "Popular
+ * Vegetarian" (TILL-14, ADR-393).
+ */
+export function cardLabel(item: Pick<MenuItemResponse, "name" | "diet" | "gluten_free" | "popular">, price: string, choices: number, soldOut: boolean): string {
+  const diet = item.diet === "veg" ? "vegetarian" : item.diet === "non_veg" ? "non-vegetarian" : item.diet === "vegan" ? "vegan" : null;
+  const marks = [price, diet, item.gluten_free ? "gluten free" : null, item.popular ? "popular" : null, choices > 0 ? choicesText(choices) : null];
+  return [item.name, ...(soldOut ? ["sold out"] : marks)].filter(Boolean).join(", ");
+}
+
 export function choiceCount(groups: readonly ModifierGroupResponse[]): number {
   return groups.reduce((n, g) => n + g.modifiers.length, 0);
 }

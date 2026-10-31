@@ -8,6 +8,8 @@ import { ArrowLeftIcon, FileTextIcon, TagIcon, UsersIcon, UtensilsIcon } from "l
 import type { OrderResponse, TenderResponse } from "../../../shared/api-types";
 import { Button, Money } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { useVenueClock } from "../../../shared/use-venue";
+import { ticketName } from "../bills/orders-logic";
 import { OrderTotals } from "../register/OrderTotals";
 import { guestsText, serviceLabels } from "../register/rail-logic";
 import { methodNames } from "./tender-logic";
@@ -24,6 +26,7 @@ interface PaySummaryProps {
 }
 
 export function PaySummary({ order, title, busy, onDiscount, onNote, onBack }: PaySummaryProps) {
+  const { timezone } = useVenueClock();
   const guests = guestsText(order.covers);
   const payments = order.tenders.filter((t) => t.status !== "voided");
   const lines = order.lines.filter((l) => l.status !== "voided");
@@ -52,7 +55,7 @@ export function PaySummary({ order, title, busy, onDiscount, onNote, onBack }: P
               {guests}
             </span>
           )}
-          <span className="font-mono">{order.id}</span>
+          <span>{ticketName(order, timezone)}</span>
         </p>
       </header>
 

@@ -16,12 +16,12 @@ and leaves with a printed credit note.
 
 ## Layout
 
-Inside the frame (`terminal-shell.md`). Reached from **Order History** on
-Tables, **Past bills** under the order screen's "...", and a waiter's
-**Orders** tile.
+Inside the frame (`terminal-shell.md`). Reached from **Today's orders** on
+Tables, under the order screen's "..." and in the open orders sheet, and a
+waiter's **Orders** tile (one name for one place, TILL-9, ADR-393).
 
 - **The list, the rest of the width:**
-  - **Orders** in the serif, and under it "86 orders today · ₹24,580.00
+  - **Today's orders** in the serif, and under it "86 orders today · ₹24,580.00
     collected". At the right, **Print queue**, in danger with "(2 not
     printed)" while anything has failed, and **New Order** (terracotta).
   - **The tabs**, as pills with their counts: **All**, **To collect**,
@@ -36,7 +36,8 @@ Tables, **Past bills** under the order screen's "...", and a waiter's
     table, so six columns are left and Items keeps a real width: at 1024x768,
     beside the panel, Items is about 130px and View is whole. A row is one
     button, 56px; the picked one has the green tint. The number is the
-    invoice's once there is one.
+    invoice's once there is one, and "–" before (its time and items are
+    columns; its `ord_` id is not a name, TILL-8).
   - **Before today**, under the day's rows, when a search finds settled
     bills from earlier.
   - **An order to collect** (ADR-253), paid for on a guest's phone: its
@@ -51,7 +52,8 @@ Tables, **Past bills** under the order screen's "...", and a waiter's
     collected."
 - **The order, 384px, 440px from 1536px, chrome.** With none picked: "Pick an
   order to see it."
-  - **The head:** the invoice number, or the order's id, in the serif; where
+  - **The head:** the invoice number, or before one the time it was opened and
+    its first dish ("12:40 PM · Masala dosa", TBS-7), in the serif; where
     and when; and its status chip. Under them, in a tinted band, where the
     money stands: **Amount due ₹500.00** (mustard) while anything is due, else
     **Paid ₹860.00** (green) while anything stands paid; no band for an

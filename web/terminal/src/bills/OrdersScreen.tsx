@@ -76,10 +76,10 @@ export function OrdersScreen({ selectedId, names, initialTab = "all", onSelect, 
 
   return (
     <div className="flex min-w-0 flex-1">
-      <section aria-label="Orders" className="flex min-w-0 flex-1 flex-col px-4 pb-4 pt-4 xl:px-6 xl:pb-5 xl:pt-5 2xl:px-7 2xl:pt-6">
+      <section aria-label="Today's orders" className="flex min-w-0 flex-1 flex-col px-4 pb-4 pt-4 xl:px-6 xl:pb-5 xl:pt-5 2xl:px-7 2xl:pt-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="font-serif text-total leading-tight">Orders</h1>
+            <h1 className="font-serif text-total leading-tight">Today&apos;s orders</h1>
             <p className="mt-1 text-base text-fg-muted" aria-live="polite">
               {day.data ? (
                 <>

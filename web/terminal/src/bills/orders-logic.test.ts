@@ -6,6 +6,7 @@ import {
   countText,
   filterOrders,
   itemsText,
+  orderName,
   orderNumber,
   pastStatus,
   paymentText,
@@ -43,7 +44,8 @@ describe("tabCounts", () => {
 describe("orderNumber", () => {
   it("is the invoice number once there is one", () => {
     expect(orderNumber(day[1]!)).toBe("INV/26-27/000041");
-    expect(orderNumber(day[0]!)).toBe("ord_OPEN");
+    // Not its ord_ id, which is the system's (TILL-8).
+    expect(orderNumber(day[0]!)).toBe("–");
   });
 });
 
@@ -271,5 +273,18 @@ describe("tabFrom", () => {
     expect(tabFrom("")).toBe("all");
     expect(tabFrom("?tab=closed")).toBe("all");
     expect(tabFrom("?q=42")).toBe("all");
+  });
+});
+
+describe("what an order is called (TILL-8, TBS-7)", () => {
+  it("is its invoice number once it has one", () => {
+    expect(orderName({ invoiceNo: "INV/26-27/000041", openedAt: "2026-10-31T07:10:00Z", firstItem: "Masala dosa" }, "Asia/Kolkata")).toBe("INV/26-27/000041");
+  });
+  it("is when it was opened and its first dish before, never its id", () => {
+    expect(orderName({ openedAt: "2026-10-31T07:10:00Z", firstItem: "Masala dosa" }, "Asia/Kolkata")).toBe("12:40 PM · Masala dosa");
+    expect(orderName({ openedAt: "2026-10-31T07:10:00Z" }, "Asia/Kolkata")).toBe("12:40 PM");
+  });
+  it("leaves a row with no invoice a dash: its time and items are columns of their own", () => {
+    expect(orderNumber({})).toBe("–");
   });
 });

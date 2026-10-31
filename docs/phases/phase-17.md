@@ -141,9 +141,21 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
 
 ### Words staff can say
 
-- [ ] **Task 22 - Names and labels.** TILL-8, TBS-7, TILL-9, TBS-8,
-  TBS-10, TBS-18, TBS-9, TBS-11, TBS-14, TBS-19, TILL-17, TILL-19,
-  TILL-20, TILL-22, TILL-23, TILL-14.
+- **Task 22 - Names and labels.** Sixteen findings across the till, the
+  tables, the waiter's tablet, the requests and the paid step: split in two
+  on 2026-10-31, as one session's work each.
+  - [x] **Task 22a - The till's words.** Done 2026-10-31 (ADR-393). An order is named by its invoice
+    number, or its time and first dish, never its `ord_` id (TILL-8, TBS-7);
+    "Till", "Open orders" with its count in sight, "Today's orders" (TILL-9,
+    TBS-8); "Sent" only when something was (TBS-10); "Close the day" from
+    the menu that opens it (TBS-18); "1 choice" (TILL-20); a dish card
+    announced name first (TILL-14); "Tap your name first." (TILL-22); the UPI
+    wait not drawn as a code (TILL-23).
+  - [ ] **Task 22b - Tables and follow-ups.** The same table words on the
+    till and the waiter's tablet, "Seated" never beside "Ordered", "Seat and
+    order" the primary on both (TBS-9, TBS-11, TBS-19, ADR-381 item 9); one
+    free count (TBS-14); the requests sheet closes with a toast (TILL-17);
+    a receipt that did not print says so on the paid step (TILL-19).
 
 ### The guest app
 

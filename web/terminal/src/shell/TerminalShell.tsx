@@ -68,7 +68,7 @@ export function TerminalShell({ children }: { children: ReactNode }) {
   const canCloseShift = auth.permissions.includes("shift.manage") && Boolean(shift.shift);
   const account: ProfileAction[] = [
     { icon: LockIcon, label: "Lock", onClick: () => void store.signOut() },
-    ...(canCloseShift ? [{ icon: DoorClosedIcon, label: "Close the shift", onClick: () => navigate(route.shiftClose) }] : []),
+    ...(canCloseShift ? [{ icon: DoorClosedIcon, label: "Close the day", onClick: () => navigate(route.shiftClose) }] : []),
     { icon: PrinterIcon, label: "Print queue", onClick: () => setPrintOpen(true) },
   ];
 

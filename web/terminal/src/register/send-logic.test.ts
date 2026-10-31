@@ -29,6 +29,10 @@ describe("sendPlan", () => {
     expect(sendLabel(plan)).toBe("Sent");
   });
 
+  it("says Send to Kitchen, not Sent, on an order with nothing on it (TBS-10)", () => {
+    expect(sendLabel(sendPlan(order([])), false)).toBe("Send to Kitchen");
+  });
+
   it("is nothing without an order", () => {
     expect(sendPlan(undefined)).toEqual({ waiting: 0, firing: null, next: null });
   });

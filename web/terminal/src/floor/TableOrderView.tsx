@@ -129,7 +129,10 @@ export function TableOrderView({ table, orderId, onAddItems, onSettle, onMode, o
           </Button>
           <Button className="flex-1 px-3" disabled={busy || held || sendWaits || plan.waiting === 0} onClick={() => run(send)}>
             <SendIcon aria-hidden="true" size={17} />
-            {sendLabel(plan)}
+            {sendLabel(
+              plan,
+              order.lines.some((l) => l.status === "active"),
+            )}
           </Button>
         </div>
         <div className="mt-3 flex gap-3">

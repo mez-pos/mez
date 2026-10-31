@@ -38,7 +38,8 @@ middle and scrolls inside itself, so an order's total never leaves the screen.
 **Desktop frame:**
 
 - **Top bar, 72px:** the logo; the navigation as pills, each 48px with an
-  icon, the pressed one the green fill: **Orders**, **Tables**, and for those
+  icon, the pressed one the green fill: **Till** (the order screen; "Orders"
+  also named the open orders and today's list, TILL-9, ADR-393), **Tables**, and for those
   who may open them **Menu** (`menu.edit`) and **Reports** (`reports.view`).
   At the right: **Retry now** while the server is down; **N table
   requests** while a guest's request waits (`terminal-requests.md`); **Not
@@ -72,7 +73,7 @@ screen reader. Any other state ("Reconnecting", "Server unreachable") keeps
 its word at every width.
 - **No status bar.** The top bar says whether the server is there.
 
-**The profile menu** opens under the name: **Lock**; **Close the shift**, for
+**The profile menu** opens under the name: **Lock**; **Close the day** (the name of what it opens, TBS-18), for
 someone with `shift.manage` while a shift is open; **Print queue**.
 
 ## Paths
@@ -117,7 +118,7 @@ Anywhere else is landed again by role.
 | Menu, Reports | Leave for `/backoffice/menu`, `/backoffice/sales` | The back office is another app: it has its own pairing and sign-in |
 | The profile | Opens its menu | Focus moves to the first choice; Escape, a tap elsewhere or Tab leaving closes it |
 | Lock | Ends the session, locally even if the server cannot be told | Staff Login |
-| Close the shift | Opens `/shift/close` | Close the day |
+| Close the day | Opens `/shift/close` | Close the day |
 | Print queue, Not printed | Opens the print queue sheet | `terminal-print-queue.md` |
 | Retry now | Tries the stream at once | The connection word follows |
 | More (waiter) | Opens Floor plan, Your shift, Print queue | Pressed on the floor plan and the shift summary |
@@ -171,7 +172,7 @@ Every screen inside the frame waits on the shift (`shiftGate`, ADR-094):
   while a request waits (`terminal-requests.md`, ADR-212).
 - **Search in the top bar:** each screen that searches has its own.
 
-Kept, though the design does not draw it (rule 4): Lock, Close the shift and
+Kept, though the design does not draw it (rule 4): Lock, Close the day and
 Print queue under the profile; Floor plan, Your shift and Print queue under a
 waiter's More; the Not printed pill, because a receipt that did not print must
 not wait for someone to look for it.

@@ -42,7 +42,7 @@ below.
     photo or, with none, its category's icon on the sunken ground. Under it:
     the diet mark (a dot or a triangle, ADR-389), the name in the serif, the
     gluten-free mark (the wheat icon and "GF"), up to two lines
-    of description, "6 choices" when it has any, then the price with a crown
+    of description, "6 choices" ("1 choice") when it has any, then the price with a crown
     beside it when popular, and a round terracotta **+**, 48px, bottom right.
 - **The order rail, `w-rail`, chrome:**
   - **The head:** where the order is in the serif ("Table T4", "Table T4 +
@@ -105,9 +105,13 @@ of a six-item order at 1366, with no label cut off at 1024 (TILL-2, TILL-3).
   (the total is just above it), so the three words fit 288px. Beside
   "Invoice and close" there is no room, so Send keeps its own row there.
 
-**The "..." menu** holds what the design draws no button for: **Orders** with
-the count open, **Order history**, **Discount the order**, **Fire course N**
-when a course is held back, **Past bills**.
+**The "..." menu** holds what the design draws no button for: **Open orders**
+with the count open, **This order's history**, **Discount the order**, **Fire
+course N** when a course is held back, **Today's orders**. The count is also a
+terracotta badge on the "..." button, and in its name ("More actions, 3 open
+orders"), so it is not hidden (TILL-9, ADR-393). A dish card is announced name
+first: "Filter coffee, ₹60.00, vegetarian, gluten free, popular, 5 choices"
+(TILL-14).
 
 ## The item modal (D04)
 
@@ -151,9 +155,10 @@ Side panels on a desktop, bottom sheets on touch; one at a time.
 - **Note on the order:** "Everyone working this order sees it", up to 200
   characters, **Add note**.
 - **Orders:** every order not closed, oldest first: where it is, a Held or
-  Settling chip, its id, its item count, its total, and how long it has run; a
+  Settling chip, when it was opened ("Opened 12:40 PM", not its id, TILL-8), its item count, its total, and how long it has run; a
   Late chip and terracotta time past the venue's limit (20 minutes by
-  default); "On screen" on the one in front. Under them **Past bills**,
+  default); "On screen" on the one in front. The sheet is **Open orders**.
+  Under them **Today's orders**,
   and **New order**: **Counter sale** and **Seat a table**. Closing the
   day is not here: it is under the profile, for someone with
   `shift.manage` (ADR-197).
