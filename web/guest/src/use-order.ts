@@ -34,6 +34,10 @@ export interface OrderApi {
   place: () => Promise<boolean>;
   /** Asks now how the order placed stands: its payment has just been answered. */
   refresh: () => void;
+  /** The venue answered "not found" for the order placed: it no longer has it (GST-3). */
+  lost: boolean;
+  /** Since when asking about the order has failed, by the phone's clock, or null while it is answered (GST-3). */
+  failingSince: number | null;
 }
 
 // Storage can be refused. An order is then remembered for as long as the
@@ -70,9 +74,13 @@ export function useOrder(code: string, cart: CartApi): OrderApi {
   // asked: a poll can take ten seconds on 3G, and a newer order may have
   // been placed meanwhile.
   const currentId = useRef<string | null>(placed?.round.id ?? null);
+  // Since when asking has failed: one failure is not news, a run of them is
+  // a connection the screen must not hide (GST-3, ADR-395).
+  const [failingSince, setFailingSince] = useState<number | null>(null);
 
   const keep = (next: Placed) => {
     currentId.current = next.round.id;
+    setFailingSince(null);
     setPlaced(next);
     // A sent order says which bill it is on: remembered for the receipt.
     keepBill(code, next.round.bill);
@@ -96,7 +104,9 @@ export function useOrder(code: string, cart: CartApi): OrderApi {
         if (next) keep(next);
       })
       .catch((err: unknown) => {
-        if (orderGone(err) && currentId.current === asked.round.id) setGone(asked.round.id);
+        if (currentId.current !== asked.round.id) return;
+        if (orderGone(err)) setGone(asked.round.id);
+        else setFailingSince((since) => since ?? Date.now());
       });
   };
   // An order just sent has not been asked about at its own address yet:
@@ -147,5 +157,5 @@ export function useOrder(code: string, cart: CartApi): OrderApi {
 
   const refresh = ask;
 
-  return { placed, placing, error, place, refresh };
+  return { placed, placing, error, place, refresh, lost, failingSince };
 }

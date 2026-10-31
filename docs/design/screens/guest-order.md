@@ -40,6 +40,14 @@ guess at how long, and never "being made" before a cook has started it.
     from the menu at any time. You pay when you are ready to leave."
   - declined, in the danger tint: "This order was not accepted. Nothing was
     sent to the kitchen. Please ask a member of staff."
+  - under each, small: "Placed at 6:42 PM · 3 minutes ago", by the phone's
+    clock; and after five minutes still waiting, "No answer yet? Please ask
+    a member of staff: they may not have seen it." (GST-3, ADR-395)
+- **What the screen cannot know,** under the card: after twenty seconds
+  of failed checks, in the warning tone, "We can't reach the venue right
+  now, so this may be out of date. Trying again."; once the venue answers
+  that it no longer has the order, in the danger tint, "The venue no longer
+  has this order. Please ask a member of staff." (GST-3)
   - unpaid, where guests pay first, in the warning tone: "Pay to send your
     order. Nothing is sent to the kitchen until this order is paid for."
   - sent after paying first: "Paid, and with the kitchen" until a cook
@@ -69,11 +77,15 @@ guess at how long, and never "being made" before a cook has started it.
 - **At the foot:** **Order more**, the primary, once sent; under it
   **Order this again** (ADR-242), secondary, unless the order was
   cancelled; and **See the table's bill** (`guest-bill.md`). **Back to the
-  menu**, secondary, while waiting or declined.
+  menu**, secondary, while waiting or declined. A declined or cancelled order
+  has **Put these back in my cart**, the primary: its dishes go back in the
+  cart it emptied, to change and place again (GST-5, ADR-395).
 - **The strip,** over the menu and the cart while the phone remembers an
   order: "Your order: Waiting to be accepted", "Sent to the kitchen",
   "Being made", "Ready", "Accepted", "Cancelled" or "Not accepted", in the
-  state's tone, and **View**. The whole strip is the button.
+  state's tone, and **View**. The whole strip is the button. It sits with
+  the screen's head in one sticky block, so it is in sight wherever the page
+  is scrolled: a decline is never scrolled out of view (GST-4, ADR-395).
 
 ## Data
 

@@ -5,6 +5,7 @@
 
 import { ApiError, isUnreachable } from "../../shared/api";
 import type { GuestOrderRequest, GuestRoundProgress, GuestRoundResponse, GuestRoundStatus, Money } from "../../shared/api-types";
+import { venueTime } from "../../shared/venue-clock";
 import type { PricedLine } from "./cart-logic";
 
 /** How often a waiting order asks whether it has been answered. */
@@ -345,4 +346,43 @@ export function refusalOf(error: unknown): Refusal {
     default:
       return { text: "Something went wrong and your order was not placed. Try again, or order at the counter.", readMenu: false };
   }
+}
+
+/** How long asking may fail before the screen says it cannot reach the venue (GST-3, ADR-395). */
+export const UNREACHED_AFTER_MS = 20_000;
+
+/** How long an order may wait to be accepted before the guest is told to ask (GST-3). */
+export const ASK_STAFF_AFTER_MS = 5 * 60_000;
+
+export interface CheckNote {
+  readonly text: string;
+  /** danger: the order is lost; warning: what is shown may be out of date. */
+  readonly tone: "danger" | "warning";
+}
+
+/**
+ * What the order screen says of its own knowledge, or null when it has
+ * nothing to add (GST-3, ADR-395). A screen that kept saying "Waiting" could
+ * not tell a slow venue from a lost connection or a lost order: the venue no
+ * longer has it, or it has not been reached for twenty seconds.
+ */
+export function checkNote(lost: boolean, failingSince: number | null, now: number): CheckNote | null {
+  if (lost) return { text: "The venue no longer has this order. Please ask a member of staff.", tone: "danger" };
+  if (failingSince !== null && now - failingSince >= UNREACHED_AFTER_MS) {
+    return { text: "We can't reach the venue right now, so this may be out of date. Trying again.", tone: "warning" };
+  }
+  return null;
+}
+
+/** "Placed at 6:42 PM · 3 minutes ago", by the phone's clock (GST-3). */
+export function placedText(at: number, now: number): string {
+  const minutes = Math.max(0, Math.floor((now - at) / 60_000));
+  const ago = minutes === 0 ? "just now" : minutes === 1 ? "1 minute ago" : `${minutes} minutes ago`;
+  return `Placed at ${venueTime(new Date(at), null)} · ${ago}`;
+}
+
+/** After five minutes waiting to be accepted, the guest is told to ask; null before, and for any other status. */
+export function waitingNudge(placed: Pick<Placed, "round" | "at">, now: number): string | null {
+  if (placed.round.status !== "waiting" || now - placed.at < ASK_STAFF_AFTER_MS) return null;
+  return "No answer yet? Please ask a member of staff: they may not have seen it.";
 }

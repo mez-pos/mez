@@ -3,7 +3,7 @@
 // the phone's own until then; what is sent is ids and counts, and the venue
 // prices it (ADR-210, ADR-213).
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { formatMoney } from "../../shared/money";
 import { Button } from "../../shared/ui/Button";
 import { DietMark } from "../../shared/ui/DietMark";
@@ -25,9 +25,11 @@ interface CartProps {
   collect?: boolean;
   /** The bill adds tax to the menu's prices (the venue's tax_added, ADR-386). */
   taxAdded: boolean;
+  /** The order placed, over the head, sticking with it (GST-4). */
+  strip?: ReactNode;
 }
 
-export function Cart({ cart, order, onBack, onPlaced, onBill, collect = false, taxAdded }: CartProps) {
+export function Cart({ cart, order, onBack, onPlaced, onBill, collect = false, taxAdded, strip }: CartProps) {
   const place = () => {
     void order.place().then((ok) => {
       if (ok) onPlaced();
@@ -35,30 +37,34 @@ export function Cart({ cart, order, onBack, onPlaced, onBill, collect = false, t
   };
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-canvas text-fg">
-      <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-line bg-chrome px-2">
-        <button
-          type="button"
-          aria-label="Back to the menu"
-          onClick={onBack}
-          className="flex size-tap items-center justify-center rounded-round outline-line-focus hover:bg-raised-high focus-visible:outline-2"
-        >
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 24 24"
-            className="size-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+      {/* The order's strip and the head stick together: a decline is never scrolled out of sight (GST-4). */}
+      <div className="sticky top-0 z-10">
+        {strip}
+        <header className="flex h-14 items-center gap-3 border-b border-line bg-chrome px-2">
+          <button
+            type="button"
+            aria-label="Back to the menu"
+            onClick={onBack}
+            className="flex size-tap items-center justify-center rounded-round outline-line-focus hover:bg-raised-high focus-visible:outline-2"
           >
-            <path d="M19 12H5M11 6l-6 6 6 6" />
-          </svg>
-        </button>
-        <h1 className="font-serif text-xl">Your cart</h1>
-        {cart.count > 0 && <p className="rounded-pill bg-accent-tint px-3 py-1 text-sm font-bold text-accent-text">{itemsText(cart.count)}</p>}
-        {cart.count > 0 && !order.placing && <ClearButton onClear={cart.clear} />}
-      </header>
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="size-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M19 12H5M11 6l-6 6 6 6" />
+            </svg>
+          </button>
+          <h1 className="font-serif text-xl">Your cart</h1>
+          {cart.count > 0 && <p className="rounded-pill bg-accent-tint px-3 py-1 text-sm font-bold text-accent-text">{itemsText(cart.count)}</p>}
+          {cart.count > 0 && !order.placing && <ClearButton onClear={cart.clear} />}
+        </header>
+      </div>
 
       <main className="flex flex-1 flex-col px-4 pb-8">
         <Notice text={cart.notice} onDismiss={cart.dismissNotice} />

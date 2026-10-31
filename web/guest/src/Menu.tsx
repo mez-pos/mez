@@ -3,7 +3,7 @@
 // (ItemSheet.tsx); one with no choices to make is added straight from its
 // card. The cart's bar stays at the foot while there is anything in it.
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { GuestItemResponse, GuestMenuResponse, GuestTableResponse } from "../../shared/api-types";
 import { formatMoney } from "../../shared/money";
 import { Button } from "../../shared/ui/Button";
@@ -35,13 +35,15 @@ interface MenuProps {
   menu: GuestMenuResponse;
   cart: CartApi;
   onViewCart: () => void;
+  /** The order placed, over the head, sticking with it (GST-4). */
+  strip?: ReactNode;
 }
 
 const chip = "inline-flex min-h-tap shrink-0 items-center rounded-pill border px-4 text-base outline-offset-2 outline-line-focus focus-visible:outline-2";
 const chipOff = "border-line-strong bg-raised text-fg";
 const chipOn = "border-accent bg-accent font-semibold text-accent-fg";
 
-export function Menu({ table, menu, cart, onViewCart }: MenuProps) {
+export function Menu({ table, menu, cart, onViewCart, strip }: MenuProps) {
   // The dish that is open, by id: read from the menu each time, so a sheet
   // left open shows it sold out when it does.
   const [openId, setOpenId] = useState<number | null>(null);
@@ -62,10 +64,14 @@ export function Menu({ table, menu, cart, onViewCart }: MenuProps) {
 
   return (
     <div className={cx("mx-auto min-h-dvh w-full max-w-md bg-canvas text-fg", cart.count > 0 ? "pb-28" : "pb-10")}>
-      <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-line bg-chrome px-4">
-        <Logo className="h-6" />
-        <p className="rounded-pill bg-attention-tint px-3.5 py-1.5 text-base font-bold text-attention-text">{tableLabel(table.table.name)}</p>
-      </header>
+      {/* The order's strip and the head stick together: a decline is never scrolled out of sight (GST-4). */}
+      <div className="sticky top-0 z-10">
+        {strip}
+        <header className="flex h-14 items-center justify-between border-b border-line bg-chrome px-4">
+          <Logo className="h-6" />
+          <p className="rounded-pill bg-attention-tint px-3.5 py-1.5 text-base font-bold text-attention-text">{tableLabel(table.table.name)}</p>
+        </header>
+      </div>
 
       <main className="px-4">
         <Notice text={cart.notice} onDismiss={cart.dismissNotice} />

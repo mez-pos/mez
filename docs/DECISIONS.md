@@ -15146,3 +15146,33 @@ Because: the same table must have the same name wherever a person looks at it, a
 that leaves the screen as it was, or says something untrue, is read as one that did nothing.
 Cost: the tablet's pills are five where they were four. The paid step's receipt line waits for
 the print queue's next read.
+
+## ADR-395 - The guest's order says what it knows, and what it does not
+2026-10 · Status: accepted. Phase 17 Task 23 (GST-3, GST-4, GST-5).
+Context: a guest's order screen said "Waiting for the venue to accept your order" whatever was
+happening: a slow venue, a phone that could no longer reach it, and an order the venue had lost
+read the same. A failed check was dropped in silence; a "not found" stopped the checks and
+said nothing; nothing said when the order went. The strip over the menu and the cart scrolled
+away with the page, so a decline arrived unseen. And a declined order had emptied the cart:
+the guest had nothing to change and send again.
+Decision:
+  - **When it went**: under how the order stands, "Placed at 6:42 PM · 3 minutes ago", by the
+    phone's clock. After five minutes still waiting to be accepted, "No answer yet? Please ask
+    a member of staff: they may not have seen it."
+  - **What it cannot know**, said under the card: once asking has failed for twenty seconds,
+    "We can't reach the venue right now, so this may be out of date. Trying again." (warning);
+    once the venue answers that it no longer has the order, "The venue no longer has this
+    order. Please ask a member of staff." (danger). `useOrder` keeps since when asking has
+    failed, and that the order is lost; a single failure is still not news.
+  - **The strip sticks with the screen's head**: on the menu and the cart it sits in one
+    sticky block with the header, so it is in sight wherever the page is scrolled.
+  - **"Put these back in my cart"**, the primary on a declined or cancelled order: the
+    order's dishes go back in the cart, as Order this again does for one sent, to change and
+    place again.
+Rejected: a fixed timer that says "taking longer than usual" (the venue's pace is its own;
+the time placed lets the guest judge, and five minutes is the one point to say ask); the
+strip fixed to the foot (the cart's Place Order and the menu's View cart live there); putting
+the dishes back by themselves on a decline (a guest may not want them again; the button asks).
+Because: a guest waiting on a phone has only the screen to go by, and a screen that cannot
+tell them apart makes them wait for an order that will not come.
+Cost: the waiting card is a line taller.

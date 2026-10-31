@@ -8,6 +8,17 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 22b: tables and follow-ups** (TBS-9, TBS-11, TBS-19,
+TBS-14, TILL-17, TILL-19, ADR-394), 2026-10-31. The waiter's tablet speaks
+the till's table words (Seated, Ordered, Paying, To clear, Free; a paid
+table with Ordered, its card Paid); "No guest count" where there is none,
+never "Seated"; Seat and order is the primary on the till too. The Tables
+screen's line and bars count the same tables the same way, Paid apart. The
+requests sheet closes with a toast once its last item is answered. The paid
+step says what became of its receipt from the print queue, and the queue
+words a missing printer for a cashier. Task 22 is done. Seen in a browser at
+1024.
+
 **Phase 17, Task 22a: the till's words** (TILL-8, TBS-7, TILL-9, TBS-8,
 TBS-10, TBS-18, TILL-20, TILL-14, TILL-22, TILL-23, ADR-393), 2026-10-31.
 Task 22 was split in two. An order is called by its invoice number, or its

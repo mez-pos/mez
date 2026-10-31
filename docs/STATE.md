@@ -13,7 +13,7 @@ the UI audit (`docs/design/ui-audit-2026-10-31.md`). Tasks 1 and 4 to
 12 are done: at the human's word the device-fit pass came first, built
 and seen at 1024x768, 1366x768 and 1920x1080 on 2026-10-31 (ADR-381,
 ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s,
-Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 22 (ADR-384 to ADR-394). It runs before Phase 16, which is mostly
+Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 23 (ADR-384 to ADR-395). It runs before Phase 16, which is mostly
 `mez-cloud`'s.
 
 Before it, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
@@ -28,21 +28,22 @@ list below.
 
 ## Last completed task
 
-**Phase 17, Task 22b: tables and follow-ups** (TBS-9, TBS-11, TBS-19,
-TBS-14, TILL-17, TILL-19, ADR-394), 2026-10-31. The waiter's tablet speaks
-the till's table words (Seated, Ordered, Paying, To clear, Free; a paid
-table with Ordered, its card Paid); "No guest count" where there is none,
-never "Seated"; Seat and order is the primary on the till too. The Tables
-screen's line and bars count the same tables the same way, Paid apart. The
-requests sheet closes with a toast once its last item is answered. The paid
-step says what became of its receipt from the print queue, and the queue
-words a missing printer for a cashier. Task 22 is done. Seen in a browser at
-1024.
+**Phase 17, Task 23: the guest's order tells the truth** (GST-3, GST-4,
+GST-5, ADR-395), 2026-10-31. The order screen says when the order was
+placed ("Placed at 6:42 PM · 3 minutes ago"), nudges the guest to ask staff
+after five minutes waiting, says "We can't reach the venue right now..."
+after twenty seconds of failed checks and "The venue no longer has this
+order..." on a not found (`useOrder` keeps `failingSince` and `lost`). The
+strip sticks with the menu's and the cart's head. A declined or cancelled
+order offers "Put these back in my cart". Seen on a phone at 390: placed
+time, the strip at the top after scrolling, a decline from the till and the
+dishes back in the cart, the venue out of reach and the order lost (both
+made up in the walk).
 
 ## Next task
 
-**Here: Phase 17 Task 23, order status that tells the truth (GST-3, GST-4, GST-5)**,
-then Task 24 onward; Tasks 1 to 22 are done. Each screen is checked by eye at
+**Here: Phase 17 Task 24, phone ergonomics (GST-6, GST-7, GST-8, GST-9, GST-12, GST-13, GST-14)**,
+then Task 25 onward; Tasks 1 to 23 are done. Each screen is checked by eye at
 1024x768 and 1366x768 before it is ticked: the audit's walk (a demo venue
 from `mez setup -demo-menu` in a scratch data directory, a scripted
 Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel

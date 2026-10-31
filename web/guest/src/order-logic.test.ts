@@ -7,6 +7,7 @@ import {
   TRACK_MS,
   TRACK_READY_MS,
   askAfterMs,
+  checkNote,
   drawKey,
   dueOf,
   keyFor,
@@ -16,6 +17,7 @@ import {
   orderWords,
   parsePlaced,
   pickupCodeOf,
+  placedText,
   progressWords,
   refusalOf,
   sentNote,
@@ -23,6 +25,7 @@ import {
   stepIndex,
   toRequest,
   trackedAnswer,
+  waitingNudge,
   withRound,
   type Placed,
 } from "./order-logic";
@@ -376,5 +379,29 @@ describe("trackedAnswer", () => {
   it("drops an answer about an order no longer held, or none at all", () => {
     expect(trackedAnswer(placed, "rnd_NEWER", later)).toBeNull();
     expect(trackedAnswer(placed, null, later)).toBeNull();
+  });
+});
+
+describe("an order screen that tells the truth (GST-3)", () => {
+  it("says an order the venue no longer has is lost", () => {
+    expect(checkNote(true, null, 0)).toEqual({ text: "The venue no longer has this order. Please ask a member of staff.", tone: "danger" });
+  });
+  it("says nothing of a check that failed for a moment, and that the venue cannot be reached after twenty seconds", () => {
+    expect(checkNote(false, null, 50_000)).toBeNull();
+    expect(checkNote(false, 40_000, 59_999)).toBeNull();
+    expect(checkNote(false, 40_000, 60_000)?.tone).toBe("warning");
+    expect(checkNote(false, 40_000, 60_000)?.text).toMatch(/^We can't reach the venue right now/);
+  });
+  it("says when it was placed, by the phone's clock", () => {
+    const at = new Date("2026-10-31T13:12:00Z").getTime();
+    expect(placedText(at, at + 20_000)).toBe("Placed at 6:42 PM · just now");
+    expect(placedText(at, at + 61_000)).toBe("Placed at 6:42 PM · 1 minute ago");
+    expect(placedText(at, at + 3 * 60_000)).toBe("Placed at 6:42 PM · 3 minutes ago");
+  });
+  it("tells a guest kept waiting five minutes to ask, and no one else", () => {
+    const waiting = { at: 0, round: { status: "waiting" } } as unknown as Placed;
+    expect(waitingNudge(waiting, 4 * 60_000)).toBeNull();
+    expect(waitingNudge(waiting, 5 * 60_000)).toMatch(/ask a member of staff/);
+    expect(waitingNudge({ ...waiting, round: { ...waiting.round, status: "sent" } }, 10 * 60_000)).toBeNull();
   });
 });

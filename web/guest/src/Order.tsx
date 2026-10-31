@@ -12,11 +12,12 @@ import type { GuestRoundProgress, GuestRoundStatus, GuestTableResponse } from ".
 import { formatMoney } from "../../shared/money";
 import { Button } from "../../shared/ui/Button";
 import { cx } from "../../shared/ui/cx";
+import { useClock } from "../../shared/use-clock";
 import { chargeTones } from "./Bill";
 import { itemsText, toPayLabel, totalNote } from "./cart-logic";
 import { canPayRound, chargeOpen, checkoutUrlOf, paymentStuck, roundChargeWords, stuckWords } from "./charge-logic";
 import { tableLabel } from "./Landing";
-import { dueOf, kitchenSteps, orderWords, pickupCodeOf, sentNote, stepIndex, type Placed } from "./order-logic";
+import { checkNote, dueOf, kitchenSteps, orderWords, pickupCodeOf, placedText, sentNote, stepIndex, waitingNudge, type Placed } from "./order-logic";
 import { useCharge, type ChargeApi } from "./use-charge";
 
 const tones: Readonly<Record<GuestRoundStatus, string>> = {
@@ -41,12 +42,21 @@ interface OrderProps {
   onBill: () => void;
   /** Puts this order's dishes in the cart again (ADR-242). It places nothing. */
   onAgain: () => void;
+  /** The venue no longer has this order (GST-3). */
+  lost?: boolean;
+  /** Since when asking about it has failed, or null (GST-3). */
+  failingSince?: number | null;
   /** An order to collect (guest-collect.md): no table and no bill, and a code to be called by. */
   collect?: boolean;
 }
 
-export function Order({ code, table, placed, onRefresh, onMenu, onBill, onAgain, collect = false }: OrderProps) {
+export function Order({ code, table, placed, onRefresh, onMenu, onBill, onAgain, collect = false, lost = false, failingSince = null }: OrderProps) {
   const { round } = placed;
+  // "3 minutes ago" moves on, and a failing connection is said once it has lasted.
+  const now = useClock(15_000);
+  const note = checkNote(lost, failingSince, now);
+  const nudge = waitingNudge(placed, now);
+  const declined = round.status === "declined" || (round.status === "sent" && round.progress === "cancelled");
   // The charge this phone started for this order, if it started one. An
   // order the venue did not hold has none, and this asks nothing.
   const online = useCharge(code, { round: round.id, onAnswered: onRefresh });
@@ -71,6 +81,9 @@ export function Order({ code, table, placed, onRefresh, onMenu, onBill, onAgain,
         >
           <h2 className="font-serif text-xl">{words.title}</h2>
           {words.line !== "" && <p className="mt-2 text-base">{words.line}</p>}
+          {/* When it went: a guest can judge a slow venue only by the time (GST-3). */}
+          <p className="mt-2 text-sm">{placedText(placed.at, now)}</p>
+          {nudge && <p className="mt-2 text-base font-semibold">{nudge}</p>}
           {/* Where it is among the kitchen's steps: each is a word, and the one it is at is said as well as drawn. */}
           {at >= 0 && (
             <ol className="mt-4 grid grid-cols-3 gap-2 text-sm">
@@ -86,6 +99,18 @@ export function Order({ code, table, placed, onRefresh, onMenu, onBill, onAgain,
             </ol>
           )}
         </section>
+        {/* What this screen cannot know: the venue no longer has the order, or cannot be reached (GST-3). */}
+        {note && (
+          <p
+            role="alert"
+            className={cx(
+              "mt-3 rounded-card border p-4 text-base",
+              note.tone === "danger" ? "border-line bg-danger-tint text-danger" : "border-chip-warning-border bg-chip-warning-bg text-chip-warning-fg",
+            )}
+          >
+            {note.text}
+          </p>
+        )}
         {/* What the counter calls out. Large, since it is read at arm's length and said aloud. */}
         {pickup !== null && round.progress !== "cancelled" && (
           <section aria-label="Your pickup code" className="mt-4 rounded-card border border-line bg-raised p-5 text-center shadow-card">
@@ -134,10 +159,16 @@ export function Order({ code, table, placed, onRefresh, onMenu, onBill, onAgain,
           <Button variant={round.status === "sent" ? "primary" : "secondary"} size="charge" className="w-full" onClick={onMenu}>
             {round.status !== "sent" ? "Back to the menu" : collect ? "Order something else" : "Order more"}
           </Button>
-          {/* The same again goes to the cart, to be read and placed from there. Not for an order the venue turned down or cancelled. */}
+          {/* The same again goes to the cart, to be read and placed from there. */}
           {round.status === "sent" && round.progress !== "cancelled" && (
             <Button variant="secondary" className="w-full" onClick={onAgain}>
               Order this again
+            </Button>
+          )}
+          {/* Turned down or cancelled, the cart it emptied comes back: to change and place again (GST-5). */}
+          {declined && (
+            <Button variant="primary" size="charge" className="w-full" onClick={onAgain}>
+              Put these back in my cart
             </Button>
           )}
           {/* The bill has this order on it only once it is accepted. */}

@@ -10,6 +10,16 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The guest's order tells the truth** (ADR-395, Phase 17 Task 23;
+  2026-10-31). Seen in a scripted Chromium at 390x844: "Placed at 6:24 PM ·
+  just now"; the strip at the top of the menu after scrolling; a request
+  declined at the till read "This order was not accepted" on the phone, and
+  Put these back in my cart brought the Upma back; "We can't reach the venue
+  right now..." after thirty seconds of checks refused, and "The venue no
+  longer has this order..." on a made-up not found. **Not seen:** the
+  five-minute nudge (tested); a cancelled order's way back (the same
+  button). Left: the nudge's five minutes is fixed, not the venue's.
+
 - **One set of table words; follow-ups that say what happened** (ADR-394,
   Phase 17 Task 22b; 2026-10-31). Seen in a scripted Chromium at 1024x768:
   the Tables screen's line and bars agreeing (8 tables, 5 free, 1 ordered,

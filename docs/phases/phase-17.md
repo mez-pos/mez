@@ -159,7 +159,10 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
 
 ### The guest app
 
-- [ ] **Task 23 - Order status that tells the truth (GST-3, GST-4, GST-5).**
+- [x] **Task 23 - Order status that tells the truth (GST-3, GST-4, GST-5).** Done
+  2026-10-31 (ADR-395): when it was placed, a nudge after five minutes, the
+  venue out of reach and a lost order said, the strip sticky, and "Put these
+  back in my cart" after a decline.
 - [ ] **Task 24 - Phone ergonomics (GST-6, GST-7, GST-8, GST-9, GST-12,
   GST-13, GST-14).**
 - [ ] **Task 25 - The venue's menu, light on 3G (GST-10, GST-11, TECH-18).**

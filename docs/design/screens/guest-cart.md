@@ -31,7 +31,7 @@ each, how many, and the total.
   is being sent it reads "Placing your order" and is off, and Clear is
   hidden.
 - **The strip** over the screen while the phone remembers an order placed
-  (`guest-order.md`).
+  (`guest-order.md`), sticking with the head (GST-4).
 
 ## Data
 

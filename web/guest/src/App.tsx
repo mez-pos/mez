@@ -72,6 +72,8 @@ function Table({ code, collect }: { code: string; collect: boolean }) {
           go("cart");
         }}
         collect={collect}
+        lost={order.lost}
+        failingSince={order.failingSince}
       />
     );
   }
@@ -88,8 +90,8 @@ function Table({ code, collect }: { code: string; collect: boolean }) {
   if (view === "cart") {
     return (
       <>
-        {strip}
         <Cart
+          strip={strip}
           cart={cart}
           order={order}
           onBack={() => go("menu")}
@@ -103,8 +105,7 @@ function Table({ code, collect }: { code: string; collect: boolean }) {
   }
   return (
     <>
-      {strip}
-      <Menu table={table.data} menu={menu.data} cart={cart} onViewCart={() => go("cart")} />
+      <Menu table={table.data} menu={menu.data} cart={cart} onViewCart={() => go("cart")} strip={strip} />
     </>
   );
 }
