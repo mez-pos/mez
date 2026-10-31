@@ -210,7 +210,21 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
   word alone is announced; `radioGroup` on fourteen groups and the grid
   pattern on the floor editor; the pairing sentences at 13px.
 - [ ] **Task 31 - Kit cleanup (TECH-21 to TECH-24, BO-12, BO-13, BO-16 to
-  BO-18).**
+  BO-18).** Split on 2026-11-01: nine findings, two of them M, and one
+  (TECH-24) overturns decided screen specs, so it needs its case first.
+  - [ ] **31a - The back office's rows, heads and drawer (BO-12, BO-13,
+    BO-16, BO-17, BO-18).** Staff rows read as a person and say a click
+    shows their role; Add a person asks for a role, by its name as people
+    read it; the menu list drops the placeholder tile and the "Active" on
+    every row; page heads say the screen's name from the nav, and Add is
+    one colour; the phone drawer has a Close and takes focus.
+  - [ ] **31b - Dead classes, a check for them, and one stroke (TECH-21,
+    TECH-22).** Classes that render nothing are gone and a test fails on
+    one; icon strokes come to the kit's few; the tagline has one tracking.
+  - [ ] **31c - One keypad, one input, one switch, one pill (TECH-23).**
+    The copies outside `shared/ui` use the kit's.
+  - [ ] **31d - One casing (TECH-24).** Its case in DECISIONS.md first, as
+    it overturns screen specs (ui-audit "Decided items"); then the words.
 - [ ] **Task 32 - Split the terminal bundle (TECH-25).**
 - [ ] **Task 33 - The audit again**, same walk and sizes; the scores go in
   this file.

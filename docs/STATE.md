@@ -42,8 +42,9 @@ demo venue.
 
 ## Next task
 
-**Here: Phase 17 Task 31, kit cleanup (TECH-21 to TECH-24, BO-12, BO-13,
-BO-16 to BO-18)**, then Task 32 onward; Tasks 1 to 30 are done. Each screen is checked by eye at
+**Here: Phase 17 Task 31a, the back office's rows, heads and drawer
+(BO-12, BO-13, BO-16, BO-17, BO-18)**, then 31b to 31d (Task 31 is split in
+the phase file), then Task 32; Tasks 1 to 30 are done. Each screen is checked by eye at
 1024x768 and 1366x768 before it is ticked: the audit's walk (a demo venue
 from `mez setup -demo-menu` in a scratch data directory, a scripted
 Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel
