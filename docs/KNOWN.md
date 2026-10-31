@@ -10,6 +10,21 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Setup says what happened, offers the name, ends on the menu** (ADR-398,
+  Phase 17 Task 26; 2026-10-31). Seen in a scripted Chromium on two fresh
+  venues at 1366x768, the device step at 1024 too: the time zone chosen as
+  "Kolkata · India Standard Time (GMT+5:30)" of 419; the tax cards with
+  their dots; "Searched this network and this computer's own printers."; a
+  test page sent to a stand-in printer (a socket on port 9100), then
+  "Nothing came out, skip" to the Cloud step with Printer marked Skipped;
+  Cloud skipped and marked so; `mez.local:7792` first, "Or by number" and
+  192.168.29.211 under it; "Add your menu" landing on the back office's
+  Menu, signed in as the owner. **Not seen:** a tablet opening
+  `mez.local` (ADR-379's own walk); the name with no numbered address; the
+  zone list in a browser that cannot list zones (the typed field, tested
+  by type only); mez-cloud's PaymentLink with the dot (its build reads
+  `fields.tsx`; not built here).
+
 - **The venue's menu, light on 3G** (ADR-397, Phase 17 Task 25;
   2026-10-31). Seen in a scripted Chromium: at 360 and 390, the landing's
   "Welcome to Corner Cafe", the bar's "Corner Cafe" and a made-up long

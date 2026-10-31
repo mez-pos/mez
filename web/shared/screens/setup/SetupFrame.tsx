@@ -8,7 +8,7 @@
 // buttons, the last thing in the card, stays at the foot of the window while
 // the card runs past it, so Continue is never a scroll away (SET-4).
 
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, MinusIcon } from "lucide-react";
 import { useRef, type ReactNode } from "react";
 import { Logo } from "../../ui";
 import { cx } from "../../ui/cx";
@@ -27,6 +27,8 @@ interface SetupFrameProps {
   /** The steps and which is in hand; omitted where there are no questions to show. */
   steps?: readonly FrameStep[];
   current?: number;
+  /** Steps passed over without doing them, by key: marked skipped, never done (SET-2). */
+  skipped?: ReadonlySet<string>;
   /** Go back to a step already done. Omitted while nothing may be changed. */
   onStep?: ((index: number) => void) | undefined;
   children: ReactNode;
@@ -42,7 +44,7 @@ const stickyFoot = cx(
   "[&>*>:last-child]:-mx-6 [&>*>:last-child]:-mb-6 [&>*>:last-child]:px-6 [&>*>:last-child]:pb-6 [&>*>:last-child]:rounded-b-card",
 );
 
-export function SetupFrame({ lead, leadWhenShort = true, steps, current = 0, onStep, children }: SetupFrameProps) {
+export function SetupFrame({ lead, leadWhenShort = true, steps, current = 0, skipped = noneSkipped, onStep, children }: SetupFrameProps) {
   const page = useRef<HTMLElement>(null);
   const card = useRef<HTMLElement>(null);
   useStepArrival(steps ? `${steps.map((s) => s.key).join(" ")}#${current}` : null, page, card);
@@ -58,7 +60,7 @@ export function SetupFrame({ lead, leadWhenShort = true, steps, current = 0, onS
           <p className={cx("mt-2 max-w-xl text-base text-fg", !leadWhenShort && "short:hidden")}>{lead}</p>
         </header>
 
-        {steps && <Steps steps={steps} current={current} onStep={onStep} />}
+        {steps && <Steps steps={steps} current={current} skipped={skipped} onStep={onStep} />}
 
         <section ref={card} className={cx("flex flex-1 flex-col rounded-card border border-line bg-raised p-6 shadow-card [&_h2]:outline-none", stickyFoot)}>
           {children}
@@ -77,16 +79,31 @@ export function SetupFrame({ lead, leadWhenShort = true, steps, current = 0, onS
   );
 }
 
-function Steps({ steps, current, onStep }: { steps: readonly FrameStep[]; current: number; onStep?: ((index: number) => void) | undefined }) {
+const noneSkipped: ReadonlySet<string> = new Set();
+
+interface StepsProps {
+  steps: readonly FrameStep[];
+  current: number;
+  skipped: ReadonlySet<string>;
+  onStep?: ((index: number) => void) | undefined;
+}
+
+function Steps({ steps, current, skipped, onStep }: StepsProps) {
   return (
     <ol aria-label="Steps" className="flex">
       {steps.map((step, i) => {
-        const done = i < current;
+        // A skipped step is behind, but not done: a dashed round with a dash, and the word (SET-2).
+        const skip = i < current && skipped.has(step.key);
+        const done = i < current && !skip;
         const here = i === current;
         const last = i === steps.length - 1;
         const round = cx(
           "flex size-10 shrink-0 items-center justify-center rounded-round font-mono text-base font-bold",
-          done || here ? "bg-accent text-accent-fg" : "bg-raised-high text-fg-muted",
+          skip
+            ? "border-2 border-dashed border-line-strong bg-raised text-fg-muted"
+            : done || here
+              ? "bg-accent text-accent-fg"
+              : "bg-raised-high text-fg-muted",
         );
         return (
           <li key={step.key} aria-current={here ? "step" : undefined} className={cx("flex flex-col gap-2", !last && "flex-1")}>
@@ -101,13 +118,26 @@ function Steps({ steps, current, onStep }: { steps: readonly FrameStep[]; curren
                   <CheckIcon aria-hidden="true" size={20} strokeWidth={3} />
                 </button>
               ) : (
-                <span className={round}>{done ? <CheckIcon aria-hidden="true" size={20} strokeWidth={3} /> : i + 1}</span>
+                <span className={round}>
+                  {skip ? (
+                    <MinusIcon aria-hidden="true" size={20} strokeWidth={3} />
+                  ) : done ? (
+                    <CheckIcon aria-hidden="true" size={20} strokeWidth={3} />
+                  ) : (
+                    i + 1
+                  )}
+                </span>
               )}
-              {!last && <span aria-hidden="true" className={cx("h-0.75 flex-1", done ? "bg-accent" : "bg-line-strong")} />}
+              {!last && <span aria-hidden="true" className={cx("h-0.75 flex-1", i < current ? "bg-accent" : "bg-line-strong")} />}
             </div>
             <span className={cx("pr-3 text-sm", here ? "font-bold text-accent-text" : "font-semibold text-fg-2")}>
-              <span className="sr-only">{done ? "Done: " : here ? "Now: " : ""}</span>
+              <span className="sr-only">{skip ? "Skipped: " : done ? "Done: " : here ? "Now: " : ""}</span>
               {step.name}
+              {skip && (
+                <span aria-hidden="true" className="block font-normal text-fg-muted">
+                  Skipped
+                </span>
+              )}
             </span>
           </li>
         );

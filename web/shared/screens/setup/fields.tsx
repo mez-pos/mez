@@ -115,7 +115,12 @@ export interface CardChoiceProps<T extends string> {
   min?: string;
 }
 
-/** A choice among a few, each a tinted card with a line saying what it means (components.md, "an option inside a form"). */
+/**
+ * A choice among a few, each a card with a line saying what it means
+ * (components.md, "an option inside a form"). The chosen one has a radio's
+ * filled dot as well as the green border and tint: a choice is never shown by
+ * colour alone (SET-9).
+ */
 export function CardChoice<T extends string>({ label, value, options, onChange, min = "11.5rem" }: CardChoiceProps<T>) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -131,12 +136,23 @@ export function CardChoice<T extends string>({ label, value, options, onChange, 
               aria-checked={chosen}
               onClick={() => onChange(o.value)}
               className={cx(
-                "flex min-h-tap flex-col items-start justify-center gap-0.5 rounded border px-4 py-3 text-left outline-offset-2 outline-line-focus focus-visible:outline-2",
+                "flex min-h-tap items-start gap-3 rounded border px-4 py-3 text-left outline-offset-2 outline-line-focus focus-visible:outline-2",
                 chosen ? "border-accent bg-accent-tint" : "border-line-strong bg-raised hover:bg-raised-high",
               )}
             >
-              <span className={cx("text-base font-semibold", chosen && "text-accent-text")}>{o.label}</span>
-              {o.blurb && <span className="text-sm text-fg-2">{o.blurb}</span>}
+              <span
+                aria-hidden="true"
+                className={cx(
+                  "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-round border-2",
+                  chosen ? "border-accent" : "border-line-strong",
+                )}
+              >
+                {chosen && <span className="size-2.5 rounded-round bg-accent" />}
+              </span>
+              <span className="flex min-w-0 flex-col gap-0.5">
+                <span className={cx("text-base font-semibold", chosen && "text-accent-text")}>{o.label}</span>
+                {o.blurb && <span className="text-sm text-fg-2">{o.blurb}</span>}
+              </span>
             </button>
           );
         })}

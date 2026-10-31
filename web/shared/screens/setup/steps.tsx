@@ -1,7 +1,6 @@
 // The wizard's three steps (setup-wizard.md). Each draws its fields from the
 // answers and reports a change; none of them holds anything or asks the server.
 
-import { useId } from "react";
 import { CardChoice, SelectField, TextField } from "./fields";
 import {
   currencies,
@@ -23,8 +22,7 @@ export interface StepProps {
   onChange: <K extends keyof Answers>(key: K, value: Answers[K]) => void;
 }
 
-export function VenueStep({ answers, problems, onChange, timezones }: StepProps & { timezones: readonly string[] }) {
-  const zonesId = useId();
+export function VenueStep({ answers, problems, onChange, zones }: StepProps & { zones: readonly { value: string; label: string }[] }) {
   // A currency the list does not have is still shown, so it is never silently changed.
   const offered = currencies.some((c) => c.code === answers.currency) ? currencies : [{ code: answers.currency, name: answers.currency }, ...currencies];
   return (
@@ -58,22 +56,28 @@ export function VenueStep({ answers, problems, onChange, timezones }: StepProps 
         error={problems.currency}
         options={offered.map((c) => ({ value: c.code, label: c.code === c.name ? c.code : `${c.code} · ${c.name}` }))}
       />
-      <div>
+      {zones.length > 0 ? (
+        // Chosen from a list in words, this computer's own first chosen; never
+        // an IANA name to type (SET-8).
+        <SelectField
+          label="Time zone"
+          value={answers.timezone}
+          onChange={(v) => onChange("timezone", v)}
+          error={problems.timezone}
+          hint="The venue's own. The day's sales and every invoice's time follow it."
+          options={zones}
+        />
+      ) : (
+        // A browser that cannot list the zones: the name is typed.
         <TextField
           label="Time zone"
           value={answers.timezone}
           onChange={(v) => onChange("timezone", v)}
           error={problems.timezone}
           hint="The venue's own, such as Asia/Kolkata. The day's sales and every invoice's time follow it."
-          list={zonesId}
           placeholder="Asia/Kolkata"
         />
-        <datalist id={zonesId}>
-          {timezones.map((zone) => (
-            <option key={zone} value={zone} />
-          ))}
-        </datalist>
-      </div>
+      )}
       <div className="md:col-span-2">
         <TextField
           label="What this till is called"

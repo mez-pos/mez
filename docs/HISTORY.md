@@ -8,6 +8,17 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 25: the venue's menu, light on 3G** (GST-10, GST-11,
+TECH-18, ADR-397), 2026-10-31. The guest sees the venue's name: on the
+landing under "Welcome to", in the menu's bar and as the tab's title; mez
+is "Ordering by mez", small, at the foot. The claims and the menu's green
+band are gone. The guest has its own faces (`web/shared/fonts/guest.css`:
+Fraunces 600 static, DM Sans at optical size 14, Archivo, no Caveat), the
+first two preloaded, and `check-size.mjs` holds them to 72 KB (67.3 today,
+from about 180). `tokens.css` no longer imports faces: the terminal and
+back office import `fonts/fonts.css` themselves, as mez-cloud already does.
+Seen at 360, 390 and 1366, and the till's faces at 1366.
+
 **Phase 17, Task 24: phone ergonomics** (GST-6, GST-7, GST-8, GST-9,
 GST-12, GST-13, GST-14, ADR-396), 2026-10-31. The guest app keeps clear of
 a phone's home bar and notch: the Sheet's panel pads by the safe-area

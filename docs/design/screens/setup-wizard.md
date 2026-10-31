@@ -30,7 +30,7 @@ after Create, and the number of I had mez before). The card's last row, its
 buttons, stays at the foot of the window while the card runs past it, on
 the card's own ground and over its padding, and comes to rest at the card's
 foot as before; the page keeps room above it, so a field that takes the
-focus is never under it. So Continue, Skip for now and Start selling are in
+focus is never under it. So Continue, Skip for now and Add your menu are in
 view on every step at 1366x768 and 1024x768 (SET-4).
 
 - **Head:** the logo with "Good food brings people together" in small caps;
@@ -39,7 +39,8 @@ view on every step at 1366x768 and 1024x768 (SET-4).
 - **The steps:** a numbered round for each, joined by a rule, with its name
   under it. Done is the green fill and a tick, and can be gone back to; the
   one in hand is green with its number and its name in green; the rest are
-  sunken.
+  sunken. A step passed over (the printer or mez Cloud, skipped) is a dashed
+  round with a dash and "Skipped" under its name, never a tick (SET-2).
 - **The card:** the step's title in the serif, a line under it, its fields,
   and along the foot "Step 2 of 6", **Back** and the green **Continue**
   with its arrow (**Create the venue** on the last of the questions).
@@ -48,9 +49,13 @@ view on every step at 1366x768 and 1024x768 (SET-4).
 The steps:
 
 1. **Your venue.** Venue name; name on invoices (optional, "if it differs");
-   currency; time zone; what this till is called.
+   currency; time zone, chosen from a list in words ("Kolkata · India
+   Standard Time (GMT+5:30)"), listed by city, this computer's own chosen
+   already, and typed only where the browser cannot list the zones (SET-8);
+   what this till is called.
 2. **Taxes and invoices.** The tax profile, as four cards (No tax, GST
-   India, VAT UK, Sales tax US); the registration number, where the profile
+   India, VAT UK, Sales tax US), each with a radio's dot, filled on the one
+   chosen (SET-9); the registration number, where the profile
    has one; prices include tax or tax is added, where the profile lets that
    be chosen; the month the financial year starts; the invoice prefix.
 3. **You.** Your name; a PIN of 6 to 8 digits; the PIN again. What the PIN
@@ -60,10 +65,12 @@ The steps:
    first (by Windows' name), then each address on the network that answers
    on the printer port, each a row to pick, marked "already added" where
    the venue has it; under them always **Enter its address**, which opens
-   an address field. What was searched is said under the list. Once one is
-   picked: **Paper**, 80mm or 58mm. Then what became of the test page. The
-   foot has **Skip for now** and the green **Print a test page**; after a
-   page is sent, **Print again** and the green **It printed**.
+   an address field. What was searched is said under the list, in words
+   ("Searched this network and this computer's own printers"), never a
+   network's number (SET-8). Once one is picked: **Paper**, 80mm or 58mm.
+   Then what became of the test page. The foot has **Skip for now** and the
+   green **Print a test page**; after a page is sent, **Nothing came out,
+   skip**, **Print again** and the green **It printed** (SET-5).
 5. **mez Cloud** (phase 14, Task 4c2, ADR-322; `CloudStep.tsx`, with its
    words in `web/shared/cloud-pair.ts`). "Connect to mez Cloud": a line
    saying what a code from a mez Cloud account does, that the till works
@@ -81,10 +88,14 @@ The steps:
    away, in the numeral face, and the green **Continue**.
 6. **More devices.** "Add another device", as three numbered things to do
    on it. **1. What is it?** Another till, Kitchen display or Back office,
-   as cards. **2. On that device, scan this or open the address**: a
-   sunken band holding a QR code of the address, 132px on white, and
-   beside it the address with that app's path in the numeral face (the
-   display size from 1280px wide, the total size under). A computer on
+   as cards. **2. On that device, scan this or open the address**: first, where the
+   server answers for its name (ADR-379), a sunken band holding a QR code
+   of `mez.local:7777` with that app's path, 132px on white, and beside it
+   the address in the numeral face (the display size from 1280px wide, the
+   total size under), with "By name, on an iPhone, iPad, Mac, Windows PC or
+   Android 12 and later. The name stays the same when this computer's
+   address changes." (SET-1). Then "Or by number, on an older Android
+   tablet", and a band like it for each address. A computer on
    more than one real network has a band for each, each headed "On
    Wi-Fi", "On Ethernet", and a line saying to use the one the other
    device is on: none is put first as the likely one. Virtual adapters'
@@ -92,8 +103,9 @@ The steps:
    does not open.
    **3. Enter this code there**: the terracotta **Show a pairing code**,
    then the code at the same size on the same band, what it is for and
-   until when. The foot has **Another code** once one is shown, and the
-   green **Start selling**.
+   until when. The foot says "Next, your menu: the till sells what is on
+   it.", and has **Another code** once one is shown, **Go to the till**,
+   and the green **Add your menu** (SET-6).
 
 ### I had mez before
 
@@ -154,7 +166,10 @@ and goes back to step 1.
   `{code}`, once, when Connect is pressed. Nothing is asked on arriving,
   and nothing at all if the step is skipped.
 - The last step: `GET /api/v1/devices/addresses` on arriving:
-  `{addresses}`, each with its `adapter`, whether it is `virtual`, and for
+  `{named, addresses}`. `named` is each kind's address by the server's
+  name and its `svg`, empty where no name is announced; it comes even when
+  the addresses could not be read. Each of `addresses` has its `adapter`,
+  whether it is `virtual`, and for
   each kind of device the `url` it opens and that address as an `svg` QR
   code (none where the server listens on this computer alone); and
   `POST /api/v1/devices/codes` `{name, kind}` for each code.
@@ -199,15 +214,18 @@ PIN is in memory until the wizard is left.
 - Picking another printer and printing again retires the one the first try
   added. **Skip for now** and **Continue without it** leave no printer
   behind: one that was added and never confirmed is retired.
-- **It printed**, and either way of leaving the printer, go to the mez
-  Cloud step; **Skip for now** there, and **Continue** once paired, go to
-  the last.
+- **It printed**, and each way of leaving the printer (**Skip for now**,
+  **Continue without it**, **Nothing came out, skip**), go to the mez Cloud
+  step; **Skip for now** there, and **Continue** once paired, go to the
+  last. A step left without its thing done is marked Skipped in the row.
 - **Show a pairing code** makes a code for one device of the kind chosen,
   named Counter 2, Kitchen or Office until it is renamed. Choosing another
   kind takes the code off the screen: a code pairs the kind it was made
   for. No code is made until asked for, because it lasts ten minutes.
-- **Start selling** goes to `/`, where the owner is signed in and lands as
-  an owner does.
+- **Add your menu** goes to the back office's Menu (`/backoffice/menu`)
+  in the same tab, where the owner is still signed in: a new venue has no
+  menu, and a till with none sells nothing (SET-6). **Go to the till** goes
+  to `/`, where the owner lands as an owner does.
 - **Send the code** and **Continue** (I had mez before) check what was
   typed first: a number needs its plus and country code, a code its six
   digits. What the server refuses is said in its words, under the field
@@ -255,7 +273,9 @@ PIN is in memory until the wizard is left.
   on this network, is said under the field.
 - **No address to show** (the server listens on this computer alone, or
   could not read its own): says to find the computer's IP address in
-  Windows and gives the port and path to put after it.
+  Windows and gives the port and path to put after it. With the name to
+  show, the name comes first and the line says that is for an older
+  Android tablet.
 - **A code that could not be made** says why under the button.
 - **Brought back, and this browser could not be paired:** the last card
   says the venue is back and that this till needs a code from `mez pair`
@@ -310,6 +330,11 @@ PIN is in memory until the wizard is left.
 - **"your venue", not "your restaurant":** a cafe and a bar are venues.
 - **The page scrolls.** D24 is a fixed 940 by 880 card; a 768px screen has
   no room for it.
+- **It ends on the menu** (SET-6, ADR-398): "Start selling", on a till
+  with nothing to sell, is "Add your menu", with "Go to the till" beside
+  it.
+- **The mez Cloud step makes no claim about guests:** they order from
+  their phones on the venue's wifi without it (SET-8).
 
 - **No preview of the first invoice number.** The pattern differs by tax
   profile and the server that knows it cannot be asked before there is a

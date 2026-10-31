@@ -70,6 +70,62 @@ func TestServerAddresses(t *testing.T) {
 	}
 }
 
+// TestServerAddressesByName: where the server answers for mez.local
+// (ADR-379), each kind's address by that name comes with the numbered ones,
+// with a QR code of exactly it, so the wizard can offer the name first
+// (SET-1). It comes even when the numbered addresses could not be read, and
+// it is an empty list, not a missing one, when there is no name.
+func TestServerAddressesByName(t *testing.T) {
+	want := map[auth.DeviceKind]string{
+		auth.KindTerminal:   "http://mez.local:7777",
+		auth.KindKitchen:    "http://mez.local:7777/kitchen",
+		auth.KindBackOffice: "http://mez.local:7777/backoffice/",
+	}
+	for name, addresses := range map[string]func() ([]discover.Address, error){
+		"beside the numbered addresses":            func() ([]discover.Address, error) { return []discover.Address{{URL: "http://192.168.1.10:7777"}}, nil },
+		"when the numbered ones could not be read": func() ([]discover.Address, error) { return nil, errors.New("no adapters") },
+	} {
+		t.Run(name, func(t *testing.T) {
+			w := newTill(t)
+			w.rebuild(t, WithAddresses(addresses), WithNamedAddress(func() string { return "http://mez.local:7777/" }))
+			owner := w.asStaff(w.signInAs(t, "stf_PRIYA001", "2468").Token)
+			status, out, body := addressesOf(t, w, owner)
+			if status != http.StatusOK || len(out.Named) != len(want) {
+				t.Fatalf("status %d: %s", status, body)
+			}
+			for _, app := range out.Named {
+				if app.URL != want[app.Kind] {
+					t.Errorf("a %s opens %q by name, want %q", app.Kind, app.URL, want[app.Kind])
+				}
+				code, err := qr.Encode([]byte(app.URL))
+				if err != nil {
+					t.Fatal(err)
+				}
+				if app.SVG != code.SVG(qrQuiet) {
+					t.Errorf("the QR for a %s by name is not the code of %q", app.Kind, app.URL)
+				}
+			}
+		})
+	}
+
+	for name, opts := range map[string][]Option{
+		"a server announcing no name":     nil,
+		"an announcer that did not start": {WithNamedAddress(func() string { return "" })},
+	} {
+		t.Run(name, func(t *testing.T) {
+			w := newTill(t)
+			w.rebuild(t, append([]Option{WithAddresses(func() ([]discover.Address, error) {
+				return []discover.Address{{URL: "http://192.168.1.10:7777"}}, nil
+			})}, opts...)...)
+			owner := w.asStaff(w.signInAs(t, "stf_PRIYA001", "2468").Token)
+			status, out, body := addressesOf(t, w, owner)
+			if status != http.StatusOK || len(out.Named) != 0 || !strings.Contains(body, `"named":[]`) || len(out.Addresses) != 1 {
+				t.Errorf("status %d, body %s", status, body)
+			}
+		})
+	}
+}
+
 func TestServerAddressesWithNone(t *testing.T) {
 	for name, addresses := range map[string]func() ([]discover.Address, error){
 		"a server on this computer alone":     func() ([]discover.Address, error) { return nil, nil },

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ApiError, type ApiClient } from "../../api";
 import type { AddressResponse } from "../../api-types";
-import { codeError, makeCode, placesFor, secondDevice, secondDevices, serverAddresses, svgSrc, typed, untilWords } from "./ready-logic";
+import { codeError, makeCode, namedPlaceFor, placesFor, secondDevice, secondDevices, serverAddresses, svgSrc, typed, untilWords } from "./ready-logic";
 
 /** An address as the server answers it, with every app at it. */
 function address(host: string, adapter: string, virtual = false): AddressResponse {
@@ -65,6 +65,19 @@ describe("placesFor", () => {
   });
 });
 
+describe("namedPlaceFor", () => {
+  const named = address("mez.local", "").apps;
+
+  it("is the kind's address by the server's name, with its code (SET-1)", () => {
+    expect(namedPlaceFor(named, "kitchen")).toEqual({ url: "http://mez.local:7777/kitchen", svg: "<svg>mez.local/kitchen</svg>", adapter: "" });
+  });
+
+  it("is nothing where the server announces no name, or for a kind it did not answer for", () => {
+    expect(namedPlaceFor([], "terminal")).toBeNull();
+    expect(namedPlaceFor(named, "guest")).toBeNull();
+  });
+});
+
 describe("svgSrc", () => {
   it("is a data address an image can show, whatever is in the SVG", () => {
     const src = svgSrc('<svg viewBox="0 0 1 1"><path d="M0 0#"/></svg>');
@@ -74,12 +87,12 @@ describe("svgSrc", () => {
 });
 
 describe("serverAddresses", () => {
-  it("is the server's list, or none when it cannot be asked", async () => {
-    const list = [address("192.168.1.10", "Wi-Fi")];
-    const ok = { get: async () => ({ addresses: list }) } as unknown as ApiClient;
-    expect(await serverAddresses(ok)).toEqual(list);
+  it("is the server's answer, by name and by number, or none of either when it cannot be asked", async () => {
+    const answer = { named: address("mez.local", "").apps, addresses: [address("192.168.1.10", "Wi-Fi")] };
+    const ok = { get: async () => answer } as unknown as ApiClient;
+    expect(await serverAddresses(ok)).toEqual(answer);
     const down = { get: async () => Promise.reject(new ApiError("network", "unreachable")) } as unknown as ApiClient;
-    expect(await serverAddresses(down)).toEqual([]);
+    expect(await serverAddresses(down)).toEqual({ named: [], addresses: [] });
   });
 });
 

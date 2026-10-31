@@ -119,7 +119,12 @@ var appPaths = []struct {
 // address this server can be opened at from the venue's network, real
 // adapters first. Empty when it listens on this computer alone.
 type addressesResponse struct {
-	Addresses []addressResponse `json:"addresses"`
+	// Named is what each kind of device opens by the name the server answers
+	// for (ADR-379), "http://mez.local:7777", with its QR code: offered first,
+	// since it outlives an address change (SET-1). Empty when no name is
+	// announced.
+	Named     []addressAppResponse `json:"named"`
+	Addresses []addressResponse    `json:"addresses"`
 }
 
 // addressResponse is one address, by the adapter it is on, and what each
@@ -202,26 +207,38 @@ func (s *Server) serverAddresses(w http.ResponseWriter, r *http.Request) {
 		s.log.Warn("reading this server's addresses failed", "request_id", RequestID(r.Context()), "error", err)
 		found = nil
 	}
-	out := addressesResponse{Addresses: make([]addressResponse, 0, len(found))}
-	for _, a := range found {
-		one := addressResponse{Adapter: a.Adapter, Virtual: a.Virtual, Apps: make([]addressAppResponse, 0, len(appPaths))}
-		base := strings.TrimSuffix(a.URL, "/")
-		for _, app := range appPaths {
-			url := base + app.path
-			code, err := qr.Encode([]byte(url))
-			if err != nil {
-				// An address is a few dozen bytes; a code holds two
-				// thousand. Without a picture the address is still typed.
-				s.log.Warn("drawing an address as a QR failed", "request_id", RequestID(r.Context()), "error", err)
-				one.Apps = append(one.Apps, addressAppResponse{Kind: app.kind, URL: url})
-				continue
-			}
-			one.Apps = append(one.Apps, addressAppResponse{Kind: app.kind, URL: url, SVG: code.SVG(qrQuiet)})
+	out := addressesResponse{Named: []addressAppResponse{}, Addresses: make([]addressResponse, 0, len(found))}
+	// The name does not depend on the adapters: it is offered even when they
+	// could not be read.
+	if s.namedAddress != nil {
+		if base := strings.TrimSuffix(s.namedAddress(), "/"); base != "" {
+			out.Named = s.appsAt(r, base)
 		}
-		out.Addresses = append(out.Addresses, one)
+	}
+	for _, a := range found {
+		out.Addresses = append(out.Addresses, addressResponse{Adapter: a.Adapter, Virtual: a.Virtual, Apps: s.appsAt(r, strings.TrimSuffix(a.URL, "/"))})
 	}
 	w.Header().Set("Cache-Control", "no-store")
 	writeJSON(w, s.log, http.StatusOK, out)
+}
+
+// appsAt is what each kind of device opens under base, an address with no
+// trailing slash, and that address as a QR code.
+func (s *Server) appsAt(r *http.Request, base string) []addressAppResponse {
+	apps := make([]addressAppResponse, 0, len(appPaths))
+	for _, app := range appPaths {
+		url := base + app.path
+		code, err := qr.Encode([]byte(url))
+		if err != nil {
+			// An address is a few dozen bytes; a code holds two thousand.
+			// Without a picture the address is still typed.
+			s.log.Warn("drawing an address as a QR failed", "request_id", RequestID(r.Context()), "error", err)
+			apps = append(apps, addressAppResponse{Kind: app.kind, URL: url})
+			continue
+		}
+		apps = append(apps, addressAppResponse{Kind: app.kind, URL: url, SVG: code.SVG(qrQuiet)})
+	}
+	return apps
 }
 
 func (s *Server) listDevices(w http.ResponseWriter, r *http.Request) {

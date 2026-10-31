@@ -15259,3 +15259,49 @@ the phone shows should be whose table it is, and what it fetches should be what 
 Cost: the guest's serif is one weight, and its type is a touch less tuned at the largest and
 smallest sizes than the variable faces would make it. A venue that wants its own words on the
 landing has nowhere to put them yet.
+
+## ADR-398 - Setup says what happened, offers the name, and ends on the menu
+2026-10 · Status: accepted. Phase 17 Task 26 (SET-1, SET-2, SET-5, SET-6, SET-8, SET-9).
+Context: the wizard's device step showed the computer's numbered addresses and, where it had
+none, asked the owner to find the PC's IP address in Windows, though the server answers for
+`mez.local` (ADR-379) and only the back office's pairing modal said so. A printer or mez Cloud
+step that was skipped got the same green tick as one that was done. After a test page was sent
+the only way on was "It printed". The last button, "Start selling", landed on a till with no
+menu. The search said "Searched 192.168.29.0/24", the time zone was a field to type
+"Asia/Kolkata" into, and the Cloud step said "guests can order from their phones", which they
+do on the venue's wifi without it. Its choice cards, and every `CardChoice`, showed the chosen
+one by its tint alone.
+Decision:
+  - **The name first.** `GET /api/v1/devices/addresses` answers `{named, addresses}`: `named`
+    is each kind's address by the name the server announces, with its QR code, empty where
+    none is, and given even when the adapters cannot be read. The device step shows it first,
+    "By name, on an iPhone, iPad, Mac, Windows PC or Android 12 and later. The name stays the
+    same when this computer's address changes.", then "Or by number, on an older Android
+    tablet" and the numbered bands. With a name and no number, the IP-address line is said as
+    being for an older Android tablet only.
+  - **Skipped is said.** The wizard keeps which steps after Create were left without their
+    thing done; the row shows each as a dashed round with a dash and "Skipped" (to a screen
+    reader, "Skipped: Printer"). Done is still the green tick.
+  - **"Nothing came out, skip"** beside Print again once a page is sent: it leaves no printer
+    behind, as Skip for now does.
+  - **It ends on the menu.** The last step's green button is "Add your menu", to the back
+    office's Menu in the same tab, where the owner is still signed in; "Go to the till" is the
+    other way. The foot says "Next, your menu: the till sells what is on it."
+  - **Plain words.** "Searched this network and this computer's own printers" (or "this
+    computer's 2 networks"); the time zone a list in words, "Kolkata · India Standard Time
+    (GMT+5:30)", by city so a city's first letters find it, its value still the IANA name,
+    typed only where the browser cannot list zones; no claim about guests on the Cloud step.
+  - **A choice card has a radio's dot**, filled on the chosen one, as the printer list's rows
+    already had. `CardChoice` is shared: mez-cloud's forms that use it get the dot too.
+Rejected: "Start selling" kept with a menu step before it (the menu editor is the back
+office's, and a second editor in the wizard is a second thing to keep right); a demo menu
+offered in the wizard (`mez setup -demo-menu` is for walks; a venue's menu is its own); the
+skipped steps left unmarked but greyed (a grey round reads as "not yet", and the wizard does
+not come back to them); the zones sorted by offset as Windows does (a list of four hundred is
+found by typing a city, and an offset sort breaks that); the name shown alone (Android before
+12 cannot resolve it, ADR-379).
+Because: an owner setting up has only the screen to go by. It should not claim a step was done
+that was not, leave them stuck when a printer stays silent, make them find a number the
+computer already knows a name for, or send them to sell from an empty till.
+Cost: one more field in the addresses answer (a list of three); the device step is a band
+taller where the name is announced.

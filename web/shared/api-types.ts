@@ -867,19 +867,20 @@ export interface PrinterCandidate {
 }
 
 export interface AddressesResponse {
+  named: AddressAppResponse[];
   addresses: AddressResponse[];
-}
-
-export interface AddressResponse {
-  adapter: string;
-  virtual: boolean;
-  apps: AddressAppResponse[];
 }
 
 export interface AddressAppResponse {
   kind: DeviceKind;
   url: string;
   svg: string;
+}
+
+export interface AddressResponse {
+  adapter: string;
+  virtual: boolean;
+  apps: AddressAppResponse[];
 }
 
 export interface SetupStatusResponse {

@@ -2,17 +2,41 @@
 // device opens mez, as an address in large type and a QR code for its camera,
 // and a code to pair it. The owner is signed in, so the pairing code is the
 // one the back office's Devices screen would make.
+//
+// The name the server answers for, mez.local, comes first: it outlives an
+// address change, and nobody has to find this computer's number (SET-1). The
+// way on is the menu, which a new venue does not have yet (SET-6).
 
 import { ArrowRightIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { ApiClient } from "../../api";
-import type { AddressResponse, PairingCodeResponse } from "../../api-types";
+import type { AddressesResponse, PairingCodeResponse } from "../../api-types";
 import { Button } from "../../ui";
 import { CardChoice } from "./fields";
-import { codeError, makeCode, placesFor, secondDevice, secondDevices, serverAddresses, svgSrc, typed, untilWords, type Place } from "./ready-logic";
+import {
+  codeError,
+  makeCode,
+  namedPlaceFor,
+  placesFor,
+  secondDevice,
+  secondDevices,
+  serverAddresses,
+  svgSrc,
+  typed,
+  untilWords,
+  type Place,
+} from "./ready-logic";
 
-export function ReadyStep({ api, onDone }: { api: ApiClient; onDone: () => void }) {
-  const [addresses, setAddresses] = useState<readonly AddressResponse[] | null>(null);
+interface ReadyStepProps {
+  api: ApiClient;
+  /** On to the back office's menu: the way on for a venue with none. */
+  onMenu: () => void;
+  /** Straight to the till. */
+  onTill: () => void;
+}
+
+export function ReadyStep({ api, onMenu, onTill }: ReadyStepProps) {
+  const [found, setFound] = useState<AddressesResponse | null>(null);
   const [kind, setKind] = useState<string>(secondDevices[0]?.kind ?? "terminal");
   const [code, setCode] = useState<PairingCodeResponse | null>(null);
   const [busy, setBusy] = useState(false);
@@ -21,8 +45,8 @@ export function ReadyStep({ api, onDone }: { api: ApiClient; onDone: () => void 
 
   useEffect(() => {
     let live = true;
-    void serverAddresses(api).then((found) => {
-      if (live) setAddresses(found);
+    void serverAddresses(api).then((answer) => {
+      if (live) setFound(answer);
     });
     return () => {
       live = false;
@@ -48,13 +72,15 @@ export function ReadyStep({ api, onDone }: { api: ApiClient; onDone: () => void 
     }
   };
 
-  const { main, others } = placesFor(addresses ?? [], kind);
+  const named = namedPlaceFor(found?.named ?? [], kind);
+  const { main, others } = placesFor(found?.addresses ?? [], kind);
+  const port = window.location.port || "80";
 
   return (
     <div className="flex flex-1 flex-col">
       <h2 className="font-serif text-xl">Add another device</h2>
       <p className="mt-1 text-sm text-fg-muted">
-        This computer is ready to sell. To add a tablet, a kitchen screen or a laptop now, do these three things on it. You can also do it any time later.
+        To add a tablet, a kitchen screen or a laptop now, do these three things on it. You can also do it any time later, in the back office under Devices.
       </p>
 
       <div className="mt-5 flex flex-col gap-6">
@@ -68,11 +94,20 @@ export function ReadyStep({ api, onDone }: { api: ApiClient; onDone: () => void 
 
         <div className="flex flex-col gap-2">
           <p className="text-base font-semibold">2. On that device, connect to this network, then scan this or open the address</p>
-          {addresses === null && <p className="text-base text-fg-2">Finding this computer&rsquo;s address</p>}
-          {addresses !== null && main.length === 0 && (
+          {found === null && <p className="text-base text-fg-2">Finding this computer&rsquo;s address</p>}
+          {named && (
+            <>
+              <PlaceBand place={named} named={false} />
+              <p className="text-sm text-fg-muted">
+                By name, on an iPhone, iPad, Mac, Windows PC or Android 12 and later. The name stays the same when this computer&rsquo;s address changes.
+              </p>
+            </>
+          )}
+          {found !== null && named && main.length > 0 && <p className="mt-2 text-base font-semibold">Or by number, on an older Android tablet</p>}
+          {found !== null && main.length === 0 && (
             <p className="rounded border border-line bg-sunken px-4 py-3 text-base text-fg-2">
-              mez could not tell its own address on this network. On this computer, open Windows&rsquo; network settings to find its IP address, and open that
-              address on the other device, followed by :{window.location.port || "80"}
+              {named ? "An older Android tablet cannot open the name. " : "mez could not tell its own address on this network. "}
+              On this computer, open Windows&rsquo; network settings to find its IP address, and open that address on the other device, followed by :{port}
               {device.path}.
             </p>
           )}
@@ -95,7 +130,7 @@ export function ReadyStep({ api, onDone }: { api: ApiClient; onDone: () => void 
               ). A tablet is not normally on those.
             </p>
           )}
-          {main.length > 0 && (
+          {(named || main.length > 0) && (
             <p className="text-sm text-fg-muted">
               Both must be on the same network. If it does not open, Windows may be treating this network as Public: set it to Private in Windows&rsquo; network
               settings.
@@ -134,15 +169,19 @@ export function ReadyStep({ api, onDone }: { api: ApiClient; onDone: () => void 
       </div>
 
       <div className="mt-auto flex flex-wrap items-center gap-3 pt-6">
-        {code && (
-          <Button disabled={busy} onClick={() => void show()}>
-            Another code
+        <p className="text-sm text-fg-muted">Next, your menu: the till sells what is on it.</p>
+        <div className="ml-auto flex flex-wrap gap-3">
+          {code && (
+            <Button disabled={busy} onClick={() => void show()}>
+              Another code
+            </Button>
+          )}
+          <Button onClick={onTill}>Go to the till</Button>
+          <Button variant="primary" className="min-w-44" onClick={onMenu}>
+            Add your menu
+            <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={2.2} />
           </Button>
-        )}
-        <Button variant="primary" className="ml-auto min-w-44" onClick={onDone}>
-          Start selling
-          <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={2.2} />
-        </Button>
+        </div>
       </div>
     </div>
   );

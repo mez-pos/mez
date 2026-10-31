@@ -67,8 +67,9 @@ export function addressProblem(address: string): string | null {
 /** One line on what was searched, for under the list. */
 export function searchedWords(found: DiscoverResponse): string {
   if (found.searched.length === 0) return "This computer is not on a network that could be searched.";
-  const nets = found.searched.join(" and ");
-  return `Searched ${nets} and this computer's own printers.`;
+  // An owner knows "this network", not "192.168.29.0/24" (SET-8).
+  if (found.searched.length === 1) return "Searched this network and this computer's own printers.";
+  return `Searched this computer's ${found.searched.length} networks and its own printers.`;
 }
 
 // As the server compares them: the default port is no difference, and Windows

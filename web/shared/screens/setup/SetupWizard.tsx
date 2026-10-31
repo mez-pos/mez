@@ -31,6 +31,7 @@ import {
   steps,
   timezoneList,
   withProfile,
+  zoneOptions,
   type AfterStep,
   type Answers,
   type Failure,
@@ -40,6 +41,7 @@ import {
 } from "./setup-logic";
 import { TaxesStep, VenueStep, YouStep } from "./steps";
 import { browserPage, forgetSetupToken, takeSetupToken } from "./setup-token";
+import { menuAddress } from "./ready-logic";
 import { useSetupStatus } from "./use-setup-status";
 
 const lead = `${allSteps.length} steps. You can change everything later in Settings.`;
@@ -110,6 +112,8 @@ function Questions({ token, onBegin }: { token: string | null; onBegin: () => vo
   const store = useAuthStore();
   const [, navigate] = useLocation();
   const timezones = useMemo(() => timezoneList(browserTimezone()), []);
+  // The same zones in an owner's words, worked out once (SET-8).
+  const zones = useMemo(() => zoneOptions(timezones), [timezones]);
   const [answers, setAnswers] = useState<Answers>(() => startingAnswers(browserTimezone()));
   // What the owner set by hand, so choosing a tax profile does not undo it.
   const touched = useRef(new Set<keyof Answers>());
@@ -119,6 +123,8 @@ function Questions({ token, onBegin }: { token: string | null; onBegin: () => vo
   const [failure, setFailure] = useState<Failure | null>(null);
   // Which of the steps after Create is showing.
   const [after, setAfter] = useState<AfterStep>("printer");
+  // Which of those were passed over: marked skipped, never done (SET-2).
+  const [skipped, setSkipped] = useState<ReadonlySet<AfterStep>>(() => new Set());
   const [busy, setBusy] = useState(false);
   // The other way through: a venue this owner had before, brought back (RecoverFlow).
   const [recovering, setRecovering] = useState<RecoverStepKey | null>(null);
@@ -194,7 +200,8 @@ function Questions({ token, onBegin }: { token: string | null; onBegin: () => vo
 
   if (progress.stage === "done") {
     // Each of these can be skipped, and the last one leaves the wizard.
-    const onward = () => {
+    const onward = (kept: boolean) => {
+      if (!kept) setSkipped((was) => new Set([...was, after]));
       const next = nextAfter(after);
       if (next === null) leave();
       else setAfter(next);
@@ -205,10 +212,12 @@ function Questions({ token, onBegin }: { token: string | null; onBegin: () => vo
         leadWhenShort={after === "printer"}
         steps={allSteps}
         current={indexOfAfter(after)}
+        skipped={skipped}
       >
         {after === "printer" && <PrinterStep api={store.api} onDone={onward} />}
         {after === "cloud" && <CloudStep api={store.api} onDone={onward} />}
-        {after === "ready" && <ReadyStep api={store.api} onDone={onward} />}
+        {/* A new venue has no menu: the way on is to add one, and the till is the other (SET-6). */}
+        {after === "ready" && <ReadyStep api={store.api} onMenu={() => window.location.assign(menuAddress)} onTill={leave} />}
       </SetupFrame>
     );
   }
@@ -276,7 +285,7 @@ function Questions({ token, onBegin }: { token: string | null; onBegin: () => vo
           </div>
         )}
         <div className="mt-5">
-          {current.key === "venue" && <VenueStep {...stepProps} timezones={timezones} />}
+          {current.key === "venue" && <VenueStep {...stepProps} zones={zones} />}
           {current.key === "taxes" && <TaxesStep {...stepProps} onProfile={chooseProfile} />}
           {current.key === "you" && <YouStep {...stepProps} />}
         </div>

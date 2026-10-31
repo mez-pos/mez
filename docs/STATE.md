@@ -13,7 +13,7 @@ the UI audit (`docs/design/ui-audit-2026-10-31.md`). Tasks 1 and 4 to
 12 are done: at the human's word the device-fit pass came first, built
 and seen at 1024x768, 1366x768 and 1920x1080 on 2026-10-31 (ADR-381,
 ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s,
-Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 25 (ADR-384 to ADR-397). It runs before Phase 16, which is mostly
+Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 26 (ADR-384 to ADR-398). It runs before Phase 16, which is mostly
 `mez-cloud`'s.
 
 Before it, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
@@ -28,21 +28,22 @@ list below.
 
 ## Last completed task
 
-**Phase 17, Task 25: the venue's menu, light on 3G** (GST-10, GST-11,
-TECH-18, ADR-397), 2026-10-31. The guest sees the venue's name: on the
-landing under "Welcome to", in the menu's bar and as the tab's title; mez
-is "Ordering by mez", small, at the foot. The claims and the menu's green
-band are gone. The guest has its own faces (`web/shared/fonts/guest.css`:
-Fraunces 600 static, DM Sans at optical size 14, Archivo, no Caveat), the
-first two preloaded, and `check-size.mjs` holds them to 72 KB (67.3 today,
-from about 180). `tokens.css` no longer imports faces: the terminal and
-back office import `fonts/fonts.css` themselves, as mez-cloud already does.
-Seen at 360, 390 and 1366, and the till's faces at 1366.
+**Phase 17, Task 26: setup** (SET-1, SET-2, SET-5, SET-6, SET-8, SET-9,
+ADR-398), 2026-10-31. The device step offers `mez.local` first: `GET
+/api/v1/devices/addresses` answers `{named, addresses}` (Go, a test, and
+`api-types.ts` regenerated). A printer or mez Cloud step left without its
+thing done is marked Skipped in the row, not ticked. "Nothing came out,
+skip" once a test page is sent. The last step ends on "Add your menu" (the
+back office's Menu, same tab, still signed in) beside "Go to the till".
+The search says "this network", the time zone is a list in words, the
+Cloud step makes no claim about guests, and `CardChoice` has a radio's dot
+(mez-cloud's forms that use it get it too). Walked twice on a fresh venue
+at 1366 and 1024, with a stand-in printer on port 9100.
 
 ## Next task
 
-**Here: Phase 17 Task 26, setup (SET-1, SET-2, SET-5, SET-6, SET-8, SET-9)**,
-then Task 27 onward; Tasks 1 to 25 are done. Each screen is checked by eye at
+**Here: Phase 17 Task 27, back office onboarding (BO-8, BO-9, BO-10, BO-11, BO-15)**,
+then Task 28 onward; Tasks 1 to 26 are done. Each screen is checked by eye at
 1024x768 and 1366x768 before it is ticked: the audit's walk (a demo venue
 from `mez setup -demo-menu` in a scratch data directory, a scripted
 Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel

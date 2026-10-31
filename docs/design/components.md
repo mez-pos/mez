@@ -30,7 +30,8 @@ on paper and on espresso night.
 
 `pillClass` (`web/shared/ui/pill.ts`) is the toggle and tab look: a pill,
 the chosen one the green fill. Filters, view switches and area tabs use
-it; an option inside a form is a tinted card instead.
+it; an option inside a form is a tinted card instead, with a radio's dot
+so the choice is never shown by colour alone (`CardChoice`, SET-9).
 
 ## Composites (built inside their own phase)
 

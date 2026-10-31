@@ -176,7 +176,10 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
 
 ### First run and empty states
 
-- [ ] **Task 26 - Setup (SET-1, SET-2, SET-5, SET-6, SET-8, SET-9).**
+- [x] **Task 26 - Setup (SET-1, SET-2, SET-5, SET-6, SET-8, SET-9).** Done
+  2026-10-31 (ADR-398): `mez.local` first on the device step, skipped steps
+  marked skipped, "Nothing came out, skip", "Add your menu" at the end, the
+  time zone and the search in plain words, and a radio's dot on choice cards.
 - [ ] **Task 27 - Back office onboarding (BO-8, BO-9, BO-10, BO-11,
   BO-15).**
 - [ ] **Task 28 - GST composition scheme (SET-7).** A product decision

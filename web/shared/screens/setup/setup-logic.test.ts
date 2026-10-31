@@ -16,6 +16,7 @@ import {
   startingAnswers,
   stepOf,
   timezoneList,
+  zoneOptions,
   toRequest,
   withProfile,
   type Answers,
@@ -333,6 +334,29 @@ describe("failureOf", () => {
 describe("currentZoneName", () => {
   it("gives a renamed zone its present name and leaves the rest alone", () => {
     expect([currentZoneName("Asia/Calcutta"), currentZoneName("Europe/London"), currentZoneName("")]).toEqual(["Asia/Kolkata", "Europe/London", ""]);
+  });
+});
+
+describe("zoneOptions", () => {
+  const at = new Date("2026-01-15T12:00:00Z");
+
+  it("names a zone by its city, its time's name and its offset, the IANA name kept as the value (SET-8)", () => {
+    const [kolkata] = zoneOptions(["Asia/Kolkata"], at);
+    expect(kolkata?.value).toBe("Asia/Kolkata");
+    expect(kolkata?.label).toMatch(/^Kolkata · .+ \(GMT\+5:30\)$/);
+    expect(zoneOptions(["America/Argentina/Buenos_Aires"], at)[0]?.label).toMatch(/^Buenos Aires · /);
+  });
+
+  it("lists by city, so typing a city's first letters in the list finds it", () => {
+    expect(zoneOptions(["Europe/London", "Asia/Kolkata", "America/New_York"], at).map((o) => o.value)).toEqual([
+      "Asia/Kolkata",
+      "Europe/London",
+      "America/New_York",
+    ]);
+  });
+
+  it("names a zone the browser does not know by its city alone", () => {
+    expect(zoneOptions(["Not/A_Zone"], at)).toEqual([{ value: "Not/A_Zone", label: "A Zone" }]);
   });
 });
 

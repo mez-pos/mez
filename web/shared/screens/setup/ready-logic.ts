@@ -27,6 +27,13 @@ export const secondDevices: readonly SecondDevice[] = [
   { kind: "back_office", label: "Back office", blurb: "A laptop for the menu, reports and settings.", name: "Office", path: "/backoffice/" },
 ];
 
+/**
+ * Where a new venue's owner goes from the wizard: the back office's menu, in
+ * the same tab, which keeps the session. A till with no menu sells nothing
+ * (SET-6).
+ */
+export const menuAddress = "/backoffice/menu";
+
 export function secondDevice(kind: string): SecondDevice {
   return secondDevices.find((d) => d.kind === kind) ?? (secondDevices[0] as SecondDevice);
 }
@@ -36,12 +43,17 @@ export function typed(url: string): string {
   return url.replace(/^https?:\/\//, "");
 }
 
-/** Where the server is on the venue's network. Never throws: with no answer there are none, and the screen says so. */
-export async function serverAddresses(api: ApiClient): Promise<readonly AddressResponse[]> {
+/**
+ * Where the server is on the venue's network: by the name it answers for, and
+ * by each address. Never throws: with no answer there are none of either, and
+ * the screen says so.
+ */
+export async function serverAddresses(api: ApiClient): Promise<AddressesResponse> {
   try {
-    return (await api.get<AddressesResponse>("/api/v1/devices/addresses")).addresses;
+    const found = await api.get<AddressesResponse>("/api/v1/devices/addresses");
+    return { named: found.named ?? [], addresses: found.addresses ?? [] };
   } catch {
-    return [];
+    return { named: [], addresses: [] };
   }
 }
 
@@ -70,6 +82,16 @@ export function placesFor(addresses: readonly AddressResponse[], kind: string): 
   const real = of(addresses.filter((a) => !a.virtual));
   const virtual = of(addresses.filter((a) => a.virtual));
   return real.length > 0 ? { main: real, others: virtual } : { main: virtual, others: [] };
+}
+
+/**
+ * Where a kind of device opens mez by the server's name, "mez.local:7777"
+ * (ADR-379), or null where it announces none. Offered first: a tablet that
+ * opens it keeps working when this computer's address changes (SET-1).
+ */
+export function namedPlaceFor(named: readonly AddressAppResponse[], kind: string): Place | null {
+  const app = named.find((a) => a.kind === kind);
+  return app ? { url: app.url, svg: app.svg, adapter: "" } : null;
 }
 
 /** An SVG as something an <img> can show. */

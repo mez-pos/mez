@@ -35,7 +35,7 @@ const papers: readonly { value: `${PaperMM}`; label: string; blurb: string }[] =
   { value: "58", label: "58mm", blurb: "The narrow roll of a small or handheld printer." },
 ];
 
-export function PrinterStep({ api, onDone }: { api: ApiClient; onDone: () => void }) {
+export function PrinterStep({ api, onDone }: { api: ApiClient; onDone: (kept: boolean) => void }) {
   const host = window.location.host;
   const [search, setSearch] = useState<Search>({ state: "searching" });
   const [picked, setPicked] = useState<string | null>(null);
@@ -106,7 +106,7 @@ export function PrinterStep({ api, onDone }: { api: ApiClient; onDone: () => voi
     setBusy(true);
     watching.current?.abort();
     await forget(api, added.current);
-    onDone();
+    onDone(false);
   };
 
   return (
@@ -199,10 +199,14 @@ export function PrinterStep({ api, onDone }: { api: ApiClient; onDone: () => voi
         <div className="ml-auto flex flex-wrap gap-3">
           {outcome?.kind === "sent" ? (
             <>
+              {/* A page that never came out is not a dead end (SET-5): the printer is left behind, as Skip for now does. */}
+              <Button disabled={busy} onClick={() => void leaveWithout()}>
+                Nothing came out, skip
+              </Button>
               <Button disabled={busy} onClick={() => void print()}>
                 Print again
               </Button>
-              <Button variant="primary" className="min-w-44" onClick={onDone}>
+              <Button variant="primary" className="min-w-44" onClick={() => onDone(true)}>
                 It printed
                 <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={2.2} />
               </Button>

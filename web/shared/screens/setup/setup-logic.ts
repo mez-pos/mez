@@ -469,6 +469,34 @@ export function timezoneList(current: string): readonly string[] {
   return zones.includes(current) || current === "" ? zones : [current, ...zones];
 }
 
+/** One way to name a zone at a moment, or "" where the browser cannot. */
+function zoneName(zone: string, style: "longGeneric" | "shortOffset", at: Date, locale: string): string {
+  try {
+    const parts = new Intl.DateTimeFormat(locale, { timeZone: zone, timeZoneName: style }).formatToParts(at);
+    return parts.find((p) => p.type === "timeZoneName")?.value ?? "";
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * The zones as an owner reads them: "Kolkata · India Standard Time
+ * (GMT+5:30)", the IANA name kept as the value (SET-8). Listed by city, so
+ * typing a city's first letters in the list finds it. A zone the browser
+ * cannot name is said by its city alone.
+ */
+export function zoneOptions(zones: readonly string[], at: Date = new Date(), locale = "en"): { value: string; label: string }[] {
+  return zones
+    .map((zone) => {
+      const city = (zone.split("/").pop() ?? zone).replaceAll("_", " ");
+      const generic = zoneName(zone, "longGeneric", at, locale);
+      const offset = zoneName(zone, "shortOffset", at, locale);
+      const words = generic !== "" && generic !== offset ? ` · ${generic}` : "";
+      return { value: zone, label: `${city}${words}${offset !== "" ? ` (${offset})` : ""}` };
+    })
+    .sort((a, b) => a.label.localeCompare(b.label, locale));
+}
+
 // Chrome still reports a few zones by the names they had before they were
 // renamed. Both names work; the one an owner recognises is offered.
 const renamedZones: Readonly<Record<string, string>> = {

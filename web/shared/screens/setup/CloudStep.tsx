@@ -12,7 +12,7 @@ import { backOfficeAddress, cleanCode, codeRefusal, pairRefusal, pairToCloud, pa
 import { Button } from "../../ui";
 import { TextField } from "./fields";
 
-export function CloudStep({ api, onDone }: { api: ApiClient; onDone: () => void }) {
+export function CloudStep({ api, onDone }: { api: ApiClient; onDone: (paired: boolean) => void }) {
   const [typed, setTyped] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -52,7 +52,7 @@ export function CloudStep({ api, onDone }: { api: ApiClient; onDone: () => void 
           <p className="font-mono text-lg font-semibold break-all">{backOfficeAddress(paired.hostname)}</p>
         </div>
         <div className="mt-auto flex flex-wrap items-center justify-end gap-3 pt-6">
-          <Button variant="primary" className="min-w-44" onClick={onDone}>
+          <Button variant="primary" className="min-w-44" onClick={() => onDone(true)}>
             Continue
             <ArrowRightIcon aria-hidden="true" size={18} strokeWidth={2.2} />
           </Button>
@@ -65,8 +65,8 @@ export function CloudStep({ api, onDone }: { api: ApiClient; onDone: () => void 
     <form onSubmit={(event) => void connect(event)} noValidate className="flex flex-1 flex-col">
       <h2 className="font-serif text-xl">Connect to mez Cloud</h2>
       <p className="mt-1 text-sm text-fg-muted">
-        If you have a mez Cloud account, a code from it joins this venue to it: the back office opens from anywhere, guests can order from their phones, and a
-        backup is kept away from this computer. The till works the same without it, and you can do this any time later, in the back office under Devices.
+        If you have a mez Cloud account, a code from it joins this venue to it: the back office opens from anywhere, and a backup is kept away from this
+        computer. The till works the same without it, and you can do this any time later, in the back office under Devices.
       </p>
       <div className="mt-5 max-w-md">
         <TextField
@@ -89,7 +89,7 @@ export function CloudStep({ api, onDone }: { api: ApiClient; onDone: () => void 
         />
       </div>
       <div className="mt-auto flex flex-wrap items-center justify-end gap-3 pt-6">
-        <Button disabled={busy} onClick={onDone}>
+        <Button disabled={busy} onClick={() => onDone(false)}>
           Skip for now
         </Button>
         <Button type="submit" variant="primary" className="min-w-44" disabled={busy}>

@@ -85,9 +85,9 @@ describe("choicesOf", () => {
     expect(choiceKey({ transport: "tcp", address: "192.168.1.60:9101" })).not.toBe(choiceKey(choicesOf(found)[2] as PrinterChoice));
   });
 
-  it("says what was searched, or that nothing could be", () => {
-    expect(searchedWords(found)).toBe("Searched 192.168.1.0/24 and this computer's own printers.");
-    expect(searchedWords({ ...found, searched: ["192.168.1.0/24", "10.0.0.0/24"] })).toContain("192.168.1.0/24 and 10.0.0.0/24");
+  it("says what was searched in an owner's words, never a network's number, or that nothing could be (SET-8)", () => {
+    expect(searchedWords(found)).toBe("Searched this network and this computer's own printers.");
+    expect(searchedWords({ ...found, searched: ["192.168.1.0/24", "10.0.0.0/24"] })).toBe("Searched this computer's 2 networks and its own printers.");
     expect(searchedWords({ ...found, searched: [] })).toContain("not on a network");
   });
 });
