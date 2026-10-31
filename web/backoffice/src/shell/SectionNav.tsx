@@ -13,6 +13,7 @@
 // bar's menu button opens it, over the screen, from the left, and closed
 // again by choosing a section, by the scrim, or by Escape (ADR-311).
 
+import { useEffect, useRef } from "react";
 import {
   ArmchairIcon,
   ChartColumnIcon,
@@ -30,6 +31,7 @@ import {
 import { Link } from "wouter";
 import type { Permission } from "../../../shared/api-types";
 import { cx } from "../../../shared/ui/cx";
+import { CloseIcon } from "../../../shared/ui/icons";
 import { useGuardedLink } from "./leave-guard";
 import { visibleNav, type Section, type SectionId } from "./nav-logic";
 
@@ -61,6 +63,11 @@ interface SectionNavProps {
 
 export function SectionNav({ current, held, open, onClose }: SectionNavProps) {
   const groups = visibleNav(held);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  // Opened under 768px, the drawer takes focus, so a keyboard is in it, not behind it.
+  useEffect(() => {
+    if (open) closeRef.current?.focus();
+  }, [open]);
   return (
     <>
       {/* The scrim: what is behind the drawer, and a tap on it closes. Never at 768px or over. */}
@@ -77,6 +84,16 @@ export function SectionNav({ current, held, open, onClose }: SectionNavProps) {
           "md:static md:z-auto md:flex md:w-52 md:max-w-none md:shadow-none md:scrollbar-thin xl:w-60",
         )}
       >
+        {/* The drawer's own way out, and where focus lands when it opens (BO-18). Not at 768px or over. */}
+        <button
+          ref={closeRef}
+          type="button"
+          aria-label="Close the menu"
+          onClick={onClose}
+          className="mb-2 flex size-12 shrink-0 items-center justify-center self-end rounded outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3 md:hidden"
+        >
+          <CloseIcon />
+        </button>
         {groups.map((g) => (
           <div key={g.label ?? "top"} className="mb-1 last:mb-0">
             {g.label && <h2 className="px-4 pb-1 pt-1.5 text-meta font-bold uppercase text-fg-faint">{g.label}</h2>}

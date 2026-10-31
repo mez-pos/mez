@@ -7,7 +7,7 @@
 // kept as a hash and none of it can be shown. A new PIN is set from a row's
 // menu, and so is Unlock for someone too many wrong PINs locked (ADR-260).
 
-import { UserPlusIcon } from "lucide-react";
+import { ChevronRightIcon, UserPlusIcon } from "lucide-react";
 import { useState } from "react";
 import type { Person, Role } from "../../../shared/api-types";
 import { useVenueClock } from "../../../shared/use-venue";
@@ -45,6 +45,8 @@ type Open =
   | { kind: "unlock"; person: Person }
   | { kind: "add-role" };
 
+/** What picking a person does, said once above the table and read with each person (BO-12). */
+const pickHint = "staff-pick-hint";
 export function PeopleScreen() {
   const api = usePeople();
   const toast = useToast();
@@ -64,7 +66,7 @@ export function PeopleScreen() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-serif text-total">Staff &amp; roles</h1>
+          <h1 className="font-serif text-total">Staff</h1>
           <p className="mt-1 text-base text-fg-muted">{data ? peopleSummary(data.staff) : "Reading the staff"}</p>
         </div>
         {mirror ? (
@@ -185,6 +187,9 @@ function StaffTable({ staff, roleId, now, api, readOnly, onRole, onOpen, onProbl
   }
   return (
     <Card padding="lg" className="min-w-0">
+      <p id={pickHint} className="mb-2 text-sm text-fg-muted">
+        Pick a person to show their role&apos;s permissions.
+      </p>
       {/* Under 1280px it scrolls sideways; kept tall enough there for a row's menu to open inside. */}
       <div className="min-h-80 relative overflow-x-auto xl:min-h-0 xl:overflow-visible">
         <table aria-label="Staff" className="w-full min-w-136 text-base">
@@ -212,10 +217,12 @@ function StaffTable({ staff, roleId, now, api, readOnly, onRole, onOpen, onProbl
               return (
                 <tr key={p.id} className={cx("border-b border-line-soft last:border-b-0", shown && "bg-accent-tint")}>
                   <td className="py-1">
-                    {/* The person is the button: picking them shows their role beside the table. */}
+                    {/* The person is the button: picking them shows their role's permissions (BO-12). */}
                     <button
                       type="button"
                       onClick={() => onRole(p.role_id)}
+                      aria-current={shown ? "true" : undefined}
+                      aria-describedby={pickHint}
                       className="flex min-h-tap w-full items-center gap-3 rounded px-2 text-left outline-offset-2 outline-focus focus-visible:outline-3"
                     >
                       <span
@@ -230,8 +237,8 @@ function StaffTable({ staff, roleId, now, api, readOnly, onRole, onOpen, onProbl
                           {p.id === me && <span className="font-normal text-fg-muted"> (you)</span>}
                         </strong>
                         <span className="block font-mono text-sm tabular-nums text-fg-muted">{sinceText(p, timezone)}</span>
-                        <span className="sr-only">{shown ? ". Their role is shown beside the table." : ". Show their role."}</span>
                       </span>
+                      <ChevronRightIcon aria-hidden="true" size={18} className={cx("ml-auto shrink-0", shown ? "text-accent-text" : "text-fg-muted")} />
                     </button>
                   </td>
                   <td className="py-1 text-fg-2">{roleText(p.role_name)}</td>

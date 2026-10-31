@@ -125,7 +125,7 @@ export function MenuScreen() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-serif text-total">Menu Management</h1>
+          <h1 className="font-serif text-total">Menu</h1>
           <p className="mt-1 text-base text-fg-muted">
             {mirror
               ? "The items, categories and their choices, as the venue last backed them up."

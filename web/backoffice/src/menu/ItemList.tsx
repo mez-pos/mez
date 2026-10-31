@@ -2,7 +2,6 @@
 // plain tile, its name and price, where it stands, and "..." for what can be
 // done to it without opening it. The row itself opens it in the editor.
 
-import { UtensilsIcon } from "lucide-react";
 import { useState } from "react";
 import type { EditorItem, MenuEditor } from "../../../shared/api-types";
 import { photoUrl } from "../../../shared/menu";
@@ -48,6 +47,7 @@ export function ItemList({ menu, filter, onOrder, openId, onOpen, api, onProblem
     if (next) run(() => api.orderItems(item.category_id, next));
   };
 
+  const anyPhoto = items.some((i) => Boolean(i.photo));
   return (
     <Card padding="none" className="flex min-w-0 flex-col overflow-hidden">
       <div className="flex flex-wrap items-center gap-3 border-b border-line p-4">
@@ -91,19 +91,20 @@ export function ItemList({ menu, filter, onOrder, openId, onOpen, api, onProblem
                   onClick={() => onOpen(item)}
                   className="flex min-h-tap min-w-0 flex-1 items-center gap-2.5 rounded p-2 text-left outline-offset-2 outline-focus focus-visible:outline-3"
                 >
+                  {/* A photo where there is one; where others have one, its room, so the names line up;
+                      never a placeholder on every row (BO-16). */}
                   {item.photo ? (
                     <img src={photoUrl(item.photo)} alt="" loading="lazy" className="size-11 shrink-0 rounded-tight object-cover" />
                   ) : (
-                    <span aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-tight bg-sunken text-fg-muted">
-                      <UtensilsIcon size={18} />
-                    </span>
+                    anyPhoto && <span aria-hidden="true" className="size-11 shrink-0" />
                   )}
                   <span className="min-w-0 flex-1">
                     <span className={cx("block truncate text-base font-bold", state === "retired" && "text-fg-muted")}>{item.name}</span>
                     {/* The price and where it stands share the second line, so the name has the whole of the first. */}
                     <span className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
                       <Money amount={item.price} tone={state === "retired" ? "muted" : "default"} className="text-sm" />
-                      <StatusChip status={{ kind: "menu", status: state }} className="px-2 py-0 text-sm" />
+                      {/* On sale is every item's state: only what differs is said (BO-16). */}
+                      {state !== "active" && <StatusChip status={{ kind: "menu", status: state }} className="px-2 py-0 text-sm" />}
                     </span>
                   </span>
                 </button>

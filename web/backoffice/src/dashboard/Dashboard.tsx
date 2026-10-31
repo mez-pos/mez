@@ -60,7 +60,7 @@ export function Dashboard() {
   if (!canSales && !canFloor && !canStock && quickActions(held).length === 0) {
     return (
       <Card padding="lg" className="max-w-prose">
-        <h1 className="font-serif text-xl">Dashboard</h1>
+        <h1 className="font-serif text-total">Dashboard</h1>
         <p className="mt-2 text-base text-fg-2">Your role opens no back office sections. Ask the owner if you need one.</p>
       </Card>
     );

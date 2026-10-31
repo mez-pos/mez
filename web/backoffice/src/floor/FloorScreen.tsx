@@ -59,7 +59,7 @@ export function FloorScreen() {
           <div className="flex flex-wrap gap-tap-gap">
             <Button onClick={() => setEditing({ kind: "add-area" })}>Add an area</Button>
             {areaId !== null && (
-              <Button variant="primary" onClick={() => setEditing({ kind: "add-table", form: emptyTableForm(areaId) })}>
+              <Button variant="attention" onClick={() => setEditing({ kind: "add-table", form: emptyTableForm(areaId) })}>
                 Add a table
               </Button>
             )}

@@ -67,7 +67,9 @@ screen each scroll on their own.
   - **Under 768px there is no sidebar** (ADR-311). The bar has a menu
     button at its left, 48px, and the sections are a drawer it opens: from
     the left, 288px or 85% of the width, over the screen, with a scrim
-    behind. Choosing a section, the scrim and Escape all close it. Each
+    behind, and a **Close** at its top, which takes focus when the drawer
+    opens (BO-18, ADR-404); closed, focus goes back to the menu button.
+    Choosing a section, Close, the scrim and Escape all close it. Each
     entry is one row, and no key chords are shown. The bar there is the
     button, the logo's mark alone (the whole logo from 640px), the
     connection's word, which is cut with an ellipsis before it pushes

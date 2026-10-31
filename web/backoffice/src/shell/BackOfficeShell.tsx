@@ -51,11 +51,17 @@ function Frame({ children }: { children: ReactNode }) {
   const [path] = useLocation();
   // Under 768px the sections are a drawer, and this is whether it is open.
   const [navOpen, setNavOpen] = useState(false);
+  const navButton = useRef<HTMLButtonElement>(null);
+  // Closed, the drawer gives focus back to the button that opened it (BO-18).
+  const closeNav = () => {
+    setNavOpen(false);
+    navButton.current?.focus();
+  };
   const leave = useLeave();
   useChords();
   useFreshWhenAway();
   useMirrorKeptUp();
-  useEscape(navOpen, () => setNavOpen(false));
+  useEscape(navOpen, closeNav);
   if (auth.kind !== "signed_in") return null; // the Gate never lets this happen
   const till = tillPath(auth.device);
 
@@ -64,6 +70,7 @@ function Frame({ children }: { children: ReactNode }) {
       <header className="flex h-18 shrink-0 items-center gap-2 border-b border-line bg-chrome px-3 short:h-15 md:gap-6 md:px-5 2xl:px-7">
         {/* Under 768px: the way to the sections, which are a drawer there. */}
         <button
+          ref={navButton}
           type="button"
           aria-label="Menu"
           aria-expanded={navOpen}
@@ -106,7 +113,7 @@ function Frame({ children }: { children: ReactNode }) {
       </header>
       <MirrorNote className="flex shrink-0 justify-center border-b px-3 py-1.5 md:hidden" />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col md:flex-row">
-        <SectionNav current={sectionForPath(path)} held={auth.permissions} open={navOpen} onClose={() => setNavOpen(false)} />
+        <SectionNav current={sectionForPath(path)} held={auth.permissions} open={navOpen} onClose={closeNav} />
         {/* Positioned, so anything absolute in a screen (every sr-only label) scrolls
             and clips with it. Left to the page, one below the fold makes the whole
             page scroll, bar and navigation with it. */}

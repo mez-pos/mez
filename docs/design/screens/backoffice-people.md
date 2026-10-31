@@ -18,10 +18,14 @@ beside it the roles: from 1280px a column at the back office's side width
 (`w-aside`, 307px at 1280, 328px at 1366, 380px from 1584; TECH-17), the
 table the rest; under 1280px the roles sit under the table.
 
-- **The head:** "Staff & roles" in the serif, and "9 people · 2
+- **The head:** "Staff", the nav's name for it, in the serif (BO-17,
+  ADR-404; D20 said "Staff & roles"), and "9 people · 2
   deactivated". At the right, **Add a role** and **Add staff**
   (terracotta).
-- **The staff table:**
+- **The staff table:** under the card's top, "Pick a person to show their
+  role's permissions.", which each person's button is described by; a
+  chevron ends each person, green on the one whose role is shown, which is
+  `aria-current` (BO-12, ADR-404).
 
   | Column | Shows |
   |---|---|
@@ -54,7 +58,9 @@ table the rest; under 1280px the roles sit under the table.
 
 **The forms** (modals):
 
-- **Add staff, Edit:** Name; Role (a select); on Add, a **PIN**, 4 to 8
+- **Add staff, Edit:** Name; Role (a select, each role by its name as
+  people read it, "Manager"; on Add it starts on "Choose a role" and is
+  refused without one, "Choose their role.": BO-13, ADR-404); on Add, a **PIN**, 4 to 8
   digits, or 6 to 8 for a role that manages staff, devices or settings, and
   **The PIN again**. On Edit, moving someone to a role that needs the longer
   PIN says "This role needs a PIN of 6 digits or more. Ask them to set a

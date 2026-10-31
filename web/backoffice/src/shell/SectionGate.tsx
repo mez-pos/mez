@@ -16,7 +16,7 @@ export function SectionGate({ id, children }: { id: SectionId; children: ReactNo
 
   return (
     <Card padding="lg" className="max-w-prose">
-      <h1 className="text-xl font-semibold">That is not yours to open</h1>
+      <h1 className="font-serif text-total">That is not yours to open</h1>
       <p className="mt-2 text-base text-fg-2">
         {s.label} needs the permission <span className="font-mono">{s.needs}</span>. Ask the owner to add it to your role.
       </p>

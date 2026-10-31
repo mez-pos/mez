@@ -212,8 +212,8 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
 - [ ] **Task 31 - Kit cleanup (TECH-21 to TECH-24, BO-12, BO-13, BO-16 to
   BO-18).** Split on 2026-11-01: nine findings, two of them M, and one
   (TECH-24) overturns decided screen specs, so it needs its case first.
-  - [ ] **31a - The back office's rows, heads and drawer (BO-12, BO-13,
-    BO-16, BO-17, BO-18).** Staff rows read as a person and say a click
+  - [x] **31a - The back office's rows, heads and drawer (BO-12, BO-13,
+    BO-16, BO-17, BO-18).** Done 2026-11-01 (ADR-404). Staff rows read as a person and say a click
     shows their role; Add a person asks for a role, by its name as people
     read it; the menu list drops the placeholder tile and the "Active" on
     every row; page heads say the screen's name from the nav, and Add is

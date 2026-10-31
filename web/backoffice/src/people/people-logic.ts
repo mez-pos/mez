@@ -111,10 +111,9 @@ export interface StaffForm {
   again: string;
 }
 
-export function newStaffForm(roles: readonly Role[], held: readonly Permission[]): StaffForm {
-  // The least a new person could start as: the first role you may give, fewest permissions first.
-  const giveable = roles.filter((r) => mayGive(held, r.permissions)).sort((a, b) => a.permissions.length - b.permissions.length);
-  return { name: "", roleId: giveable[0]?.id ?? 0, pin: "", again: "" };
+/** A new person, with no role yet: it is chosen, never assumed (BO-13). */
+export function newStaffForm(): StaffForm {
+  return { name: "", roleId: 0, pin: "", again: "" };
 }
 
 export function staffFormFrom(p: Person): StaffForm {
@@ -124,6 +123,7 @@ export function staffFormFrom(p: Person): StaffForm {
 /** The request for a staff form; a PIN only when adding, long enough for the role chosen. */
 export function toPersonInput(form: StaffForm, adding: boolean, roles: readonly Role[] = []): { input: PersonInput } | { problem: Problem } {
   const base: PersonInput = { name: form.name.trim(), role_id: form.roleId };
+  if (form.roleId === 0) return { problem: { field: "role_id", message: "Choose their role." } };
   if (!adding) return { input: base };
   const problem = pinProblem(form.pin, form.again, minPinLengthOf(roles, form.roleId));
   return problem ? { problem } : { input: { ...base, pin: form.pin } };

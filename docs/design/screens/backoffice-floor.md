@@ -230,8 +230,9 @@ Every one is the same `PUT /api/v1/floor/tables/{id}`.
 
 ## Constraints
 
-- One primary: **Add a table**. The chosen table is shown with the focus
-  outline, not a fill.
+- One primary: **Add a table**, terracotta, as every screen's Add is
+  (BO-17, ADR-404). The chosen table is shown with a green ring inside its
+  edge, not a fill and not the focus outline (ADR-403).
 - Every control 48px; every cell 48px or more (56px at 1366). Seats,
   columns and rows tabular.
 - No hover-dependent behaviour: a drag is a shortcut, not the way.

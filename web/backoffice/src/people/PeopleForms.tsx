@@ -2,6 +2,7 @@
 // and a role with its permissions in words. Each shows the server's
 // refusal under its field, or over the form.
 
+import { roleText } from "../../../shared/auth/format";
 import { useState, type ReactNode } from "react";
 import type { Permission, Person, PersonInput, Role, RoleInput } from "../../../shared/api-types";
 import { Field, inputClass } from "../FormFields";
@@ -106,7 +107,7 @@ interface StaffModalProps {
 }
 
 export function StaffModal({ person, roles, held, onSave, onClose }: StaffModalProps) {
-  const [form, setForm] = useState<StaffForm>(person ? staffFormFrom(person) : newStaffForm(roles, held));
+  const [form, setForm] = useState<StaffForm>(person ? staffFormFrom(person) : newStaffForm());
   const s = useSave(onClose);
   const cloudNote = cloudEditNote(person);
   const set = (patch: Partial<StaffForm>) => {
@@ -138,7 +139,7 @@ export function StaffModal({ person, roles, held, onSave, onClose }: StaffModalP
               const mine = mayGive(held, r.permissions);
               return (
                 <option key={r.id} value={r.id} disabled={!mine && r.id !== form.roleId}>
-                  {mine ? r.name : `${r.name} (not yours to give)`}
+                  {mine ? roleText(r.name) : `${roleText(r.name)} (not yours to give)`}
                 </option>
               );
             })}

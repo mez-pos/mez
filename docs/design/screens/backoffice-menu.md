@@ -23,7 +23,8 @@ the change; every line already on an order keeps what it was rung up at
 
 Inside the frame (`backoffice-shell.md`).
 
-- **The head:** "Menu Management" in the serif, and "Create and manage
+- **The head:** "Menu", the nav's name for it, in the serif (BO-17,
+  ADR-404; D18 said "Menu Management"), and "Create and manage
   items, categories and their choices. Changes reach every order screen at
   once." At the right, on Items: the search ("Search menu items"), a select
   of what to show (**All items**, Active, Sold out, Retired), **Spreadsheet**
@@ -56,8 +57,9 @@ below.
   1536px, 16px from there.
 - **Menu items (68):** the title with its count, and a select for the
   order: **Menu order**, **A–Z**, **Price**. Each row is one button: the
-  photo or a plain tile, the name, the price and a chip (**Active**, **Sold
-  out**, **Retired**). The open one has the green tint. Its **...** holds
+  photo where there is one (and its room, empty, where other rows have
+  one), the name, the price, and a chip only where the item is **Sold
+  out** or **Retired** (BO-16, ADR-404). The open one has the green tint. Its **...** holds
   **Sold out today** or **Back on sale**, **Retire** or **Bring back**, and
   **Move up**, **Move down**. The list scrolls inside itself. A retire is
   said in a toast with **Undo**.

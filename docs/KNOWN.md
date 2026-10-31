@@ -10,6 +10,17 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The back office's rows, heads and drawer** (ADR-404, Phase 17 Task 31a;
+  2026-11-01). Seen in a scripted Chromium on a demo venue at 1366 and 1024:
+  the staff rows named as the person and described by the hint, the shown
+  one `aria-current`, a chevron on each; Add staff on "Choose a role",
+  refused without one; the menu list's 18 rows with no tile and no Active;
+  "Menu" and "Staff" as heads; Add a table terracotta; at 600 wide, the
+  drawer's Close taking focus and Close and Escape giving it back to the
+  menu button. **Not seen:** a menu where some items have photos (the room
+  kept for the rest); the dashboard's head for a role that opens nothing;
+  "That is not yours to open".
+
 - **One focus rule, one field rule, arrows in every group** (ADR-403, Phase 17
   Task 30; 2026-11-01). Seen in a scripted Chromium at 1024x768 and
   1366x768 on a demo venue: a till button's focus, a 3px terracotta

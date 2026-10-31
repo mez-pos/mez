@@ -67,12 +67,14 @@ describe("pinProblem", () => {
 });
 
 describe("the staff form", () => {
-  it("starts a new person on the smallest role you may give", () => {
-    expect(newStaffForm(roles, manager).roleId).toBe(3);
-    expect(newStaffForm(roles, ["order.open"]).roleId).toBe(0);
+  it("starts a new person with no role: it is chosen, never assumed (BO-13)", () => {
+    expect(newStaffForm()).toEqual({ name: "", roleId: 0, pin: "", again: "" });
+    expect(toPersonInput({ ...newStaffForm(), name: "Kiran", pin: "1357", again: "1357" }, true)).toEqual({
+      problem: { field: "role_id", message: "Choose their role." },
+    });
   });
   it("sends a PIN only when adding", () => {
-    const form = { ...newStaffForm(roles, manager), name: " Kiran ", pin: "1357", again: "1357" };
+    const form = { ...newStaffForm(), roleId: 3, name: " Kiran ", pin: "1357", again: "1357" };
     expect(toPersonInput(form, true)).toEqual({ input: { name: "Kiran", role_id: 3, pin: "1357" } });
     expect(toPersonInput(form, false)).toEqual({ input: { name: "Kiran", role_id: 3 } });
     expect(toPersonInput({ ...form, again: "" }, true)).toMatchObject({ problem: { field: "again" } });

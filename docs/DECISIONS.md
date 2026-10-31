@@ -15517,3 +15517,34 @@ Because: a keyboard user, and anyone at a till with a scanner's keypad, has to s
 are, and tell it from what is chosen; a field's hint is half of what the field asks.
 Cost: the radio groups' tab stop is kept by a MutationObserver per group. The guest's bundle
 grows by about half a kilobyte (50.3 KB of 60).
+
+## ADR-404 - The back office's rows, heads and drawer
+2026-11 · Status: accepted. Phase 17 Task 31a (BO-12, BO-13, BO-16, BO-17, BO-18). Departs
+from D18 and D20 on two heads.
+Context: a staff row's button was named "Priya (you) Since 3 Oct. Show their role.", and
+nothing on screen said a click opened the role's permissions. Add a person started on the
+smallest role the adder may give, and listed roles as they are stored, "manager". The menu list
+drew a placeholder tile for every item without a photo and an Active chip on every row. Two
+heads were not the nav's name for the screen ("Menu Management", "Staff & roles"), the floor
+plan's Add a table was green where every other screen's Add is terracotta, and two heads were
+not the serif total. The phone's section drawer had no close of its own, and opening it left
+focus behind it.
+Decision:
+  - **A staff row is the person**: its name is the person's, with "(you)" and when they
+    started; one line above the table, "Pick a person to show their role's permissions.",
+    describes every row, a chevron ends each, and the person whose role is shown is
+    `aria-current`.
+  - **A new person's role is chosen**: Add staff starts on "Choose a role" and refuses to save
+    without one ("Choose their role."). Roles read as people read them, "Manager", there as
+    they already did in the table and the role chips.
+  - **The menu list says what differs**: no placeholder tile (a row keeps the photo's room
+    only where others have one, so names line up), and a chip only for Sold out or Retired.
+  - **A screen's head is its name in the nav**, in the serif total: "Menu", "Staff", and the
+    dashboard's and "That is not yours to open"'s heads too. Every screen's Add is terracotta.
+  - **The drawer has a Close** at its top, takes focus when it opens, and gives it back to the
+    menu button when it closes, by Close, Escape, the scrim or a section.
+Rejected: keeping the least role as a start (it is safe, but an owner adding a manager can save
+a waiter without noticing); "Menu Management" as the nav's name too (a nav entry is a word).
+Because: each of these is a place where the screen said something other than what it meant, or
+said it on every row so that nothing stood out.
+Cost: the D18 and D20 heads are departed from; the specs say so.
