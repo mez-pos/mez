@@ -9,6 +9,13 @@ licences sit next to the files.
 | `dm-sans.woff2` | `ofl/dmsans/DMSans[opsz,wght].ttf` | `wght` 400 to 700, `opsz` left variable |
 | `caveat.woff2` | `ofl/caveat/Caveat[wght].ttf` | `wght` 400 to 600, ASCII only |
 | `archivo.woff2` | `ofl/archivo/Archivo[wdth,wght].ttf` | `wdth` pinned to 100, `wght` 400 to 700 |
+| `fraunces-600.woff2` | `fraunces.woff2` above | The guest's: `wght` 600, `opsz` pinned to 20. Static |
+| `dm-sans-14.woff2` | `dm-sans.woff2` above | The guest's: `opsz` pinned to 14, `wght` 400 to 700 kept |
+
+`fonts.css` declares the first four, for the venue's screens; `guest.css`
+declares the guest's two cuts and Archivo, and no Caveat (GST-11, TECH-18,
+ADR-397). The guest's fonts count against a budget of their own in
+`scripts/check-size.mjs`.
 
 Archivo is the numeral face. Fraunces and DM Sans, as Google ships them,
 have no `tnum` feature: their digits are proportional, and
@@ -39,3 +46,15 @@ pyftsubset archivo-inst.ttf --unicodes="$U" --layout-features+=tnum,lnum,zero,ca
 
 `tnum` is kept explicitly on Archivo: pyftsubset drops it by default, and
 every number in the product depends on it.
+
+The guest's two cuts are made from the files above, with the glyphs and
+features they already have:
+
+```sh
+python -m fontTools.varLib.instancer fraunces.woff2 wght=600 opsz=20 -o fraunces-600.woff2
+python -m fontTools.varLib.instancer dm-sans.woff2 opsz=14 -o dm-sans-14.woff2
+```
+
+Twenty is between the guest's dish names (15 and 17px) and its titles (22
+and 32px); fourteen is the middle of its text (13 to 17px). Pinning an
+axis drops its variation data, which is most of a variable face's weight.

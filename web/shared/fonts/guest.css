@@ -1,0 +1,39 @@
+/*
+ * The guest app's faces: lighter cuts of the same families, for a stranger's
+ * phone on 3G (GST-11, TECH-18, ADR-397). fonts.css is everyone else's.
+ *
+ * - Fraunces at 600 alone, its optical size pinned at 20: the guest's serif
+ *   is always 600 (tokens.css, .font-serif), from a 15px dish name to a 32px
+ *   title. 18 KB, where the variable face is 61.
+ * - DM Sans with its optical size pinned at 14, its weights still 400 to
+ *   700: the guest's text runs 13 to 17px. 22 KB, where the variable face is 34.
+ * - Archivo as everyone has it: fetched only when a count or a bill shows.
+ * - No Caveat: the guest app sets no script line.
+ *
+ * index.html preloads the first two; scripts/check-size.mjs counts all three
+ * against the guest's font budget. fonts/README.md says how they are cut.
+ */
+
+@font-face {
+  font-family: "Fraunces";
+  src: url("./fraunces-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "DM Sans";
+  src: url("./dm-sans-14.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("./archivo.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}

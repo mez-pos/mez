@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* The guest's own, lighter faces, never Caveat (ADR-397). */
+@import "../../shared/fonts/guest.css";
 @import "../../shared/tokens.css";
 @config "../../shared/tailwind.preset.ts";
 /* Tailwind scans the app's own tree; shared components live outside it. */

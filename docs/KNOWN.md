@@ -10,6 +10,18 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The venue's menu, light on 3G** (ADR-397, Phase 17 Task 25;
+  2026-10-31). Seen in a scripted Chromium: at 360 and 390, the landing's
+  "Welcome to Corner Cafe", the bar's "Corner Cafe" and a made-up long
+  name cut short beside the table's pill, "Ordering by mez" under the
+  button and the dishes, the tab titled "Corner Cafe"; the phone fetching
+  only `fraunces-600` and `dm-sans-14` for the landing and the menu, and
+  Archivo once the sheet opened; the landing at 1366; the till at 1366
+  still fetching the variable Fraunces and DM Sans. **Not seen:** the
+  landing to collect (the same code, its own words); the preload's gain on
+  a throttled 3G link (not measured); a venue with no name (setup requires
+  one). Left: a venue cannot yet put its own line on the landing.
+
 - **The guest's phone: edges, thumb, and words** (ADR-396, Phase 17 Task
   24; 2026-10-31). Seen in a scripted Chromium: at 360 and 390, "2 in cart"
   beside a card's price, + Add in the tint, "Gluten free" muted; the sheet's

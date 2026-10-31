@@ -15218,3 +15218,44 @@ enough and clear of the phone's own controls, what they chose must show where th
 and the one thing to press next must be the loudest.
 Cost: a sixth Button variant in the shared kit (mez-cloud's account area reads the same file;
 nothing there changes). The sheet's button no longer names the cart.
+
+## ADR-397 - The guest sees the venue's name, and its phone fetches a third of the fonts
+2026-10 · Status: accepted. Phase 17 Task 25 (GST-10, GST-11, TECH-18). Amends ADR-063 (fonts
+were listed and not counted) and overturns the guest specs' brand lines, as the audit said
+GST-10 would need.
+Context: a guest who scanned a sticker at Corner Cafe saw mez's logo on the landing and in the
+menu's bar, and lines that every venue showed as its own: "Good food brings people together",
+"A small place for big moments ♡", and a green band over the menu with "Great food, brighter
+days ♡". The tab said "mez Order". On 3G the guest's phone fetched about 180 KB of fonts that no
+budget counted: the variable Fraunces (61 KB) and DM Sans (34 KB), Archivo (28 KB), and Caveat
+(58 KB) for two script lines. ADR-063 left fonts out because they load in parallel and swap; on a
+slow link that is a minute of a stranger's data and a late reflow of every word.
+Decision:
+  - **The venue's name where mez's was**: on the landing under "Welcome to", in the serif at the
+    page-title size; in the menu's bar, cut short with an ellipsis, the table's pill keeping its
+    place; and as the tab's title once the table is known. Problem screens, where no venue is
+    known, keep mez's logo.
+  - **mez is said once, small**: "Ordering by" and the logo at 16px, muted, under the landing's
+    button and under the menu's dishes.
+  - **No claim made for a venue**: the small caps, the two script lines and the menu's green
+    band are gone. The band took a phone's first hundred pixels; the dishes start there now.
+  - **The guest has its own faces** (`shared/fonts/guest.css`): Fraunces cut to 600 alone with
+    its optical size pinned at 20 (18 KB), since the guest's serif is always 600; DM Sans with
+    its optical size pinned at 14 and its weights kept (22 KB); Archivo as it is. No Caveat.
+    `tokens.css` imports no faces; the terminal and back office import `fonts.css` themselves,
+    as mez-cloud already does, so nothing changes for them.
+  - **The first screen's two faces are preloaded** from `index.html`, so they are asked for with
+    the page and not after its script has run. Archivo waits for a count or a bill.
+  - **The guest's fonts have a budget, 72 KB, and the build fails over it**, as it does for the
+    60 KB of code. Every face in `guest/dist` counts: any may be fetched. Today 67.3 KB.
+Rejected: fonts inside the 60 KB (the code alone is 49 KB; the faces would have to go); a system
+font stack for the guest (the look in tokens.md is binding, ADR-381, and a phone's default serif
+is a different face on every phone); Archivo cut too (it is not on the first
+screen, and its tabular figures are why a bill's column lines up); a venue's own tagline in
+settings (a field nobody asked for yet; the place for it is when a venue can set its own look);
+Caveat kept for one line (58 KB for a decoration a screen reader was told to skip).
+Because: the guest is at the venue's table, on the venue's wifi or a stranger's data plan; what
+the phone shows should be whose table it is, and what it fetches should be what it needs.
+Cost: the guest's serif is one weight, and its type is a touch less tuned at the largest and
+smallest sizes than the variable faces would make it. A venue that wants its own words on the
+landing has nowhere to put them yet.

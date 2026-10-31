@@ -46,6 +46,11 @@ function Table({ code, collect }: { code: string; collect: boolean }) {
     else if (hasStartedCharge(code)) go("bill");
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on arriving
   }, []);
+  // The tab and a saved bookmark carry the venue's name, not mez's (GST-10).
+  const venueName = table.data?.venue.name;
+  useEffect(() => {
+    if (venueName) document.title = venueName;
+  }, [venueName]);
 
   if (table.data === undefined) {
     if (table.isPending) return <Waiting line={collect ? "Finding the menu" : "Finding your table"} />;

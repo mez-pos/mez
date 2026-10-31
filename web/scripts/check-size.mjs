@@ -3,9 +3,13 @@
 //
 // Counted: every .js, .css and .html file in guest/dist, gzipped at level 9,
 // which is what a browser must fetch before the first screen can render.
-// Not counted: fonts and images. They load in parallel, a face is fetched
-// only if the page uses it, and `font-display: swap` means text renders
-// without them. They are listed so nobody forgets they exist. ADR-063.
+// ADR-063.
+//
+// Counted apart, against their own budget: the guest's fonts, as they are
+// sent. A woff2 is compressed already, so its size on disk is what crosses
+// the network. A face is fetched only when the page sets it, but any of them
+// may be, so every one in guest/dist counts (GST-11, TECH-18, ADR-397).
+// Images are listed and not counted: a dish's photo is the venue's.
 //
 // It also fails if React's own runtime is in the guest bundle. Guest renders
 // through preact/compat (ADR-064), and a stray import that bypasses the alias
@@ -20,7 +24,9 @@ import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 
 const GUEST_BUDGET_BYTES = 60 * 1024;
+const GUEST_FONT_BUDGET_BYTES = 72 * 1024;
 const COUNTED = /\.(js|css|html)$/;
+const FONT = /\.woff2?$/;
 // A string only React's runtime contains; Preact has no equivalent.
 const REACT_MARKER = "__SECRET_INTERNALS_DO_NOT_USE";
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -46,17 +52,23 @@ function measure(app) {
       const body = readFileSync(f);
       return { file: relative(dist, f), gz: gzipSync(body, { level: 9 }).length, react: body.includes(REACT_MARKER) };
     });
-  const other = all
-    .filter((f) => !COUNTED.test(f))
-    .map((f) => ({ file: relative(dist, f), raw: statSync(f).size }));
-  return { counted, other, total: counted.reduce((sum, f) => sum + f.gz, 0) };
+  const sized = (f) => ({ file: relative(dist, f), raw: statSync(f).size });
+  const fonts = all.filter((f) => FONT.test(f)).map(sized);
+  const other = all.filter((f) => !COUNTED.test(f) && !FONT.test(f)).map(sized);
+  return {
+    counted,
+    fonts,
+    other,
+    total: counted.reduce((sum, f) => sum + f.gz, 0),
+    fontTotal: fonts.reduce((sum, f) => sum + f.raw, 0),
+  };
 }
 
 const kb = (bytes) => `${(bytes / 1024).toFixed(1)} KB`;
 
 let failed = false;
 for (const app of ["terminal", "backoffice", "guest"]) {
-  const { counted, other, total } = measure(app);
+  const { counted, fonts, other, total, fontTotal } = measure(app);
   if (app !== "guest") {
     console.log(`  size  ${app.padEnd(10)} ${kb(total)} gzipped (no budget)`);
     continue;
@@ -64,6 +76,9 @@ for (const app of ["terminal", "backoffice", "guest"]) {
   const headroom = GUEST_BUDGET_BYTES - total;
   console.log(`  size  guest      ${kb(total)} gzipped of ${kb(GUEST_BUDGET_BYTES)} (${kb(headroom)} left)`);
   for (const f of counted) console.log(`          ${kb(f.gz).padStart(9)}  ${f.file}`);
+  const fontHeadroom = GUEST_FONT_BUDGET_BYTES - fontTotal;
+  console.log(`  size  guest fonts ${kb(fontTotal)} of ${kb(GUEST_FONT_BUDGET_BYTES)} (${kb(fontHeadroom)} left)`);
+  for (const f of fonts) console.log(`          ${kb(f.raw).padStart(9)}  ${f.file}`);
   for (const f of other) console.log(`          ${kb(f.raw).padStart(9)}  ${f.file} (not counted)`);
   for (const f of counted.filter((c) => c.react)) {
     console.error(`  size  FAIL: guest ${f.file} contains React's runtime; guest must render through preact/compat`);
@@ -71,6 +86,12 @@ for (const app of ["terminal", "backoffice", "guest"]) {
   }
   if (headroom < 0) {
     console.error(`  size  FAIL: guest bundle is ${kb(-headroom)} over its ${kb(GUEST_BUDGET_BYTES)} gzipped budget`);
+    failed = true;
+  }
+  if (fontHeadroom < 0) {
+    console.error(
+      `  size  FAIL: guest fonts are ${kb(-fontHeadroom)} over their ${kb(GUEST_FONT_BUDGET_BYTES)} budget; a face for the guest is cut in fonts/guest.css`,
+    );
     failed = true;
   }
 }

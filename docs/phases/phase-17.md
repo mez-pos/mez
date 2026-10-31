@@ -168,7 +168,11 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
   48px Clear, "2 in cart" on a card, + Add in the tint and "Gluten free"
   quieter, "Add · ₹190.00" in the sheet, sentence case, and the landing's
   button under its card on a wide screen.
-- [ ] **Task 25 - The venue's menu, light on 3G (GST-10, GST-11, TECH-18).**
+- [x] **Task 25 - The venue's menu, light on 3G (GST-10, GST-11, TECH-18).**
+  Done 2026-10-31 (ADR-397): the venue's name on the landing, in the bar
+  and the tab, mez a small line at the foot, no claims and no band; the
+  guest's own cuts (Fraunces 600, DM Sans at one optical size, no Caveat),
+  preloaded, and a 72 KB font budget the build holds.
 
 ### First run and empty states
 

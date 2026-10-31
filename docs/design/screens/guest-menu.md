@@ -14,10 +14,9 @@ or by what they do not eat.
 
 One column, at most a phone and a half wide.
 
-- **The bar,** stuck to the top: the logo, and the table in a terracotta-tint
-  pill ("Table T4").
-- **A green band:** the script line "Great food, brighter days ♡" and the
-  venue's name in small caps.
+- **The bar,** stuck to the top: the venue's name in the serif, cut short
+  with an ellipsis when it is long, and the table in a terracotta-tint pill
+  ("Table T4") that keeps its place (GST-10).
 - **Search,** "Search for dishes".
 - **Categories,** a row of pills that scrolls sideways: **All**, then each
   category that has a dish in it. The chosen one is the green fill. Left out
@@ -49,6 +48,8 @@ One column, at most a phone and a half wide.
   clear (GST-6).
 - **A notice** over the dishes when a dish was taken out of the cart
   (`guest-cart.md`, States).
+- **"Ordering by mez"** under the dishes, small and muted, as on the
+  landing.
 
 ## Data
 
@@ -119,6 +120,10 @@ dish that does not say what it is is in no diet's list.
   out, not until when, which is the kitchen's guess.
 
 **Changed:**
+- The venue's name is in the bar, where the design draws mez's logo, and the
+  green band with its script line ("Great food, brighter days ♡") is gone: a
+  claim every venue made, and a band of a phone's height before the first
+  dish (GST-10, ADR-397).
 - Prices show their paise ("₹60.00", where the design draws "₹249"): one
   figure on the menu and on the bill.
 - A menu with no photos has no frames, where the design draws a photo on

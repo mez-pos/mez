@@ -8,6 +8,18 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 24: phone ergonomics** (GST-6, GST-7, GST-8, GST-9,
+GST-12, GST-13, GST-14, ADR-396), 2026-10-31. The guest app keeps clear of
+a phone's home bar and notch: the Sheet's panel pads by the safe-area
+insets (a change in `web/shared`), the cart's bar and each page's end keep
+at least the bottom inset (the rule is in tokens.md's Layout). Clear is
+48px and its count steps aside while it asks. A card says "2 in cart"
+beside its price (`countsByDish`). + Add is a new `tint` Button variant and
+"Gluten free" is muted. The sheet's button says "Add · ₹190.00" and
+truncates before it pushes the count off. "Start ordering", "Place order";
+the landing stands in the middle from 768 wide. Seen at 360 and 390 (a
+home bar faked at 34px through the DevTools protocol), 768, 1366 and 1920.
+
 **Phase 17, Task 23: the guest's order tells the truth** (GST-3, GST-4,
 GST-5, ADR-395), 2026-10-31. The order screen says when the order was
 placed ("Placed at 6:42 PM · 3 minutes ago"), nudges the guest to ask staff

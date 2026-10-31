@@ -136,6 +136,14 @@ has it. The class kept its name to spare a hundred call sites. ADR-128.
 Script is decoration: never a button, label, price, status or field. One
 script line per screen region at most.
 
+**The guest app has lighter cuts of the same faces** (`shared/fonts/guest.css`,
+GST-11, TECH-18, ADR-397): Fraunces at 600 alone with its optical size
+pinned at 20, DM Sans with its optical size pinned at 14 (weights 400 to
+700 kept), and Archivo as everyone has it. It sets no script line, so it
+fetches no Caveat. Its fonts have a budget of their own, 72 KB, which
+`make build-web` holds as it holds the 60 KB of code. Every other app
+imports `fonts/fonts.css` before `tokens.css`, which imports no faces.
+
 ### Type scale
 
 | Token | Size | Role |

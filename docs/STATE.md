@@ -13,7 +13,7 @@ the UI audit (`docs/design/ui-audit-2026-10-31.md`). Tasks 1 and 4 to
 12 are done: at the human's word the device-fit pass came first, built
 and seen at 1024x768, 1366x768 and 1920x1080 on 2026-10-31 (ADR-381,
 ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s,
-Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 24 (ADR-384 to ADR-396). It runs before Phase 16, which is mostly
+Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 25 (ADR-384 to ADR-397). It runs before Phase 16, which is mostly
 `mez-cloud`'s.
 
 Before it, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
@@ -28,22 +28,21 @@ list below.
 
 ## Last completed task
 
-**Phase 17, Task 24: phone ergonomics** (GST-6, GST-7, GST-8, GST-9,
-GST-12, GST-13, GST-14, ADR-396), 2026-10-31. The guest app keeps clear of
-a phone's home bar and notch: the Sheet's panel pads by the safe-area
-insets (a change in `web/shared`), the cart's bar and each page's end keep
-at least the bottom inset (the rule is in tokens.md's Layout). Clear is
-48px and its count steps aside while it asks. A card says "2 in cart"
-beside its price (`countsByDish`). + Add is a new `tint` Button variant and
-"Gluten free" is muted. The sheet's button says "Add · ₹190.00" and
-truncates before it pushes the count off. "Start ordering", "Place order";
-the landing stands in the middle from 768 wide. Seen at 360 and 390 (a
-home bar faked at 34px through the DevTools protocol), 768, 1366 and 1920.
+**Phase 17, Task 25: the venue's menu, light on 3G** (GST-10, GST-11,
+TECH-18, ADR-397), 2026-10-31. The guest sees the venue's name: on the
+landing under "Welcome to", in the menu's bar and as the tab's title; mez
+is "Ordering by mez", small, at the foot. The claims and the menu's green
+band are gone. The guest has its own faces (`web/shared/fonts/guest.css`:
+Fraunces 600 static, DM Sans at optical size 14, Archivo, no Caveat), the
+first two preloaded, and `check-size.mjs` holds them to 72 KB (67.3 today,
+from about 180). `tokens.css` no longer imports faces: the terminal and
+back office import `fonts/fonts.css` themselves, as mez-cloud already does.
+Seen at 360, 390 and 1366, and the till's faces at 1366.
 
 ## Next task
 
-**Here: Phase 17 Task 25, the venue's menu, light on 3G (GST-10, GST-11, TECH-18)**,
-then Task 26 onward; Tasks 1 to 24 are done. Each screen is checked by eye at
+**Here: Phase 17 Task 26, setup (SET-1, SET-2, SET-5, SET-6, SET-8, SET-9)**,
+then Task 27 onward; Tasks 1 to 25 are done. Each screen is checked by eye at
 1024x768 and 1366x768 before it is ticked: the audit's walk (a demo venue
 from `mez setup -demo-menu` in a scratch data directory, a scripted
 Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel

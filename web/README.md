@@ -8,7 +8,7 @@ guest app runs on a stranger's phone on 3G in a basement.
 |---|---|---|---|
 | `terminal/` | Staff counter and floor | Allowed | None stated |
 | `backoffice/` | Owner and manager | Allowed | None stated |
-| `guest/` | Guest phone, QR, kiosk | **Never** | 60 KB gzipped, hard |
+| `guest/` | Guest phone, QR, kiosk | **Never** | 60 KB gzipped, hard; its fonts 72 KB, hard (ADR-397) |
 
 Guest is written in React but bundled with Preact: `shared/vite-app.ts`
 aliases `react` and `react-dom` to `preact/compat` for guest only (ADR-064).

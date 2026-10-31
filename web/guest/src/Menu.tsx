@@ -9,11 +9,10 @@ import { formatMoney } from "../../shared/money";
 import { Button } from "../../shared/ui/Button";
 import { cx } from "../../shared/ui/cx";
 import { DietMark } from "../../shared/ui/DietMark";
-import { Logo } from "../../shared/ui/Logo";
 import { SearchField } from "../../shared/ui/SearchField";
 import { countsByDish, inCartText, itemsText } from "./cart-logic";
 import { ItemSheet } from "./ItemSheet";
-import { tableLabel } from "./Landing";
+import { OrderingBy, tableLabel } from "./Landing";
 import { Notice } from "./Notice";
 import type { CartApi } from "./use-cart";
 import {
@@ -68,22 +67,15 @@ export function Menu({ table, menu, cart, onViewCart, strip }: MenuProps) {
       {/* The order's strip and the head stick together: a decline is never scrolled out of sight (GST-4). */}
       <div className="sticky top-0 z-10">
         {strip}
-        <header className="flex h-14 items-center justify-between border-b border-line bg-chrome px-4">
-          <Logo className="h-6" />
-          <p className="rounded-pill bg-attention-tint px-3.5 py-1.5 text-base font-bold text-attention-text">{tableLabel(table.table.name)}</p>
+        {/* The venue's name in the bar, where mez's logo was (GST-10). */}
+        <header className="flex h-14 items-center justify-between gap-3 border-b border-line bg-chrome px-4">
+          <p className="min-w-0 truncate font-serif text-xl">{table.venue.name}</p>
+          <p className="shrink-0 rounded-pill bg-attention-tint px-3.5 py-1.5 text-base font-bold text-attention-text">{tableLabel(table.table.name)}</p>
         </header>
       </div>
 
       <main className="px-4">
         <Notice text={cart.notice} onDismiss={cart.dismissNotice} />
-        <div className="mt-3 flex items-center justify-between gap-3 rounded-card bg-accent px-5 py-4 text-accent-fg">
-          <p aria-hidden="true" className="font-script text-xl leading-tight">
-            Great food,
-            <br />
-            brighter days ♡
-          </p>
-          <p className="text-right text-meta leading-relaxed font-bold tracking-[.16em] uppercase opacity-80">{table.venue.name}</p>
-        </div>
 
         <SearchField key={searchKey} className="mt-3" label="Search for dishes" onSearch={(search) => setFilter((f) => ({ ...f, search }))} />
 
@@ -161,6 +153,7 @@ export function Menu({ table, menu, cart, onViewCart, strip }: MenuProps) {
             ))}
           </ul>
         )}
+        <OrderingBy className="mt-10" />
       </main>
 
       {cart.count > 0 && (

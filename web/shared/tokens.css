@@ -17,7 +17,9 @@
  * "ink" is espresso night, the kitchen display.
  */
 
-@import "./fonts/fonts.css";
+/* No faces here: each app imports its own before this file, fonts/fonts.css
+   for the venue's screens and fonts/guest.css for the guest's lighter cuts
+   (ADR-397). */
 
 /* A screen 768px tall or so: the laptops and tablets most venues have. The
    shells never scroll, so on one of these every fixed height is paid for out
