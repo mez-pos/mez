@@ -8,6 +8,21 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Tasks 2 and 3: the two P0s** (ADR-383), 2026-10-31. The
+payment that settles a sale rung up at the counter with no table sends
+what is still waiting to its stations, takes the money, issues the
+invoice and closes the order, in one transaction, so the kitchen always
+hears of a paid counter sale and Order History never calls it open. A
+table's ticket stays open when paid (ADR-372) and an order to collect
+until it is handed over (ADR-253); a table paid in full now reads Paid in
+Order History, on the floor and on the waiter's home (never Needs Bill).
+The till keeps the order it paid in front until **Next order** (New Order
+renamed); Close on a closed order is answered as done, for tills not yet
+reloaded. A table's unsent lines are a warning on the payment screen
+and the paid panel, with Send now. Seen in a browser: a counter sale paid
+without Send on the kitchen board, the paid panel held, Order History's
+Paid, a paid T5 as Paid on the floor and the waiter's home.
+
 **Phase 17, Tasks 1 and 4 to 12: the UI audit and every screen at the
 venue's own size** (ADR-381, ADR-382), 2026-10-31, at the human's word.
 The impeccable skill's audit walked every screen of v0.2.0-beta.1 at

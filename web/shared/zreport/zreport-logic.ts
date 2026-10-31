@@ -110,3 +110,15 @@ export function reportProblem(status: number | undefined, number?: number): stri
   if (status === 404 && number !== undefined) return `There is no Z-report ${number}.`;
   return "Can't reach the mez server to load the report.";
 }
+
+/**
+ * The orders still open when the shift closed, which went on into the next
+ * one, and what was still to pay on them (ADR-384): "3 · ₹650.00 to pay",
+ * "None", or null on a report issued before they were counted.
+ */
+export function carriedText(carried: Tally | undefined): string | null {
+  if (!carried) return null;
+  if (carried.count === 0) return "None";
+  const due = carried.amount.minor > 0 ? `${formatMoney(carried.amount)} to pay` : "nothing to pay";
+  return `${carried.count} · ${due}`;
+}

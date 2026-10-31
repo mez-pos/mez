@@ -26,6 +26,15 @@ title.
 
 **Step 1, count the drawer:**
 
+- **What is still open** (TBS-2, ADR-384), above the counter, in the
+  warning tint with a warning sign: "2 orders are still open: T3 and 1 at the
+  counter." (three tables or pickup codes named, the rest counted), "Once
+  the count is in, every till waits for the close. Settle them first, or
+  they carry into the next shift.", and **See open orders**, to Orders on its
+  Open tab. It counts what that tab shows: a table paid in full and kept for
+  its next round is paid, not open (ADR-383). With none open, or while the
+  day's orders are read, it is not shown; when they cannot be read, a quiet
+  line says so, with **Orders**.
 - **The counter** (`DrawerCounter`), titled "Count the drawer": over the
   rows, their labels in small caps, **Note**, **Count**, **Value**; then a
   row for each note and coin of the venue's currency, largest first: the
@@ -80,6 +89,8 @@ total as the one total on the screen; a script line at the foot.
 
 ## Data
 
+- `GET /api/v1/orders/today`, key `["orders", "today"]`, the Orders screen's
+  own list and cache: on step 1, the orders whose status is `open`.
 - `GET /api/v1/shift`, key `["shift"]`: the open shift, with `counted`,
   `reconciliation` and `reason` once they exist. Read on start, every 30
   seconds, and from every command's answer.
@@ -101,7 +112,8 @@ total as the one total on the screen; a script line at the foot.
 | Pad keys | Set the picked row's count | The row's value and the total redraw |
 | Next | Picks the row below | At the last row, stays |
 | Back to the order screen | Leaves, nothing recorded | Selling goes on |
-| Submit count | Asks first: "The count can't be changed once it's in. Submit ₹9,520.00?" | On yes, `shift.counted`; step 2. The gate now holds every path here |
+| See open orders | Leaves for `/orders?tab=open`, nothing recorded | The open orders, to settle; Close the shift brings the manager back |
+| Submit count | Asks first: "2 orders are still open. They carry into the next shift." when any are, then "The count can't be changed once it's in. Submit ₹9,520.00?" | On yes, `shift.counted`; step 2. The gate now holds every path here |
 | Save note | Records the reason | The quote; Close the day no longer waits for it |
 | Save the stock count | Records the counts as stock movements | What each moved |
 | Close the day | Closes the shift, issues the Z-report and its exports | A toast, "Shift closed."; Open the shift, with "Z-report 4 issued" and View the report |
@@ -133,6 +145,8 @@ total as the one total on the screen; a script line at the foot.
 - Every number is tabular and right-aligned; every target 48px, the pad's
   keys 64px.
 - Open orders are not closed with the shift; they carry into the next one.
+  Step 1 says how many before the count, and the Z-report how many the close
+  carried and what was still to pay on them (ADR-384).
 
 ## Reference
 

@@ -301,6 +301,13 @@ func (s *Service) Close(ctx context.Context, meta Meta, shiftID int64) (Shift, e
 		if err != nil {
 			return err
 		}
+		// What is still open goes on into the next shift; the report
+		// says how much of it there was (ADR-384).
+		carried, err := s.carried(ctx, q, meta.VenueID, v.currency, taxes)
+		if err != nil {
+			return err
+		}
+		doc.Carried = &carried
 		if _, err := issue(ctx, q, meta.VenueID, row.ID, nil, "", &doc); err != nil {
 			return err
 		}

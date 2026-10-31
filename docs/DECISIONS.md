@@ -14713,3 +14713,42 @@ transaction that takes the money.
 Cost: a counter sale cannot be added to once it is paid, which New Order already meant; a
 mistaken payment is voided as before, and voiding one on a closed bill reopens it in the same
 command (ADR-084). The waiter's bill (T05) is a table's and does not warn of unsent lines yet.
+
+## ADR-384 - Close of day says what is open, and the Z-report what it carried
+2026-10 · Status: accepted. Phase 17 Task 13 (TBS-2).
+Context: submitting the drawer count holds every till at the close (`shiftGate`): a counted
+shift sends every path to `/shift/close`, so from then on no open order can be paid until the
+day is closed and the next shift opened. Nothing on close of day said that any were open,
+and the Z-report had no line for them: a manager could count the drawer over three unpaid
+tables and learn of it from the next morning's floor. Open orders are not closed with the
+shift, and stay so: they carry into the next one (`terminal-close.md`).
+Decision:
+  - **Close of day's first step names what is open**, above the counter: "2 orders are still
+    open: T3 and 1 at the counter." in the warning tint, what the count will do ("every till
+    waits for the close. Settle them first, or they carry into the next shift."), and **See
+    open orders**, to the Orders screen on its Open tab (`/orders?tab=open`, `tabFrom`). The
+    count and the places are the day's list's (`GET /orders/today`), whose word for each
+    order is the server's (`DayStatusOf`), so the note and the tab it links to agree: a
+    table's ticket paid in full and kept for its next round is paid, not open (ADR-383). With
+    none open it says nothing; while the list is read, nothing either, rather than "none" too
+    soon; a list that cannot be read says so, with the way to Orders.
+  - **The Submit count confirm says it again**: "2 orders are still open. They carry into the
+    next shift." above the line that the count is final.
+  - **The Z-report records what the close carried** (`ZDocument.Carried`, a count and what was
+    still to pay): every order of the venue not closed at the close, counted as the Open tab
+    counts it, read in the close's own transaction (`DB.LoadOrderIn`). It is a fact of the
+    moment of close, so a correction keeps the close's figure and does not read the orders
+    again. The report on screen, its slip and the printed slip say "Open orders carried
+    2 · ₹250.00 to pay", or "None". A report issued before this has no such line.
+Rejected: closing or voiding open orders with the shift (a seated party's ticket is not the
+day's to end, ADR-372); refusing the count while any order is open (a bar's last table can
+sit past the close, and a held tab would keep the day from closing); counting the open orders
+in the Z-report's pure build (`zreport.Build` adds up the shift's events; what is open at the
+close is not an event of the shift).
+Because: the count is the one step that cannot be taken back and stops every till, so what
+it leaves behind is said before it, where it can still be settled, and recorded after it,
+where the money owed on them explains part of "Paid for bills of other shifts" next day.
+Cost: one more read of the day's list on close of day, which the Orders screen already keeps
+current. An order that will not project is logged and left out of the count, as the tills'
+list leaves it out. The owner's WhatsApp close-of-day message, the CSV exports and the
+X-report do not carry the figure.

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   approvedTips,
+  carriedText,
   channelName,
   creditLines,
   differenceWords,
@@ -98,5 +99,18 @@ describe("creditLines", () => {
   });
   it("is nothing on a shift with none", () => {
     expect(creditLines({ sales, credit_notes: { count: 0, amount: inr(0) } })).toBeNull();
+  });
+});
+
+describe("carriedText", () => {
+  it("says how many orders a close carried and what was still to pay (ADR-384)", () => {
+    expect(carriedText({ count: 3, amount: inr(65000) })).toBe("3 · ₹650.00 to pay");
+    expect(carriedText({ count: 1, amount: inr(0) })).toBe("1 · nothing to pay");
+  });
+  it("says none when nothing was open", () => {
+    expect(carriedText({ count: 0, amount: inr(0) })).toBe("None");
+  });
+  it("is nothing on a report issued before they were counted", () => {
+    expect(carriedText(undefined)).toBeNull();
   });
 });

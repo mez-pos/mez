@@ -7,6 +7,11 @@
 // server's answer to the count brings it, so step one has no figure to copy.
 // Its slip of the Z-report is not drawn beside the steps: there is no report
 // until the shift is closed.
+//
+// The count holds every till at the close, so step one says first what is
+// still open, with the way to it, and the confirm says it again (TBS-2).
+// Open orders are not closed with the shift: they carry into the next one,
+// and the Z-report says how many (ADR-384).
 
 import { LockIcon, TriangleAlertIcon } from "lucide-react";
 import { useState } from "react";
@@ -14,9 +19,12 @@ import type { ShiftResponse } from "../../../shared/api-types";
 import { formatMoney } from "../../../shared/money";
 import { Button, Card, Confirm, Money, useToast } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { useDayOrders } from "../bills/use-bills";
 import { ClosingStock } from "./ClosingStock";
 import { stockCountOwed } from "./closing-stock-logic";
 import { DrawerCounter, emptyCount, type Counted } from "./DrawerCounter";
+import { carryWords, openOrders } from "./open-orders-logic";
+import { OpenOrdersNote } from "./OpenOrdersNote";
 import { useClosingStock } from "./use-closing-stock";
 import { countRequest, maxReason, reasonOwed, toleranceText, varianceWords } from "./shift-logic";
 import type { ShiftCommands } from "./use-shift";
@@ -27,17 +35,24 @@ interface CloseDayScreenProps {
   commands: ShiftCommands;
   /** Back to selling: offered only before the count, after which the drawer is shut. */
   onBack: () => void;
+  /** The floor's names for its tables, to say where the open orders are. */
+  names: ReadonlyMap<number, string>;
+  /** To the Orders screen on its Open tab: offered, like Back, only before the count. */
+  onSeeOpenOrders: () => void;
   /** Told the number of the Z-report the close issued. */
   onClosed: (zReport: number) => void;
 }
 
-export function CloseDayScreen({ shift, currency, commands, onBack, onClosed }: CloseDayScreenProps) {
+export function CloseDayScreen({ shift, currency, commands, onBack, names, onSeeOpenOrders, onClosed }: CloseDayScreenProps) {
   const [counted, setCounted] = useState<Counted>(emptyCount);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const toast = useToast();
   const stock = useClosingStock(shift.id);
+  const day = useDayOrders();
+  const open = day.data ? openOrders(day.data.orders) : null;
+  const carry = carryWords(open ? open.length : null);
 
   const run = async (what: () => Promise<unknown>, done?: string) => {
     setBusy(true);
@@ -75,6 +90,8 @@ export function CloseDayScreen({ shift, currency, commands, onBack, onClosed }: 
                 : "Count the drawer. What was expected shows once the count is in."}
             </p>
           </header>
+
+          {!rec && <OpenOrdersNote open={open} failed={day.isError} names={names} onSee={onSeeOpenOrders} />}
 
           {rec ? (
             <>
@@ -157,6 +174,7 @@ export function CloseDayScreen({ shift, currency, commands, onBack, onClosed }: 
           void run(() => commands.count(shift.id, request));
         }}
       >
+        {carry && <p className="mb-2 text-base font-semibold">{carry}</p>}
         <p className="text-base">The count can't be changed once it's in. Submit {formatMoney(request.total)}?</p>
       </Confirm>
     </div>

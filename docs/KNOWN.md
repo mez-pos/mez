@@ -10,6 +10,18 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Close of day says what is open; the Z-report what it carried**
+  (ADR-384, Phase 17 Task 13; 2026-10-31). Seen in a scripted Chromium at
+  1024x768 and 1366x768: the note over the counter with a saved counter
+  order and an unpaid T3 open (a paid T5 rightly left out), See open orders
+  landing on Orders' Open tab with both, the confirm's line, and Z-report 1
+  saying "Open orders carried 2 · ₹250.00 to pay" in the report and its
+  slip. **Not seen:** the printed slip on paper (tested in Go: "Open orders
+  carried (2)" at the foot of SALES on 80 and 58 mm); the back office's
+  Z-report, which is the same view; the line when the day's list cannot be
+  read. Left out: the owner's WhatsApp close-of-day message, the CSV
+  exports and the X-report do not carry the figure.
+
 - **A counter sale sent and closed by its settling payment; a paid table
   reads Paid** (ADR-383, Phase 17 Tasks 2 and 3; 2026-10-31). Seen in a
   scripted Chromium: a takeaway paid in cash without Send reached the

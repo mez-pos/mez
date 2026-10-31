@@ -19,6 +19,7 @@ import {
   whereText,
   type BillActions,
   type BillFacts,
+  tabFrom,
 } from "./orders-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
@@ -258,5 +259,17 @@ describe("billActions", () => {
   ];
   it.each(cases)("%s", (_n, f, want) => {
     expect(drawn(billActions(f))).toEqual(want);
+  });
+});
+
+describe("tabFrom", () => {
+  it("opens on the tab a link names, as close of day's link to the open orders does (TBS-2)", () => {
+    expect(tabFrom("?tab=open")).toBe("open");
+    expect(tabFrom("tab=collect")).toBe("collect");
+  });
+  it("opens on All for no tab, or one that is not a tab", () => {
+    expect(tabFrom("")).toBe("all");
+    expect(tabFrom("?tab=closed")).toBe("all");
+    expect(tabFrom("?q=42")).toBe("all");
   });
 });

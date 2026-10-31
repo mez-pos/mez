@@ -42,6 +42,8 @@ interface OrdersScreenProps {
   /** The order in the panel, from the path. */
   selectedId: string | null;
   names: ReadonlyMap<number, string>;
+  /** The tab it opens on: the one a link named, All otherwise. */
+  initialTab?: OrdersTab;
   onSelect: (orderId: string) => void;
   onNewOrder: () => void;
   onOpenOrder: (order: OrderResponse) => void;
@@ -54,9 +56,9 @@ interface OrdersScreenProps {
 const columns =
   "grid grid-cols-[8.5rem_5rem_minmax(0,1fr)_6rem_7rem_4rem] items-center gap-3 xl:grid-cols-[8.5rem_4.5rem_4rem_5rem_minmax(0,1fr)_6rem_7rem_4rem] 2xl:gap-4";
 
-export function OrdersScreen({ selectedId, names, onSelect, onNewOrder, onOpenOrder, onPay }: OrdersScreenProps) {
+export function OrdersScreen({ selectedId, names, initialTab = "all", onSelect, onNewOrder, onOpenOrder, onPay }: OrdersScreenProps) {
   const day = useDayOrders();
-  const [tab, setTab] = useState<OrdersTab>("all");
+  const [tab, setTab] = useState<OrdersTab>(initialTab);
   const [query, setQuery] = useState("");
   // Bills from before today are found by their number alone.
   const past = usePastBills(query, query !== "");

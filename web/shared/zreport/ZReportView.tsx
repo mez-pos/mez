@@ -11,7 +11,7 @@ import { useVenue } from "../use-venue";
 import { cx } from "../ui/cx";
 import { GroupTable, Pair, Row, Section } from "./ZTables";
 import { ZPaper } from "./ZPaper";
-import { approvedTips, channelName, clockText, differenceWords, methodName, rateText, serviceName, staffName, taxNote } from "./zreport-logic";
+import { approvedTips, carriedText, channelName, clockText, differenceWords, methodName, rateText, serviceName, staffName, taxNote } from "./zreport-logic";
 
 interface ZReportViewProps {
   z: ZReportResponse;
@@ -31,6 +31,7 @@ export function ZReportView({ z, actions }: ZReportViewProps) {
   const byService = r.by_service ?? [];
   const tipsBy = r.tips_by ?? [];
   const approved = approvedTips(r);
+  const carried = carriedText(z.carried);
 
   return (
     <article
@@ -74,6 +75,8 @@ export function ZReportView({ z, actions }: ZReportViewProps) {
           )}
           <Pair label="Invoices issued" value={String(r.invoices.count)} />
           {r.invoices.count > 0 && <Pair label="First to last" value={`${r.invoices.first ?? ""} to ${r.invoices.last ?? ""}`} />}
+          {/* Not closed with the shift: they went on into the next one (ADR-384). */}
+          {carried && <Pair label="Open orders carried" value={carried} />}
         </Section>
 
         {r.taxes.length > 0 && (

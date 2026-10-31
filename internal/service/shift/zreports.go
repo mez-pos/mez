@@ -61,6 +61,9 @@ func (s *Service) CorrectZReport(ctx context.Context, meta Meta, shiftID int64, 
 			return err
 		}
 		d := latest.Document
+		// What was open at the close cannot be read again later: the
+		// correction keeps what the close counted (ADR-384).
+		doc.Carried = d.Carried
 		if d.Corrects != 0 && d.Reason == reason && d.GeneratedBy == meta.ActorID && reflect.DeepEqual(d.Report, doc.Report) {
 			number = d.Number
 			return nil

@@ -33,16 +33,19 @@ const (
 // zReportResponse is a Z-report as issued. Every figure is the stored
 // document's; nothing here is worked out again.
 type zReportResponse struct {
-	Number      int64            `json:"number"`
-	Corrects    int64            `json:"corrects,omitempty"`
-	Reason      string           `json:"reason,omitempty"`
-	ShiftID     int64            `json:"shift_id"`
-	Shift       svcshift.ZShift  `json:"shift"`
-	Report      zreport.Report   `json:"report"`
-	Drawer      svcshift.ZDrawer `json:"drawer"`
-	Names       []zNameResponse  `json:"names"`
-	GeneratedBy int64            `json:"generated_by"`
-	GeneratedAt time.Time        `json:"generated_at"`
+	Number   int64            `json:"number"`
+	Corrects int64            `json:"corrects,omitempty"`
+	Reason   string           `json:"reason,omitempty"`
+	ShiftID  int64            `json:"shift_id"`
+	Shift    svcshift.ZShift  `json:"shift"`
+	Report   zreport.Report   `json:"report"`
+	Drawer   svcshift.ZDrawer `json:"drawer"`
+	// Carried is the orders still open at the close and what was still to
+	// pay on them (ADR-384); absent on a report issued before it was counted.
+	Carried     *zreport.Tally  `json:"carried,omitempty"`
+	Names       []zNameResponse `json:"names"`
+	GeneratedBy int64           `json:"generated_by"`
+	GeneratedAt time.Time       `json:"generated_at"`
 }
 
 // zNameResponse is a staff member the report mentions.
@@ -146,7 +149,7 @@ func (s *Server) writeZ(w http.ResponseWriter, r *http.Request, z svcshift.ZRepo
 	d := z.Document
 	out := zReportResponse{
 		Number: d.Number, Corrects: d.Corrects, Reason: d.Reason, ShiftID: z.ShiftID,
-		Shift: d.Shift, Report: d.Report, Drawer: d.Drawer, Names: []zNameResponse{},
+		Shift: d.Shift, Report: d.Report, Drawer: d.Drawer, Carried: d.Carried, Names: []zNameResponse{},
 		GeneratedBy: d.GeneratedBy, GeneratedAt: d.GeneratedAt.UTC(),
 	}
 	for id, n := range d.Names {

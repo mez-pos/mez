@@ -37,6 +37,10 @@ the report.
 - **Sales:** Bills, Gross, Discounts (with their count), Net, Taxable value,
   Tax, then **Total**; with credit notes, "Less credit notes" and **Net
   sales**. Invoices issued, and "First to last" with the two numbers.
+  Then **Open orders carried** (ADR-384): the orders still open when the
+  shift closed, which went on into the next one, and what was still to pay
+  on them, "2 · ₹250.00 to pay", or "None". A report issued before it was
+  counted has no such line.
 - **Tax:** a row per component and rate ("CGST 2.5%"): taxable value and
   tax. These rows are the tax invoiced less the tax credited, so with a
   credit note in the shift they come to less than the Sales card's Tax, and
@@ -62,7 +66,7 @@ time, then four blocks between dashed rules, in the numeral face:
 - Gross sales, Discounts, Net, each tax, **Total**, Tips collected.
 - Each payment method and what it took.
 - Orders, Covers (where the report has them), Avg. order, Refunds and Voids
-  as "2 · ₹556.00".
+  as "2 · ₹556.00", and Open orders carried as "2 · ₹250.00 to pay".
 - Expected drawer, Counted, and **Variance** in words.
 
 **On the terminal:** after **Close the day**, Open the shift shows a card:
@@ -92,6 +96,9 @@ closed shows the card; the back office has every report.
 - The close's answer carries `z_report`, the number the terminal shows.
 - The shift's export files, listed and downloaded as CSV (ADR-104).
 - `GET /api/v1/venue`, for the name on the slip.
+- `carried`, on the report, is read at the close in its transaction and kept
+  as the close counted it by any correction (ADR-384). The printed slip says
+  it at the foot of SALES, "Open orders carried (2)".
 
 ## Interactions
 

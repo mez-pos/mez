@@ -2859,6 +2859,7 @@ export interface ZReportResponse {
   shift: ZShift;
   report: Report;
   drawer: ZDrawer;
+  carried?: Tally;
   names: ZNameResponse[];
   generated_by: number;
   generated_at: string;

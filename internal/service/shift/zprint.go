@@ -60,6 +60,10 @@ func layoutZ(doc ZDocument, venueName, device string, loc *time.Location, copy b
 		diff := r.Balance.Difference
 		z.Unbalanced = &diff
 	}
+	if doc.Carried != nil {
+		c := escpos.ZCount(*doc.Carried)
+		z.Carried = &c
+	}
 	for _, t := range r.Taxes {
 		z.Taxes = append(z.Taxes, escpos.ZTax{Name: t.Name + " " + t.Rate.String(), Amount: t.Amount})
 	}

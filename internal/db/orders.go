@@ -322,6 +322,13 @@ func (d *DB) LoadOrder(ctx context.Context, orderID int64, taxes order.Taxes) (o
 	return d.loadState(ctx, d.Queries(), orderID, taxes, true)
 }
 
+// LoadOrderIn is LoadOrder read inside the caller's transaction: what a
+// writer sees under its own lock, as a shift's close counting the orders
+// it carries (ADR-384).
+func (d *DB) LoadOrderIn(ctx context.Context, q *gen.Queries, orderID int64, taxes order.Taxes) (order.State, error) {
+	return d.loadState(ctx, q, orderID, taxes, true)
+}
+
 // RebuildOrder is an order's state from its events alone, ignoring any
 // snapshot. It is the definition LoadOrder is an optimisation of.
 func (d *DB) RebuildOrder(ctx context.Context, orderID int64, taxes order.Taxes) (order.State, error) {

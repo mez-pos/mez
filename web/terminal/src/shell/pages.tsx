@@ -5,7 +5,7 @@
 // these only carry them.
 
 import { useEffect, useRef, useState } from "react";
-import { Redirect, useLocation } from "wouter";
+import { Redirect, useLocation, useSearch } from "wouter";
 import { roleText } from "../../../shared/auth/format";
 import { useAuth, useAuthStore } from "../../../shared/auth/use-auth";
 import { useMenu } from "../../../shared/use-menu";
@@ -13,6 +13,7 @@ import { useVenue } from "../../../shared/use-venue";
 import { Button, EmptyState, InboxIcon, useToast } from "../../../shared/ui";
 import { ZReportScreen } from "../../../shared/zreport/ZReportScreen";
 import { OrdersScreen } from "../bills/OrdersScreen";
+import { tabFrom } from "../bills/orders-logic";
 import { failureOf, wordsOf } from "../register/order-messages";
 import { railTitle } from "../register/rail-logic";
 import { CloseDayScreen } from "../shift/CloseDayScreen";
@@ -88,11 +89,13 @@ export function PayPage({ orderId }: { orderId: string }) {
 export function OrdersPage({ orderId }: { orderId: string | null }) {
   const { ticket, names } = useTerminal();
   const [, navigate] = useLocation();
+  const search = useSearch();
   const toast = useToast();
   return (
     <OrdersScreen
       selectedId={orderId}
       names={names}
+      initialTab={tabFrom(search)}
       // Picking another row replaces this one in the history: Back leaves the screen.
       onSelect={(id) => navigate(route.bill(id), { replace: orderId !== null })}
       onNewOrder={() => navigate(route.order)}
@@ -160,7 +163,7 @@ export function ShiftPage() {
 
 /** "/shift/close": count the drawer, explain the variance, close, and the Z-report is issued. */
 export function ShiftClosePage() {
-  const { shift, setLastZ } = useTerminal();
+  const { shift, setLastZ, names } = useTerminal();
   const auth = useAuth();
   const store = useAuthStore();
   const [, navigate] = useLocation();
@@ -189,6 +192,8 @@ export function ShiftClosePage() {
       currency={menu.data?.currency ?? "INR"}
       commands={shift.commands}
       onBack={() => navigate(route.order)}
+      names={names}
+      onSeeOpenOrders={() => navigate(route.openOrders)}
       onClosed={(z) => {
         setLastZ(z);
         navigate(route.shift);

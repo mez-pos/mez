@@ -186,7 +186,9 @@ Close sequence, in order, each step recorded:
 2. Variance computed and stored, over/short, with a reason field.
 3. Card batch reconciled against recorded tenders.
 4. Wastage and closing stock posted.
-5. Z-report generated, immutable, numbered.
+5. Z-report generated, immutable, numbered. Orders still open are not closed
+   with the shift: they carry into the next one, and the report records how
+   many and what was still to pay on them, read at the close (ADR-384).
 6. Tips pooled and split per the venue's configured rule.
 7. Tax register and accounting export queued.
 

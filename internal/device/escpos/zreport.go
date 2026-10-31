@@ -27,29 +27,32 @@ type ZReport struct {
 	// TradingDay is the day the shift is reported under, "2026-09-28".
 	TradingDay string
 
-	Orders         int64
-	Gross          money.Amount // as priced, before discounts
-	Discounts      money.Amount
-	Taxable        money.Amount
-	Taxes          []ZTax
-	Total          money.Amount  // what guests owed
-	NetOfCredits   *money.Amount // Total less the credit notes; nil to leave out
-	Categories     []ZLine
-	Channels       []ZLine
-	Staff          []ZLine
-	Tenders        []ZTender
-	Tips           money.Amount
-	Refunds        ZCount
-	CreditNotes    ZCount
-	Voids          ZCount
-	Removed        ZCount // rung up by mistake and taken off, no manager
-	Comps          ZCount
-	Discounted     ZCount // how many discounts, and what they took off
-	FirstInvoice   string
-	LastInvoice    string
-	Invoices       int64
-	Reprints       int64
-	Unbalanced     *money.Amount // payments less sales, when not zero
+	Orders       int64
+	Gross        money.Amount // as priced, before discounts
+	Discounts    money.Amount
+	Taxable      money.Amount
+	Taxes        []ZTax
+	Total        money.Amount  // what guests owed
+	NetOfCredits *money.Amount // Total less the credit notes; nil to leave out
+	Categories   []ZLine
+	Channels     []ZLine
+	Staff        []ZLine
+	Tenders      []ZTender
+	Tips         money.Amount
+	Refunds      ZCount
+	CreditNotes  ZCount
+	Voids        ZCount
+	Removed      ZCount // rung up by mistake and taken off, no manager
+	Comps        ZCount
+	Discounted   ZCount // how many discounts, and what they took off
+	FirstInvoice string
+	LastInvoice  string
+	Invoices     int64
+	Reprints     int64
+	Unbalanced   *money.Amount // payments less sales, when not zero
+	// Carried is the orders still open at the close and what was still to
+	// pay on them, which go on into the next shift; nil to leave out.
+	Carried        *ZCount
 	CashFloat      *money.Amount // the drawer's make-up; nil to leave out
 	CashIn         money.Amount
 	CashOut        money.Amount
@@ -110,6 +113,9 @@ func (z ZReport) Layout(p Paper) ([]byte, error) {
 	if z.NetOfCredits != nil {
 		total(b, "Less credit notes", negate(z.CreditNotes.Amount), w)
 		total(b, "Net sales", *z.NetOfCredits, w)
+	}
+	if z.Carried != nil {
+		counted(b, "Open orders carried", *z.Carried, w)
 	}
 	lines(b, "BY CATEGORY", z.Categories, w)
 	lines(b, "BY CHANNEL", z.Channels, w)

@@ -158,6 +158,7 @@ A modal, "Refund INV/26-27/000042?", in two steps like every approval.
 | Action | Does | Emits | Then |
 |---|---|---|---|
 | A tab | Narrows the rows by status | | |
+| Arrive at `/orders?tab=open` | Opens on that tab, as close of day's **See open orders** does (TBS-2); any other or no `tab` opens on All | | |
 | Type or scan in the search | Filters the day's rows by number or table, and asks for earlier bills by number | | "Before today" under the rows |
 | To collect | The orders to collect still out, ready first | | |
 | Type a pickup code, whole | Finds that order, out or handed over | | |

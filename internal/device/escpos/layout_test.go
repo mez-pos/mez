@@ -323,3 +323,36 @@ func TestZReportPhase09Sections(t *testing.T) {
 			"Difference", "-9.50", "Why: Change given twice")
 	}
 }
+
+// A close says what it carried into the next shift (ADR-384); a report
+// issued before that was counted prints no line for it.
+func TestZReportOpenOrdersCarried(t *testing.T) {
+	carried := ZCount{Count: 2, Amount: inr(45000)}
+	for _, tc := range []struct {
+		name    string
+		carried *ZCount
+		want    bool
+	}{
+		{"two carried", &carried, true},
+		{"none carried", &ZCount{Amount: inr(0)}, true},
+		{"before it was counted", nil, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			z := ZReport{Final: true, Number: 4, Venue: "Filter Coffee House", CashExpected: inr(0), Carried: tc.carried}
+			for _, paper := range []Paper{Paper80, Paper58} {
+				data, err := z.Layout(paper)
+				if err != nil {
+					t.Fatal(err)
+				}
+				p := decode(t, data)
+				p.fits(t, paper)
+				if got := strings.Contains(p.text(), "Open orders carried"); got != tc.want {
+					t.Fatalf("on %d columns the line printed = %v, want %v:\n%s", paper.Columns, got, tc.want, p.text())
+				}
+				if tc.carried == &carried {
+					p.has(t, "Open orders carried (2)", "450.00")
+				}
+			}
+		})
+	}
+}

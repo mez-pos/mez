@@ -32,6 +32,12 @@ type ZDocument struct {
 	Shift  ZShift         `json:"shift"`
 	Report zreport.Report `json:"report"`
 	Drawer ZDrawer        `json:"drawer"`
+	// Carried is the orders still open when the shift closed, as the
+	// Orders screen's Open tab counts them, and what was still to pay on
+	// them: they go on into the next shift (ADR-384). It is read at the
+	// close and only then, so a correction keeps it. A report issued
+	// before it was counted has none.
+	Carried *zreport.Tally `json:"carried,omitempty"`
 	// Names are the staff the report mentions, by ID, as they were named
 	// when it was issued.
 	Names map[int64]string `json:"names"`

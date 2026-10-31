@@ -34,6 +34,12 @@ export const ordersTabs: readonly { id: OrdersTab; label: string }[] = [
   { id: "voided", label: "Voided" },
 ];
 
+/** The tab a link asks for, "?tab=open", or All for none or one that is not a tab. */
+export function tabFrom(search: string): OrdersTab {
+  const asked = new URLSearchParams(search).get("tab");
+  return ordersTabs.find((t) => t.id === asked)?.id ?? "all";
+}
+
 /** How many orders each tab holds. */
 export function tabCounts(orders: readonly DayOrderResponse[]): Record<OrdersTab, number> {
   const counts: Record<OrdersTab, number> = { all: orders.length, collect: 0, open: 0, paid: 0, refunded: 0, voided: 0 };

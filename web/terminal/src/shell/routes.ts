@@ -12,6 +12,8 @@ export const route = {
   table: (tableId: number) => `/tables?table=${tableId}`,
   /** Order history; with an id, one settled bill. */
   orders: "/orders",
+  /** Order history on its Open tab: what a close of day would carry (TBS-2). */
+  openOrders: "/orders?tab=open",
   bill: (orderId: string) => `/orders/${encodeURIComponent(orderId)}`,
   /** Paying an order. */
   pay: (orderId: string) => `/pay/${encodeURIComponent(orderId)}`,
