@@ -8,6 +8,14 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 18: diet marks by shape** (GST-1, TILL-15, ADR-389),
+2026-10-31. `DietMark` is an SVG: a square with a dot for veg and vegan,
+a square with a filled triangle for non-veg, as FSSAI marks them, so the
+two differ in shape and not only in colour; every screen that shows a diet
+takes it. The till's gluten-free mark says "GF" beside the wheat icon.
+Seen in a browser on the till at 1024 and the guest's menu at 390, with
+two demo dishes marked non-veg for the look.
+
 **Phase 17, Task 17: contrast tokens** (TECH-5, TECH-6, TECH-7, TILL-7,
 BO-14, ADR-388), 2026-10-31. `--muted` is `#6E6359` (5.3:1 on parchment,
 4.5:1 or more on every light fill); `fg-faint` is drawn in it on paper and

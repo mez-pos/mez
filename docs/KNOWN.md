@@ -10,6 +10,14 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **Sold out without a fade; the warning toast as a chip** (ADR-390, Phase
+  17 Task 19; 2026-10-31). Seen in a scripted Chromium with two demo dishes
+  sold out: the till's cards at 1024 (opacity 1, the well's fill, the chip,
+  no "+"), the guest's cards at 390, and a warning toast at 1366 in the
+  chip's fill with a 1px border (the menu's refusal made up by the walk).
+  **Not seen:** the item modal and search results on the till with a
+  sold-out dish (the same card); the guest's item sheet for one.
+
 - **Diet marks by shape** (ADR-389, Phase 17 Task 18; 2026-10-31). Seen in a
   scripted Chromium with two demo dishes marked non-veg: the till's cards at
   1024 (triangles and dots, "GF" beside the wheat) and the guest's menu at

@@ -10,7 +10,7 @@
 import { CrownIcon, PlusIcon, WheatOffIcon } from "lucide-react";
 import type { MenuItemResponse, ModifierGroupResponse } from "../../../shared/api-types";
 import { photoUrl } from "../../../shared/menu";
-import { Money } from "../../../shared/ui";
+import { Money, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { DietMark } from "../../../shared/ui/DietMark";
 import { CategoryIcon } from "./CategoryIcon";
@@ -53,9 +53,10 @@ export function ItemGrid({ items, groupsFor, iconFor, onTap, soldOut, dense = fa
               disabled={gone}
               aria-label={gone ? `${item.name}, sold out` : undefined}
               className={cx(
-                "flex h-full w-full flex-col overflow-hidden rounded-card border border-line bg-raised text-left shadow-rest",
+                "flex h-full w-full flex-col overflow-hidden rounded-card border border-line text-left",
                 "outline-offset-2 outline-line-focus focus-visible:outline-2",
-                gone ? "cursor-not-allowed opacity-60" : "hover:bg-raised-high active:bg-raised-high",
+                // Sold out is a sunken card with every word at full contrast, never a fade (TECH-13, ADR-390).
+                gone ? "cursor-not-allowed bg-sunken" : "bg-raised shadow-rest hover:bg-raised-high active:bg-raised-high",
               )}
             >
               <span className={cx("flex h-28 w-full items-center justify-center bg-sunken text-fg-faint", item.photo ? "short:h-16" : "short:hidden")}>
@@ -69,7 +70,7 @@ export function ItemGrid({ items, groupsFor, iconFor, onTap, soldOut, dense = fa
               <span className="flex flex-1 flex-col gap-1 p-3.5 short:p-3">
                 <span className="flex items-start gap-2">
                   <DietMark diet={item.diet} />
-                  <span className={cx("font-serif text-lg leading-snug text-fg-heading", gone && "line-through")}>{item.name}</span>
+                  <span className={cx("font-serif text-lg leading-snug", gone ? "text-fg-muted line-through" : "text-fg-heading")}>{item.name}</span>
                   {item.gluten_free && (
                     // The icon alone was a guess; "GF" says it at a glance (TILL-15, ADR-389).
                     <span
@@ -84,10 +85,10 @@ export function ItemGrid({ items, groupsFor, iconFor, onTap, soldOut, dense = fa
                   )}
                 </span>
                 {item.description && <span className="line-clamp-2 text-sm text-fg-muted short:line-clamp-1">{item.description}</span>}
-                {gone && <span className="text-meta font-semibold uppercase text-warning">Sold out</span>}
+                {gone && <StatusChip status={{ kind: "menu", status: "sold_out" }} className="self-start px-2 py-0" />}
                 {choices > 0 && !gone && <span className="text-sm text-fg-muted">{choices} choices</span>}
                 <span className="mt-auto flex items-center gap-2 pt-2">
-                  <Money amount={item.price} className="text-lg font-semibold text-fg-heading" />
+                  <Money amount={item.price} className={cx("text-lg font-semibold", gone ? "text-fg-muted" : "text-fg-heading")} />
                   {item.popular && (
                     <span
                       role="img"
@@ -102,20 +103,22 @@ export function ItemGrid({ items, groupsFor, iconFor, onTap, soldOut, dense = fa
                 </span>
               </span>
             </button>
-            <button
-              type="button"
-              onClick={() => onTap(item, "plus")}
-              disabled={gone}
-              aria-label={`Add ${item.name}`}
-              className={cx(
-                // On its place-holder in the card's corner, which moves in with the padding on a short screen.
-                "absolute bottom-3.5 right-3.5 flex size-tap items-center justify-center rounded-round short:bottom-3 short:right-3",
-                "outline-offset-2 outline-line-focus focus-visible:outline-2",
-                gone ? "cursor-not-allowed bg-sunken text-fg-muted opacity-60" : "bg-attention text-attention-fg hover:bg-attention-hover",
-              )}
-            >
-              <PlusIcon aria-hidden="true" size={20} strokeWidth={2.4} />
-            </button>
+            {/* Nothing to add while it is sold out: the chip says so, and a dead "+" is not drawn. */}
+            {!gone && (
+              <button
+                type="button"
+                onClick={() => onTap(item, "plus")}
+                aria-label={`Add ${item.name}`}
+                className={cx(
+                  // On its place-holder in the card's corner, which moves in with the padding on a short screen.
+                  "absolute bottom-3.5 right-3.5 flex size-tap items-center justify-center rounded-round short:bottom-3 short:right-3",
+                  "outline-offset-2 outline-line-focus focus-visible:outline-2",
+                  "bg-attention text-attention-fg hover:bg-attention-hover",
+                )}
+              >
+                <PlusIcon aria-hidden="true" size={20} strokeWidth={2.4} />
+              </button>
+            )}
           </li>
         );
       })}

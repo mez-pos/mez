@@ -49,6 +49,11 @@ describe("the paper surface's text", () => {
     }
   });
 
+  // A chip's ink on its own fill: the sold-out chip and the warning toast are the warning pair (ADR-390).
+  it.each(["neutral", "success", "warning", "danger", "accent", "info"])("a %s chip's ink holds 4.5:1 on its fill", (tone) => {
+    expect(contrast(hex(`chip-${tone}-fg`), hex(`chip-${tone}-bg`))).toBeGreaterThanOrEqual(4.5);
+  });
+
   it("is muted where it was faint: one ink for the quietest text", () => {
     expect(hex("fg-faint")).toBe(hex("fg-muted"));
   });

@@ -18,7 +18,7 @@ the same task, don't invent a one-off.
 | `NumPad` | for amounts and PINs. Keys are 56px. Amounts shift in from the right as minor units; `numpad-keys.ts` does the arithmetic |
 | `SearchField` | debounced, clearable, keyboard-dismissible. Escape clears, Enter reports and blurs |
 | `DataTable` | back office only, imported from `ui/DataTable`, never the index. Sortable, cursor-paginated; the owner fetches |
-| `Toast` | transient. Never for errors that need a decision: it has no danger tone. It may carry one button that takes back what it says (**Undo**), and then stays 8 seconds (ADR-387) |
+| `Toast` | transient. Never for errors that need a decision: it has no danger tone. It may carry one button that takes back what it says (**Undo**), and then stays 8 seconds (ADR-387). A warning toast is the warning chip's fill, ink and border, with no stripe (ADR-390) |
 | `EmptyState` | icon, one line, one action |
 | `Timeline` | renders an order's event stream. Every event type has words, or the build fails |
 | `Logo` | the table mark and wordmark, inline, in the surface's colours. `variant="mark"` is the table alone |

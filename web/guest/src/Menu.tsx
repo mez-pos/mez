@@ -185,14 +185,22 @@ interface DishCardProps {
 
 function DishCard({ item, framed, onOpen, onAdd }: DishCardProps) {
   return (
-    <li className={cx("flex flex-col overflow-hidden rounded-card border border-line bg-raised shadow-rest", item.sold_out && "opacity-60")}>
+    // Sold out is a sunken card with its photo in grey and every word at full
+    // contrast, never a fade (TECH-13, ADR-390).
+    <li className={cx("flex flex-col overflow-hidden rounded-card border border-line", item.sold_out ? "bg-sunken" : "bg-raised shadow-rest")}>
       {/* The whole of the card above the button opens the dish. */}
       <button type="button" onClick={onOpen} className="flex flex-1 flex-col text-left outline-offset-[-2px] outline-line-focus focus-visible:outline-2">
         {framed &&
           (item.photo ? (
             // Below the fold on a slow link a photo is fetched when it is
             // scrolled to, and decoded off the main thread.
-            <img src={photoUrl(item.photo)} alt="" loading="lazy" decoding="async" className="aspect-[4/3] w-full bg-sunken object-cover" />
+            <img
+              src={photoUrl(item.photo)}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className={cx("aspect-[4/3] w-full bg-sunken object-cover", item.sold_out && "grayscale")}
+            />
           ) : (
             // The menu has photos and this dish has none yet: the frame is
             // kept, empty, so the cards line up.
@@ -208,12 +216,14 @@ function DishCard({ item, framed, onOpen, onAdd }: DishCardProps) {
           </span>
           {item.description && <span className="mt-1 line-clamp-2 text-sm text-fg-muted">{item.description}</span>}
           {item.gluten_free && <span className="mt-1 text-sm font-semibold text-fg-2">Gluten free</span>}
-          <span className="mt-auto block pt-2 font-serif text-lg">{formatMoney(item.price)}</span>
+          <span className={cx("mt-auto block pt-2 font-serif text-lg", item.sold_out && "text-fg-muted")}>{formatMoney(item.price)}</span>
         </span>
       </button>
       <div className="px-3 pb-3">
         {item.sold_out ? (
-          <p className="flex min-h-tap items-center justify-center rounded-pill bg-sunken text-base font-semibold text-fg-2">Sold out</p>
+          <p className="flex min-h-tap items-center justify-center rounded-pill border border-chip-warning-border bg-chip-warning-bg text-base font-semibold text-chip-warning-fg">
+            Sold out
+          </p>
         ) : (
           <Button variant="primary" className="w-full" aria-label={`Add ${item.name}`} onClick={onAdd}>
             + Add

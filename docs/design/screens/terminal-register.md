@@ -229,9 +229,10 @@ must be made takes three: the card, the choice, Add to Order.
   order". The totals show zero.
 - **Offline:** a tap still shows its line as Adding; when the command fails
   it becomes "Not added" with Retry, never a silent loss.
-- **Sold out** (ADR-109): the card stays in its place, faded, its name
-  struck, "Sold out" in the warning colour, and neither it nor its "+" can be
-  tapped. A screen reader hears "Latte, sold out". The clock is checked once
+- **Sold out** (ADR-109): the card stays in its place, sunken (the well's
+  fill, its photo in grey), its name struck and its name and price muted,
+  the "Sold out" warning chip under the description, and no "+": it cannot be
+  tapped. Never a fade: every word keeps full contrast (TECH-13, ADR-390). A screen reader hears "Latte, sold out". The clock is checked once
   a minute, so it comes back when the trading day turns.
 - **A line moved on while its modal is open:** saving is shut, with why:
   "This has gone to the kitchen. Void it and add it again."

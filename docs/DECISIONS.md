@@ -14951,3 +14951,29 @@ first line is the dish's name, and two words would push it to a third line at 10
 Because: a mark that carries meaning carries it in shape, not colour alone (WCAG 1.4.1), and
 this shape is the one an Indian guest already reads off a packet.
 Cost: none known.
+
+## ADR-390 - Sold out is a sunken card, not a fade; a warning toast is a warning chip
+2026-10 · Status: accepted. Phase 17 Task 19 (TECH-13, and the toast stripe the audit kept).
+Context: a sold-out dish on the till and on the guest's menu was its card at 60% opacity,
+which took every word on it, the name, the price and "Sold out" itself, down to about
+2.3:1, and left a dead terracotta "+" on the till. A warning toast was a plain card with a
+4px mustard stripe down its left side: the one side-stripe in the paper look, and the audit
+noted it.
+Decision:
+  - **A sold-out card is sunken, not faded**: the well's fill, no shadow, its photo in grey,
+    its name and price in muted ink (the name struck on the till), and every word at full
+    contrast (ADR-388's inks hold 4.5:1 on the well). "Sold out" is the warning chip on the
+    till (the back office's own "Sold out" chip) and a warning-chip pill where the guest's
+    Add would be. The till draws no "+" for it: there is nothing to add, and a disabled
+    button is a target that does nothing.
+  - **A warning toast is the warning chip**: its mustard fill, its ink and its border, with no
+    stripe. Success stays the green fill and the rest a plain card.
+  - `shared/tokens.test.ts` holds every chip's ink to 4.5:1 on its own fill.
+Rejected: a lighter opacity, or opacity on the photo alone (opacity is what took the words
+below AA; grey is enough for a photo); keeping a disabled "+" (it said nothing the chip does
+not); a mustard stripe kept on a tinted toast (two signals for one tone).
+Because: sold out has to be read at a glance and the dish still found, so the quietness goes
+in the card's ground and the photo, not in the words; and a warning should look the same
+whether it is a chip in a table or news in a toast.
+Cost: a sold-out card on the till is a little less quiet than it was at a distance: its
+words are now as dark as the ink allows.

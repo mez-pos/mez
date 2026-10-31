@@ -83,7 +83,9 @@ dish that does not say what it is is in no diet's list.
 
 - Nothing tapped is under 48px. Chips are pills with a word; a chosen one
   also says so to a screen reader (`aria-pressed`).
-- Sold out is a word and a fade, never a fade alone.
+- Sold out is a word and a sunken card (the well's fill, the photo in grey,
+  the price muted, "Sold out" in a warning-chip pill where Add would be),
+  never a fade: every word keeps full contrast (TECH-13, ADR-390).
 - Prices are whole figures as the bill will show them, through `formatMoney`.
   The compact form is for chart axes and is never a price.
 - The search field's text is 16px so a phone does not zoom on it.

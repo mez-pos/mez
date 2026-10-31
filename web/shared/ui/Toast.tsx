@@ -72,18 +72,18 @@ export function useToast(): ShowToast {
   return show;
 }
 
-// Good news is the green fill; a warning is a card with a mustard rule; the
-// rest is a plain card.
+// Good news is the green fill; a warning is the warning chip's fill and ink,
+// with no stripe down its side (ADR-390); the rest is a plain card.
 const shells: Record<ToastTone, string> = {
   neutral: "border-line-strong bg-raised text-fg shadow-card",
   success: "border-accent bg-accent text-accent-fg shadow-action",
-  warning: "border-chip-warning-border border-l-4 border-l-highlight bg-raised text-fg shadow-card",
+  warning: "border-chip-warning-border bg-chip-warning-bg text-chip-warning-fg shadow-card",
 };
 
 const dots: Record<ToastTone, string> = {
   neutral: "text-fg-muted",
   success: "text-accent-fg",
-  warning: "text-warning",
+  warning: "text-chip-warning-fg",
 };
 
 function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number) => void }) {

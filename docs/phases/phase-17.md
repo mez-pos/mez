@@ -123,8 +123,9 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
 - [x] **Task 18 - Diet marks by shape (GST-1, TILL-15).** Done 2026-10-31
   (ADR-389): non-veg is a triangle in its square, veg a dot; the till's
   gluten-free mark says "GF".
-- [ ] **Task 19 - Sold out without opacity; warning toasts as chips
-  (TECH-13).**
+- [x] **Task 19 - Sold out without opacity; warning toasts as chips
+  (TECH-13).** Done 2026-10-31 (ADR-390): a sold-out card is sunken with
+  the warning chip and no "+"; a warning toast is the warning chip.
 
 ### The kitchen display's behaviour
 
