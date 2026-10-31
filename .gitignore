@@ -34,3 +34,13 @@ Thumbs.db
 
 # The dev venue (docs/phases/rebuild.md)
 /.dev-data/
+
+# impeccable, the design skill (ADR-381), stays on this machine: its copy and
+# helper agents (the skill and its hook run from ~/.claude), its state and
+# caches at any depth, and the records it writes at the root. The product's own
+# record is docs/00-product.md.
+/.claude/skills/impeccable/
+/.claude/agents/impeccable-*.md
+.impeccable/
+/PRODUCT.md
+/DESIGN.md

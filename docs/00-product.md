@@ -35,6 +35,15 @@ out of scope. The architecture would need to change (ADR-001).
 **Guest** — web, QR and kiosk. Same menu, same modifiers, same invoice series as
 the counter.
 
+## The first venue's devices
+
+Confirmed 2026-10-31 (ADR-381): the first venue sells on a Windows PC or
+laptop running the till in a browser, a tablet used as a till or on the
+floor, and a separate kitchen screen at the pass. Staff phones are not in
+use there; guests use their own phones for QR ordering. Every screen is
+checked at those sizes: 1366x768 and 1920x1080 for the PC, 1024x768 for
+the tablet, 390 wide for a guest's phone (tokens.md, "Layout").
+
 ## v1 scope — the spine
 
 This is what makes it a real POS. Nothing ships until all of it works.

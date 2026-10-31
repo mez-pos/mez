@@ -14594,3 +14594,55 @@ Release workflow, disabled in mez-pos/mez until a release is decided (`docs/rele
 Because: a name on the installer tells the cafe's staff and the next session what they are
 looking at; "alpha.4" on a build with a cloud in it would have said the wrong thing.
 Cost: none in code. The next beta is `v0.2.0-beta.2`, after the walk's fixes.
+
+## ADR-381 - The UI audit of 2026-10-31, Phase 17, and the decisions it reverses
+2026-10 · Status: accepted, at the human's word on 2026-10-31. Plan: `docs/phases/phase-17.md`.
+Context: an audit with the impeccable skill (`docs/design/ui-audit-2026-10-31.md`) walked
+every screen of v0.2.0-beta.1 in a browser, as cashier, manager, waiter, cook, owner and
+guest, at 1366x768, 1024x768, 1920x1080 and 390x844, and six reviewers checked each finding
+against the source: 119 findings, 2 P0, 29 P1. `docs/00-product.md` now records
+the venue's devices (a PC till, a tablet and a kitchen screen), and the mez look in
+`tokens.md` stays binding: the fixes work inside it. Phase 16 was already the
+outlets' phase, so the plan is Phase 17; it depends on nothing and runs before 16.
+Decision: Phase 17 carries the plan. The two P0s (a paid bill stays "Open" until New Order is
+tapped; a counter order can be paid and closed without reaching the kitchen) come first, and
+at the human's word every screen is made to fit the venue's devices beside them. These
+recorded decisions are reversed, each when its task lands, with its spec changed in the same
+task:
+1. **ADR-177's defaults**: the kitchen display opens with sound on and on the ink surface;
+   paper stays a choice for a bright kitchen. A blocked sound says so on the board. tokens.md
+   names ink for the kitchen, and a silent board loses tickets.
+2. **ADR-176's ticket sizes**: where a ticket goes and its timer take `--text-display`, as
+   tokens.md already says; choices and notes take `--text-kitchen`; both grow with the
+   screen (a clamp), so a large kitchen screen reads from two metres. At 2 m the present
+   sizes fall under ISO 9241's 16 arcminute floor.
+3. **ADR-178's stats column**: below 2xl the stats leave the board, and Coming next shows only
+   when it has rows. On a 768 screen they cost a ticket's height.
+4. **The kitchen spec's Sound button** becomes an On/Off switch like its neighbours.
+5. **backoffice-menu.md and backoffice-settings.md**: a draft is never dropped silently;
+   opening another item, the sidebar and a `g` chord ask first, as backoffice-shell.md
+   already says. The item editor's Save is always in view.
+6. **Retire**: areas, tables and choice groups are confirmed with what they take with them;
+   an item stays one click but gains Undo. tokens.md: danger is always confirmed.
+7. **backoffice-settings.md's neutral backup chip**: "Nothing is being backed up" takes the
+   warning tone and shows on the dashboard to whoever may change settings.
+8. **The guest specs**: + Add is a tinted button, so the screen has one solid primary; the
+   venue's name leads the menu and the tab's title, mez becomes a small footer, and the
+   fixed brand lines go, since they speak for every venue.
+9. **terminal-floor.md and waiter-home.md**: one set of table words on the till and the
+   tablet, "Seated" never beside "Ordered", and "Seat and order" the primary on both.
+10. **terminal-tender.md**: the change due shows in the sticky foot at every size, not only
+    when the card fits.
+11. **The open-shift spec**: the counted float and Open shift sit in a sticky foot.
+12. **Casing**: buttons and headings are in sentence case; specs follow as screens are touched.
+13. **tokens.md's `--muted`**: it measures 4.47:1 on parchment, not 4.6:1. It is darkened to
+    about `#6F645B` and `fg-faint` points at it, so every muted and faint line holds 4.5:1.
+ADR-056 (the PIN dots) stands; a key pressed before a profile is chosen says "Tap your name
+first."
+Because: the walk showed the spine's screens losing their working content at the venue's own
+sizes, and two money paths that can mislead a cashier. The specs were written from the screens
+as built (ADR-196), so a spec that records a hurtful choice is changed with the screen, not
+kept to match it.
+Cost: thirty-odd sessions of work, each a task in Phase 17. A change to `web/shared` (tokens,
+Button, Modal, Toast, DietMark) changes mez-cloud's account area too, which is rebuilt against
+it.
