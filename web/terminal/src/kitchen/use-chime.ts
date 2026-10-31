@@ -7,7 +7,7 @@
 
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import type { KitchenTicketResponse } from "../../../shared/api-types";
-import { arrivals, ticketId } from "./board-prefs";
+import { arrivals, newlyVoided, ticketId, voidedKeys } from "./board-prefs";
 
 type AudioCtor = typeof AudioContext;
 
@@ -54,6 +54,14 @@ export function ring(ctx: AudioContext): void {
   [0, 0.5].forEach((start) => [660, 880].forEach((hz, i) => note(ctx, hz, ctx.currentTime + start + i * 0.16)));
 }
 
+/**
+ * A void: two falling notes, twice, unlike the rising ones of a new ticket,
+ * so a cook hears that something stopped and not that more came (KDS-13).
+ */
+export function ringVoid(ctx: AudioContext): void {
+  [0, 0.5].forEach((start) => [880, 520].forEach((hz, i) => note(ctx, hz, ctx.currentTime + start + i * 0.2)));
+}
+
 function note(ctx: AudioContext, hz: number, at: number): void {
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
@@ -75,13 +83,15 @@ export interface Chime {
 }
 
 /**
- * Chimes when a ticket arrives in New Orders while sound is on. `fresh` is
- * undefined until the board has been read once, so a display turned on to a
- * full board stays quiet.
+ * Chimes when a ticket arrives in New Orders while sound is on, and in its
+ * own falling notes when a line still to make is voided (`working`, the new
+ * and the in-preparation tickets). Both are undefined until the board has
+ * been read once, so a display turned on to a full board stays quiet.
  */
-export function useChime(on: boolean, fresh: readonly KitchenTicketResponse[] | undefined): Chime {
+export function useChime(on: boolean, fresh: readonly KitchenTicketResponse[] | undefined, working?: readonly KitchenTicketResponse[]): Chime {
   const ctx = useRef<AudioContext | null>(null);
   const seen = useRef<ReadonlySet<string> | null>(null);
+  const voided = useRef<ReadonlySet<string> | null>(null);
   const state = useSyncExternalStore(subscribe, audioState);
 
   // Made when sound is on: by a tap, or on load, when the browser holds it
@@ -105,6 +115,13 @@ export function useChime(on: boolean, fresh: readonly KitchenTicketResponse[] | 
     seen.current = new Set(fresh.map(ticketId));
     if (on && came.length > 0 && ctx.current?.state === "running") ring(ctx.current);
   }, [on, fresh]);
+
+  useEffect(() => {
+    if (!working) return;
+    const gone = newlyVoided(voided.current, working);
+    voided.current = voidedKeys(working);
+    if (on && gone.length > 0 && ctx.current?.state === "running") ringVoid(ctx.current);
+  }, [on, working]);
 
   return { blocked: on && state !== "running" && state !== "none", unblock: () => void audioContext() };
 }

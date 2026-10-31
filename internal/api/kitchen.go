@@ -39,8 +39,11 @@ type kitchenLineResponse struct {
 }
 
 type kitchenTicketResponse struct {
-	OrderID   string                `json:"order_id"`
-	TicketSeq int64                 `json:"ticket_seq"`
+	OrderID   string `json:"order_id"`
+	TicketSeq int64  `json:"ticket_seq"`
+	// Round is which send to this station the ticket is for its order: 1
+	// for the first, 2 for the next, an add-on or a later course (KDS-12).
+	Round     int                   `json:"round"`
 	Station   string                `json:"station"`
 	Status    kitchen.TicketStatus  `json:"status"`
 	SentAt    time.Time             `json:"sent_at"`
@@ -236,7 +239,7 @@ func tableNames(o order.State, tables map[int64]string) string {
 func kitchenTicket(bt svcorder.BoardTicket, tables map[int64]string) kitchenTicketResponse {
 	t, o := bt.Ticket, bt.Order
 	out := kitchenTicketResponse{
-		OrderID: bt.PublicID, TicketSeq: t.Seq, Station: t.Station, Status: t.Status, SentAt: t.At.UTC(),
+		OrderID: bt.PublicID, TicketSeq: t.Seq, Round: o.TicketRound(t), Station: t.Station, Status: t.Status, SentAt: t.At.UTC(),
 		Channel: o.Channel, Service: o.Service, TableID: o.TableID, Covers: o.Covers, Notes: []string{}, Lines: []kitchenLineResponse{},
 	}
 	if !t.StartedAt.IsZero() {

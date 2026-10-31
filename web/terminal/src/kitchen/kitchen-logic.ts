@@ -240,3 +240,14 @@ export function readFailure(err: unknown): string {
   if (err instanceof ApiError && err.unreachable) return "The tickets could not be read: no answer from the server. Trying again.";
   return "The tickets could not be read. Trying again.";
 }
+
+/**
+ * What tells a later send from an order's first at the station (KDS-12,
+ * ADR-392): its course, when that is a later one ("Mains", "Course 2"), or
+ * "Add-on" for a later send of the same course. Nothing for the first.
+ */
+export function ticketChip(t: Pick<KitchenTicketResponse, "round" | "lines">, courseName: (course: number) => string | null): string | null {
+  const course = Math.max(0, ...t.lines.filter((l) => l.status !== "voided").map((l) => l.course));
+  if (course > 1) return courseName(course) ?? `Course ${course}`;
+  return t.round > 1 ? "Add-on" : null;
+}

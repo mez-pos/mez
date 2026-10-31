@@ -17,9 +17,10 @@
 // display knows no waiter). Recall stands there instead (rule 4).
 
 import { BikeIcon, CheckIcon, PlayIcon, ShoppingBagIcon, Undo2Icon, UtensilsIcon, type LucideIcon } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { memo, useEffect, useState, type ReactNode } from "react";
 import type { KitchenTicketResponse, ServiceType } from "../../../shared/api-types";
 import { cx } from "../../../shared/ui/cx";
+import { useClock } from "../../../shared/use-clock";
 import { clockText } from "../../../shared/venue-text";
 import { agoText, latePercent, metaText, timerText, timerTone, toneWord, whereParts, whereText, type TimerTone } from "./kitchen-logic";
 
@@ -54,19 +55,41 @@ const recallArmedMs = 4000;
 interface TicketCardProps {
   ticket: KitchenTicketResponse;
   stage: CardStage;
-  now: number;
   lateAfter: number;
   /** This card's own action is on its way. */
   busy: boolean;
   /** Any action is on its way: one at a time. */
   disabled: boolean;
-  /** Start preparing, Mark ready, or Recall: what this column does. Null for someone who may only look (ADR-180). */
-  onAct: (() => void) | null;
+  /**
+   * Start preparing, Mark ready, or Recall: what this column does. Null for
+   * someone who may only look (ADR-180). The same function for every card,
+   * so a card is drawn again only when it changes.
+   */
+  onAct: ((ticket: KitchenTicketResponse, stage: CardStage) => void) | null;
   /** It arrived in the last minute: it says New (KDS-1). */
   isNew?: boolean;
+  /** Its course, when a later one, or "Add-on" (KDS-12). */
+  chip?: string | null;
+  /** New Orders go straight to ready: the button is Mark ready (KDS-17). */
+  skipPreparing?: boolean;
 }
 
-export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, onAct, isNew = false }: TicketCardProps) {
+/**
+ * A ticket's card. Drawn again only when what it shows changes: its clocks
+ * are leaves that tick by themselves, so a board of twenty tickets is not
+ * twenty cards redrawn every second (TECH-19, ADR-392).
+ */
+export const TicketCard = memo(function TicketCard({
+  ticket: t,
+  stage,
+  lateAfter,
+  busy,
+  disabled,
+  onAct,
+  isNew = false,
+  chip = null,
+  skipPreparing = false,
+}: TicketCardProps) {
   // Recall undoes a cook's work, so it asks for a second tap: one wet tap is not enough (KDS-15).
   const [armed, setArmed] = useState(false);
   useEffect(() => {
@@ -74,9 +97,6 @@ export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, o
     const timer = setTimeout(() => setArmed(false), recallArmedMs);
     return () => clearTimeout(timer);
   }, [armed]);
-  const elapsed = now - Date.parse(t.sent_at);
-  const tone = timerTone(elapsed, lateAfter);
-  const word = toneWord[tone];
   const Icon = serviceIcons[t.service];
   const look = stageClass[stage];
   const placed = clockText(new Date(t.sent_at), null).split(" · ")[1] ?? "";
@@ -85,7 +105,7 @@ export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, o
 
   return (
     <article
-      aria-label={ready ? `${whereText(t)}, ready` : `${whereText(t)}${isNew ? ", new" : ""}, ${timerText(elapsed)}${word ? `, ${word}` : ""}`}
+      aria-label={`${whereText(t)}${isNew ? ", new" : ""}${chip ? `, ${chip}` : ""}${ready ? ", ready" : ""}`}
       className={cx("rounded-card border border-l-8 bg-raised p-4 shadow-rest short:p-3", look.card)}
     >
       <header>
@@ -95,19 +115,12 @@ export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, o
             {where.lead && <span className="text-kitchen">{where.lead} · </span>}
             {where.main}
           </h3>
-          {ready ? (
-            <span className="ml-auto inline-flex min-h-10 shrink-0 items-center rounded-pill bg-chip-success-bg px-4 text-xl font-bold text-chip-success-fg">
-              Ready{t.ready_at ? ` · ${agoText(now - Date.parse(t.ready_at))}` : ""}
-            </span>
-          ) : (
-            <span className={cx("ml-auto inline-flex shrink-0 items-baseline gap-2 rounded-pill px-3.5 py-1 font-bold", tonePill[tone])}>
-              {word && <span className="text-xl uppercase">{word}</span>}
-              <span className="font-mono text-display leading-none tabular-nums">{timerText(elapsed)}</span>
-            </span>
-          )}
+          {ready ? <ReadyChip readyAt={t.ready_at} /> : <TimerPill sentAt={t.sent_at} lateAfter={lateAfter} />}
         </div>
         <p className="mt-0.5 flex items-center gap-2 text-lg text-fg-muted">
           {isNew && <span className="shrink-0 rounded-pill bg-attention px-2.5 text-lg font-bold uppercase text-attention-fg">New</span>}
+          {/* A later course or add-on, so a table sent to twice does not look like the same ticket twice (KDS-12). */}
+          {chip && <span className="shrink-0 rounded-pill bg-chip-info-bg px-2.5 text-lg font-bold text-chip-info-fg">{chip}</span>}
           <Icon aria-hidden="true" size={18} strokeWidth={1.9} className="shrink-0" />
           <span className="min-w-0">{[metaText(t), placed].filter(Boolean).join(" · ")}</span>
         </p>
@@ -119,12 +132,17 @@ export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, o
         {t.lines.map((l) => {
           const voided = l.status === "voided";
           return (
-            <li key={l.id} className={cx("flex gap-3", voided && "text-fg-muted line-through")}>
-              <span className={cx("min-w-7 font-mono text-kitchen font-bold leading-tight tabular-nums", !voided && look.qty)}>{l.qty}</span>
+            <li key={l.id} className={cx("flex gap-3", voided && "text-fg-muted")}>
+              <span className={cx("min-w-7 font-mono text-kitchen font-bold leading-tight tabular-nums", voided ? "line-through" : look.qty)}>{l.qty}</span>
               <div className="grid min-w-0 flex-1 gap-1">
                 <p className="text-kitchen font-semibold leading-tight">
-                  {l.name}
-                  {voided && <span className="ml-2 text-lg no-underline">Void</span>}
+                  <span className={voided ? "line-through" : undefined}>{l.name}</span>
+                  {/* The dish is struck; the word that says so is not, and is read across the pass (KDS-13). */}
+                  {voided && (
+                    <span className="ml-2 inline-block rounded-pill bg-chip-danger-bg px-2.5 align-middle text-lg font-bold uppercase text-chip-danger-fg">
+                      Void
+                    </span>
+                  )}
                 </p>
                 {/* A ready card is for the runner: names and quantities, and the notes still. */}
                 {!ready && l.modifiers.length > 0 && <p className="text-kitchen leading-tight text-fg-2">{l.modifiers.join(", ")}</p>}
@@ -137,20 +155,21 @@ export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, o
         })}
       </ul>
 
-      {stage === "preparing" && (
-        <div aria-hidden="true" className="mt-4 h-2 rounded-pill bg-sunken short:mt-3">
-          <div className={cx("h-2 rounded-pill", tone === "late" ? "bg-attention" : "bg-highlight")} style={{ width: `${latePercent(elapsed, lateAfter)}%` }} />
-        </div>
-      )}
+      {stage === "preparing" && <LateBar sentAt={t.sent_at} lateAfter={lateAfter} />}
 
       {onAct && stage === "fresh" && (
-        <button type="button" disabled={disabled} onClick={onAct} className={cx(action, "bg-accent text-accent-fg hover:bg-accent-hover")}>
-          <PlayIcon aria-hidden="true" size={22} strokeWidth={2.2} />
-          {busy ? "Starting" : "Start preparing"}
+        <button type="button" disabled={disabled} onClick={() => onAct(t, stage)} className={cx(action, "bg-accent text-accent-fg hover:bg-accent-hover")}>
+          {skipPreparing ? <CheckIcon aria-hidden="true" size={22} strokeWidth={2.4} /> : <PlayIcon aria-hidden="true" size={22} strokeWidth={2.2} />}
+          {busy ? (skipPreparing ? "Marking" : "Starting") : skipPreparing ? "Mark ready" : "Start preparing"}
         </button>
       )}
       {onAct && stage === "preparing" && (
-        <button type="button" disabled={disabled} onClick={onAct} className={cx(action, "border border-line-strong bg-raised hover:bg-raised-high")}>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => onAct(t, stage)}
+          className={cx(action, "border border-line-strong bg-raised hover:bg-raised-high")}
+        >
           <CheckIcon aria-hidden="true" size={22} strokeWidth={2.4} />
           {busy ? "Marking" : "Mark ready"}
         </button>
@@ -162,7 +181,7 @@ export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, o
           onClick={() => {
             if (!armed) return setArmed(true);
             setArmed(false);
-            onAct();
+            onAct(t, stage);
           }}
           className={cx(action, armed ? "bg-attention text-attention-fg" : "bg-accent-tint text-accent-text hover:bg-raised-high")}
         >
@@ -171,6 +190,42 @@ export function TicketCard({ ticket: t, stage, now, lateAfter, busy, disabled, o
         </button>
       )}
     </article>
+  );
+});
+
+/** How long it has waited and in what tone, by the second: the one part of a card that moves on its own. */
+function TimerPill({ sentAt, lateAfter }: { sentAt: string; lateAfter: number }) {
+  const elapsed = useClock(1000) - Date.parse(sentAt);
+  const tone = timerTone(elapsed, lateAfter);
+  const word = toneWord[tone];
+  return (
+    <span className={cx("ml-auto inline-flex shrink-0 items-baseline gap-2 rounded-pill px-3.5 py-1 font-bold", tonePill[tone])}>
+      {word && <span className="text-xl uppercase">{word}</span>}
+      <span className="font-mono text-display leading-none tabular-nums">{timerText(elapsed)}</span>
+    </span>
+  );
+}
+
+/** How far a ticket in preparation is towards late, by the second. */
+function LateBar({ sentAt, lateAfter }: { sentAt: string; lateAfter: number }) {
+  const elapsed = useClock(1000) - Date.parse(sentAt);
+  return (
+    <div aria-hidden="true" className="mt-4 h-2 rounded-pill bg-sunken short:mt-3">
+      <div
+        className={cx("h-2 rounded-pill", timerTone(elapsed, lateAfter) === "late" ? "bg-attention" : "bg-highlight")}
+        style={{ width: `${latePercent(elapsed, lateAfter)}%` }}
+      />
+    </div>
+  );
+}
+
+/** Ready, and for how long: it counts in minutes, so it looks every fifteen seconds. */
+function ReadyChip({ readyAt }: { readyAt: string | undefined }) {
+  const now = useClock(15_000);
+  return (
+    <span className="ml-auto inline-flex min-h-10 shrink-0 items-center rounded-pill bg-chip-success-bg px-4 text-xl font-bold text-chip-success-fg">
+      Ready{readyAt ? ` · ${agoText(now - Date.parse(readyAt))}` : ""}
+    </span>
   );
 }
 

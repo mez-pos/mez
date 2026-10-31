@@ -62,7 +62,7 @@ order_snapshots (order_id, seq, state_json)   -- optimisation only, rebuildable
 | `line.added` | item_id, qty, unit_price, modifiers[], course, station |
 | `line.qty_changed` | line_id, from, to: only before the line reaches the kitchen |
 | `line.modified` | line_id, from[], to[]: modifiers, only before the line reaches the kitchen |
-| `line.voided` | line_id, reason_code, authorised_by |
+| `line.voided` | line_id, reason_code, authorised_by, station (the line's, when it had been sent; ADR-392) |
 | `line.comped` | line_id, reason_code, authorised_by |
 | `discount.applied` | scope (line/order), kind (pct/amount), value, reason |
 | `discount.removed` | seq of the discount, reason, authorised_by: the discount stays in the stream and takes nothing off from here on (ADR-373) |

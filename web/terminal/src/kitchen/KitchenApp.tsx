@@ -5,12 +5,15 @@
 
 import type { StationResponse } from "../../../shared/api-types";
 import { ArrowLeftIcon, LockIcon } from "lucide-react";
+import { useLayoutEffect } from "react";
+import { browserStorage } from "../../../shared/auth/storage";
 import { useAuth } from "../../../shared/auth/use-auth";
 import { NoVenueScreen } from "../../../shared/screens/NoVenueScreen";
 import { PairScreen } from "../../../shared/screens/PairScreen";
 import { Splash } from "../../../shared/screens/Splash";
 import { EmptyState, InboxIcon } from "../../../shared/ui";
 import { useMenu } from "../../../shared/use-menu";
+import { readPrefs, surfaceOf } from "./board-prefs";
 import type { SignedIn } from "./BoardFoot";
 import { KitchenBoard } from "./KitchenBoard";
 
@@ -39,6 +42,19 @@ export function StationBoard({ station, onStation, signedIn }: StationBoardProps
   const menu = useMenu();
   const stations = menu.data?.stations ?? [];
   const chosen = stations.find((s) => s.code === station);
+  // The choice of station is on the board's surface, so Change station at
+  // night on /pass does not flash paper (KDS-18); the board sets it while it
+  // is up. Leaving the kitchen gives the page back to paper: on a terminal
+  // the next screen is the sign-in, which is never dark.
+  useLayoutEffect(() => {
+    if (!chosen) document.documentElement.dataset.surface = surfaceOf(readPrefs(browserStorage("local")));
+  }, [chosen]);
+  useLayoutEffect(
+    () => () => {
+      document.documentElement.dataset.surface = "paper";
+    },
+    [],
+  );
   if (chosen) {
     return (
       <KitchenBoard

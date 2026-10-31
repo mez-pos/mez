@@ -10,6 +10,18 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The kitchen display says what changed** (ADR-392, Phase 17 Task 21;
+  2026-10-31). Seen in a scripted Chromium at 1366x768: a second send of a
+  counter order marked Add-on; a line voided on the till (reason, Arjun's
+  PIN) on the kitchen's board 248 ms later, struck with a Void chip; the
+  foot's Sound and Skip preparing switches, and Skip preparing's one tap to
+  the pass; the station picker on /pass staying on ink; timers ticking.
+  **Not seen:** a later course's chip (the demo menu sends no course 2;
+  tested in vitest); the void chime, heard. Left: a void of a line never sent,
+  and a note on a sent line, name no station and reach the board at its
+  20-second read; a ticket whose only line is voided stays in New Orders with
+  Start preparing.
+
 - **The kitchen display, heard and trusted** (ADR-391, Phase 17 Task 20;
   2026-10-31). Seen in a scripted Chromium at 1366x768: a ticket sent from
   the till arriving as new, with "1 new below" in a full New Orders; Recall

@@ -243,9 +243,19 @@ func (s *Service) RemoveLine(ctx context.Context, meta Meta, orderID, lineID int
 	})
 }
 
-// VoidLine takes a line off the bill.
+// VoidLine takes a line off the bill. A line already sent names its station
+// on the void, so the station's display is told at once (ADR-392).
 func (s *Service) VoidLine(ctx context.Context, meta Meta, orderID int64, cmd VoidLine) (Result, error) {
-	return s.run(ctx, meta, orderID, "void_line", cmd, one(order.LineVoided(cmd)))
+	return s.run(ctx, meta, orderID, "void_line", cmd, func(_ context.Context, tx *db.OrderTx, _ venue, _ time.Time) ([]order.Payload, error) {
+		void := order.LineVoided(cmd)
+		void.Station = ""
+		for _, l := range tx.State.Lines {
+			if l.ID == cmd.LineID && l.Sent {
+				void.Station = l.Station
+			}
+		}
+		return []order.Payload{void}, nil
+	})
 }
 
 // CompLine gives a line away.

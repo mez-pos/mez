@@ -460,6 +460,14 @@ func TestTopicsDecideWhatIsSent(t *testing.T) {
 	if got := c.eventIDs(); len(got) != 2 || got[0] != bumped || got[1] != recalled {
 		t.Fatalf("the bar's bump and recall gave %v, want %d and %d", got, bumped, recalled)
 	}
+	// A void of a line sent to the bar names the bar, and reaches it at once;
+	// a void of a line never sent names no station (ADR-392).
+	voided := w.src.append("ord_AAAA1111", 4, order.LineVoided{LineID: 2, ReasonCode: "wrong_item", Station: "bar"})
+	w.src.append("ord_AAAA1111", 4, order.LineVoided{LineID: 3, ReasonCode: "wrong_item"})
+	w.hub.Notify(1)
+	if got := c.eventIDs(); len(got) != 1 || got[0] != voided {
+		t.Fatalf("the bar's void gave %v, want only %d", got, voided)
+	}
 
 	// Subscribing again replaces the topics, and a table topic follows the
 	// order rather than the station.

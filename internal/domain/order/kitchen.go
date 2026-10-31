@@ -97,3 +97,17 @@ func (p *projector) ticket(seq int64, station string) (*Ticket, error) {
 	}
 	return nil, fmt.Errorf("%w: %d", ErrTicketNotFound, seq)
 }
+
+// TicketRound is which send to its station a ticket is for its order: 1 for
+// the order's first ticket there, 2 for the next. A later send is an add-on
+// or a later course, and the board says so rather than show what looks like
+// the same table twice (KDS-12, ADR-392).
+func (s State) TicketRound(t Ticket) int {
+	round := 1
+	for _, other := range s.Tickets {
+		if other.Station == t.Station && other.Seq < t.Seq {
+			round++
+		}
+	}
+	return round
+}

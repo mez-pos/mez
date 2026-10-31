@@ -168,6 +168,11 @@ type LineVoided struct {
 	LineID       int64  `json:"line_id"`
 	ReasonCode   string `json:"reason_code"`
 	AuthorisedBy int64  `json:"authorised_by"`
+	// Station is where the line was sent, when it had been: the station's
+	// display hears its void at once rather than at its next read (KDS-13,
+	// ADR-392). Set by the service from the order, never by the till; empty
+	// on a line never sent and on voids from before it.
+	Station string `json:"station,omitempty"`
 }
 
 // LineComped gives a line away. Unlike a void, the item was made and served,

@@ -738,3 +738,25 @@ func TestCashSettlesAtTheRoundedBalance(t *testing.T) {
 		t.Fatalf("the invoice's rounding: %+v", issued)
 	}
 }
+
+// A void of a line that went to its station names the station, so its
+// display hears the void at once; a line never sent names none, and what a
+// till sends cannot set it (KDS-13, ADR-392).
+func TestAVoidNamesTheStationItsLineWentTo(t *testing.T) {
+	s, _, _ := newService(t)
+	ctx := context.Background()
+	m := cashier("")
+	id := open(t, s).OrderID
+	must(t)(s.AddLine(ctx, m, id, dosa(1)))   // 2, the kitchen's
+	must(t)(s.AddLine(ctx, m, id, coffee(1))) // 3, the bar's, never sent
+	must(t)(s.SendTicket(ctx, m, id, SendTicket{Station: "kitchen"}))
+	for _, tc := range []struct {
+		line int64
+		want string
+	}{{2, "kitchen"}, {3, ""}} {
+		res := must(t)(s.VoidLine(ctx, m, id, VoidLine{LineID: tc.line, ReasonCode: "wrong_item", AuthorisedBy: 7, Station: "elsewhere"}))
+		if got := res.Events[0].Payload.(order.LineVoided).Station; got != tc.want {
+			t.Errorf("void of line %d names station %q, want %q", tc.line, got, tc.want)
+		}
+	}
+}

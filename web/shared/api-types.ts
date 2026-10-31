@@ -601,6 +601,7 @@ export interface LineVoided {
   line_id: number;
   reason_code: string;
   authorised_by: number;
+  station?: string;
 }
 
 export interface LineComped {
@@ -2990,6 +2991,7 @@ export interface KitchenLineResponse {
 export interface KitchenTicketResponse {
   order_id: string;
   ticket_seq: number;
+  round: number;
   station: string;
   status: TicketStatus;
   sent_at: string;

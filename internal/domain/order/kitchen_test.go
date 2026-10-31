@@ -57,3 +57,24 @@ func TestBumpAndRecall(t *testing.T) {
 		})
 	}
 }
+
+// A ticket's round counts the order's tickets at its own station before it,
+// and no other station's (KDS-12).
+func TestTicketRound(t *testing.T) {
+	dosa := coffee(1)
+	dosa.Name, dosa.Station = "Masala dosa", "kitchen"
+	s, err := Project(stream(
+		opened(), coffee(1), TicketSent{Station: "bar", LineIDs: []int64{2}}, // ticket 3: the bar's first
+		dosa, TicketSent{Station: "kitchen", LineIDs: []int64{4}}, // ticket 5: the kitchen's first
+		coffee(1), TicketSent{Station: "bar", LineIDs: []int64{6}}, // ticket 7: the bar's second
+	), untaxed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[int64]int{3: 1, 5: 1, 7: 2}
+	for _, tk := range s.Tickets {
+		if got := s.TicketRound(tk); got != want[tk.Seq] {
+			t.Errorf("ticket %d at %s: round %d, want %d", tk.Seq, tk.Station, got, want[tk.Seq])
+		}
+	}
+}

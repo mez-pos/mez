@@ -134,8 +134,10 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
   browser holds it, a longer louder chime, New and "1 new below", a band
   after 10 s without the server, a 700 ms hold after a move, kitchen words
   that clear, Recall and Change station on a second tap, edges on night.
-- [ ] **Task 21 - What changed (KDS-12, KDS-13, KDS-16, KDS-17, KDS-18,
-  TECH-19).**
+- [x] **Task 21 - What changed (KDS-12, KDS-13, KDS-16, KDS-17, KDS-18,
+  TECH-19).** Done 2026-10-31 (ADR-392): course and Add-on chips, a void that
+  arrives at once and reads, Sound and Skip preparing as switches, no paper
+  flash on /pass, timers in leaves.
 
 ### Words staff can say
 

@@ -15024,3 +15024,44 @@ hands: a ticket it fails to announce, or a tap it takes twice, is a dish late or
 Cost: the "1 new below" button covers the foot of the lowest card in the column while it
 shows. A headless browser plays sound without a tap, so the blocked band was seen with
 Chrome's rule emulated in the page, not in Chrome itself.
+
+## ADR-392 - The kitchen display says what changed: later sends, voids, and a bar's one tap
+2026-10 · Status: accepted. Phase 17 Task 21 (KDS-12, KDS-13, KDS-16, KDS-17, KDS-18, TECH-19).
+Context: a table's second send, an add-on or its next course, came onto the board looking
+like the first ticket again. A line voided after it was sent reached the board only at its
+next read, up to 20 seconds on, because the void named no station and the board's stream
+follows its station alone; when it came it was quiet, and its word "Void" was struck
+through with the dish. "Sound off" on a button read as a command beside two switches. A
+drink made in thirty seconds took Start preparing, then Mark ready, across two columns.
+Change station at night on a terminal's /pass flashed the page to paper. And every card on
+the board was drawn again every second, for its timer.
+Decision:
+  - **A ticket says which send it is** for its order at its station (`round`, from
+    `order.State.TicketRound`), and the card a chip: the course when it is a later one
+    ("Mains", "Course 2"), or "Add-on" for a later send of the same course.
+  - **A void of a sent line names the line's station** (`LineVoided.Station`, set by the
+    service from the order, never by the till; old voids have none), and the stream sends it
+    on that station's topic: the board hears it at once (a quarter of a second in the walk).
+    On the card the dish is struck and a danger chip says **Void**, not struck. A void of a
+    line still to make chimes its own figure, two falling notes, twice.
+  - **Sound is a switch** like Group by table and Night mode, saying On or Off.
+  - **Skip preparing**, a switch in the foot, kept on the device: New Orders' button is Mark
+    ready, and one tap puts the ticket on the pass (the server takes a bump from new,
+    ADR-175). Off by default: a kitchen that cooks wants Preparing.
+  - **The choice of station keeps the board's surface**: `StationBoard`, which stays up while
+    the board and the choice swap, sets the picker's surface from the device's choices and
+    gives the page back to paper only when the kitchen is left.
+  - **A card is drawn again only when it changes**: its clocks (the timer, the bar towards
+    late, Ready's minutes) are leaves with their own `useClock`, the card is `memo`, and the
+    board hands every card one stable function for its button.
+Rejected: a station on every event the stream sends (a note on a sent line has the same
+problem; it is left for when notes are touched, in KNOWN); the board subscribing to each
+order on it (topics are fixed when the stream opens, and a station's orders change by the
+minute); "Add-on" worked out on the screen from `ticket_seq` (it counts the order's events,
+not its tickets at the station); Skip preparing on by default for a station named "bar"
+(names are the venue's own; a switch the bar turns on once is plainer).
+Because: a cook reads what changed at a glance or not at all: a second ticket that says
+what it is, a void that arrives as it happens and is not struck out of sight, and a switch
+that says what it is.
+Cost: a void of a line never sent still names no station (nothing on a board shows it). A
+ticket whose only line is voided stays in New Orders with Start preparing until it is moved.

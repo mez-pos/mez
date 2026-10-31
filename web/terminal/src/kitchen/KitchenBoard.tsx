@@ -20,7 +20,7 @@
 // leave the board and Coming next is a strip, when it has rows (ADR-381).
 
 import { ArrowDownIcon, BellIcon, ChefHatIcon, UtensilsIcon, type LucideIcon } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import type { KitchenTicketResponse, StationResponse } from "../../../shared/api-types";
 import { browserStorage } from "../../../shared/auth/storage";
 import { cx } from "../../../shared/ui/cx";
@@ -32,7 +32,7 @@ import { BoardFoot, type SignedIn } from "./BoardFoot";
 import { AllDayStrip, BoardHeader, ComingStrip } from "./BoardHead";
 import { BoardSide } from "./BoardStats";
 import { groupByTable, noArrivals, noteArrivals, readPrefs, surfaceOf, ticketId, writePrefs, type Arrived, type BoardPrefs } from "./board-prefs";
-import { allDay, boardColumns, comingRows, isNewTicket, moveFailure, readFailure, staleText, statRows, tapHeld, whereText } from "./kitchen-logic";
+import { allDay, boardColumns, comingRows, isNewTicket, moveFailure, readFailure, staleText, statRows, tapHeld, ticketChip, whereText } from "./kitchen-logic";
 import { TicketCard, type CardStage } from "./TicketCard";
 import { useChime } from "./use-chime";
 import { useKitchenBoard } from "./use-kitchen-board";
@@ -59,7 +59,9 @@ export function KitchenBoard({ station, onChangeStation, signedIn }: KitchenBoar
   const [prefs, setPrefs] = useState<BoardPrefs>(() => readPrefs(browserStorage("local")));
   const cols = useMemo(() => boardColumns(board.data), [board.data]);
   const fresh = board.data ? cols.fresh : undefined;
-  const chime = useChime(prefs.sound, fresh);
+  // The tickets still to make, where a void is heard (KDS-13).
+  const working = useMemo(() => (board.data ? [...cols.fresh, ...cols.preparing] : undefined), [board.data, cols]);
+  const chime = useChime(prefs.sound, fresh, working);
 
   // When each new ticket came, so it says New for a minute (KDS-1). Noted as
   // the board is read: React's way to keep state that follows a value.
@@ -98,14 +100,12 @@ export function KitchenBoard({ station, onChangeStation, signedIn }: KitchenBoar
     return () => clearTimeout(timer);
   }, [error]);
 
-  // Night is the page's surface, so every token under it turns (tokens.md).
-  // Leaving the board gives the page back to paper: on a terminal the next
-  // screen is the sign-in, which is never dark.
-  useEffect(() => {
+  // Night is the page's surface, so every token under it turns (tokens.md),
+  // set before the screen is drawn. Leaving the board does not give the page
+  // back to paper: the choice of station keeps the board's surface, and
+  // StationBoard gives it back when the kitchen is left (KDS-18).
+  useLayoutEffect(() => {
     document.documentElement.dataset.surface = surfaceOf(prefs);
-    return () => {
-      document.documentElement.dataset.surface = "paper";
-    };
   }, [prefs]);
   const keep = (next: BoardPrefs) => {
     setPrefs(next);
@@ -117,9 +117,16 @@ export function KitchenBoard({ station, onChangeStation, signedIn }: KitchenBoar
   const canWork = signedIn?.canWork ?? true;
   const stats = board.data ? statRows(board.data.stats) : null;
   const menu = useMenu();
-  const coming = comingRows(board.data?.coming ?? [], courseNamer(menu.data?.courses ?? []));
+  const courseName = useMemo(() => courseNamer(menu.data?.courses ?? []), [menu.data]);
+  const coming = comingRows(board.data?.coming ?? [], courseName);
   const comingMore = board.data?.coming_more ?? 0;
-  const acts: Readonly<Record<CardStage, (t: KitchenTicketResponse) => Promise<void>>> = { fresh: board.start, preparing: board.bump, ready: board.recall };
+  // With Skip preparing on, New Orders go straight to the pass: the server
+  // takes a bump from new (ADR-175), for a drink made in thirty seconds (KDS-17).
+  const acts: Readonly<Record<CardStage, (t: KitchenTicketResponse) => Promise<void>>> = {
+    fresh: prefs.skipPreparing ? board.bump : board.start,
+    preparing: board.bump,
+    ready: board.recall,
+  };
 
   const run = (t: KitchenTicketResponse, stage: CardStage) => {
     if (tapHeld(movedAt.current)) return;
@@ -130,6 +137,13 @@ export function KitchenBoard({ station, onChangeStation, signedIn }: KitchenBoar
       .catch((err: unknown) => setError(moveFailure(err, whereText(t))))
       .finally(() => setBusy(null));
   };
+  // One function for every card, so a card is drawn again only when it
+  // changes, and not every second with the clock (TECH-19).
+  const latestRun = useRef(run);
+  useEffect(() => {
+    latestRun.current = run;
+  });
+  const act = useCallback((t: KitchenTicketResponse, stage: CardStage) => latestRun.current(t, stage), []);
 
   return (
     <main className="flex h-screen flex-col overflow-hidden bg-canvas text-fg">
@@ -186,12 +200,13 @@ export function KitchenBoard({ station, onChangeStation, signedIn }: KitchenBoar
                       <TicketCard
                         ticket={t}
                         stage={col.stage}
-                        now={now}
                         lateAfter={lateAfter}
                         busy={busy === id}
                         disabled={busy !== null}
-                        onAct={canWork ? () => run(t, col.stage) : null}
+                        onAct={canWork ? act : null}
                         isNew={isNew}
+                        chip={ticketChip(t, (n) => courseName(n))}
+                        skipPreparing={prefs.skipPreparing}
                       />
                     </li>
                   );

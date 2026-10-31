@@ -1,7 +1,8 @@
 // The foot of the kitchen's board (D10, D11): what this display is set to.
-// Change station, the chime for a new ticket, a table's tickets kept together,
-// and espresso night, which is on until a bright kitchen turns it off. Each is
-// the device's own choice (board-prefs.ts, ADR-381).
+// Change station, then switches, each saying On or Off: the chime, a table's
+// tickets kept together, New Orders straight to ready for a bar, and espresso
+// night, which is on until a bright kitchen turns it off. Each is the device's
+// own choice (board-prefs.ts, ADR-381, ADR-392).
 //
 // Left out, and why. Settings: a display has one setting besides these, its
 // station, so the button says that. Auto advance: nothing here moves a ticket
@@ -10,7 +11,7 @@
 // to be collected, ADR-090), and one tap that clears a pass has no undo. D10's
 // script line: a working screen carries none (ADR-381).
 
-import { LockIcon, Settings2Icon, Volume2Icon, VolumeXIcon } from "lucide-react";
+import { LockIcon, Settings2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cx } from "../../../shared/ui/cx";
 import type { BoardPrefs } from "./board-prefs";
@@ -37,7 +38,6 @@ const shape =
 const plain = cx(shape, "hover:bg-raised-high");
 
 export function BoardFoot({ prefs, onPrefs, onChangeStation, signedIn }: BoardFootProps) {
-  const Sound = prefs.sound ? Volume2Icon : VolumeXIcon;
   // Leaving the board for the choice of station takes a second tap: a wet
   // hand brushing the foot does not take the tickets off the screen (KDS-15).
   const [armed, setArmed] = useState(false);
@@ -60,11 +60,10 @@ export function BoardFoot({ prefs, onPrefs, onChangeStation, signedIn }: BoardFo
         <Settings2Icon aria-hidden="true" size={19} strokeWidth={1.85} />
         {armed ? "Tap again to change station" : "Change station"}
       </button>
-      <button type="button" aria-pressed={prefs.sound} onClick={() => onPrefs({ ...prefs, sound: !prefs.sound })} className={plain}>
-        <Sound aria-hidden="true" size={19} strokeWidth={1.85} />
-        {prefs.sound ? "Sound on" : "Sound off"}
-      </button>
+      {/* A switch like its neighbours: "Sound off" on a button read as a command (KDS-16). */}
+      <Switch label="Sound" on={prefs.sound} onChange={(sound) => onPrefs({ ...prefs, sound })} />
       <Switch label="Group by table" on={prefs.groupByTable} onChange={(groupByTable) => onPrefs({ ...prefs, groupByTable })} />
+      <Switch label="Skip preparing" on={prefs.skipPreparing} onChange={(skipPreparing) => onPrefs({ ...prefs, skipPreparing })} />
       <Switch label="Night mode" on={prefs.night} onChange={(night) => onPrefs({ ...prefs, night })} />
       {signedIn && (
         <button type="button" onClick={signedIn.onLock} className={cx(plain, "ml-auto border border-line-strong")}>

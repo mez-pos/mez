@@ -16,6 +16,7 @@ import {
   staleText,
   statRows,
   tapHeld,
+  ticketChip,
   timerText,
   timerTone,
   toMake,
@@ -26,6 +27,7 @@ import {
 const ticket = (extra: Partial<KitchenTicketResponse> = {}): KitchenTicketResponse => ({
   order_id: "ord_NMRNWWW1",
   ticket_seq: 3,
+  round: 1,
   station: "kitchen",
   status: "fired",
   sent_at: "2026-09-28T12:00:00Z",
@@ -259,5 +261,23 @@ describe("a board to trust (ADR-391)", () => {
   it("says the board could not be read, and that it is trying again", () => {
     expect(readFailure(new ApiError("timeout", "x"))).toBe("The tickets could not be read: no answer from the server. Trying again.");
     expect(readFailure(new ApiError("forbidden", "x", 403))).toBe("The tickets could not be read. Trying again.");
+  });
+});
+
+describe("ticketChip (KDS-12)", () => {
+  const line = { id: 1, name: "Dosa", qty: 1, course: 1, modifiers: [], notes: [], status: "active" as const };
+  const named = (n: number) => (n === 2 ? "Mains" : null);
+  it("says nothing for an order's first send at the station", () => {
+    expect(ticketChip({ round: 1, lines: [line] }, named)).toBeNull();
+  });
+  it("says Add-on for a later send of the same course", () => {
+    expect(ticketChip({ round: 2, lines: [line] }, named)).toBe("Add-on");
+  });
+  it("names a later course, by its name or its number", () => {
+    expect(ticketChip({ round: 2, lines: [{ ...line, course: 2 }] }, named)).toBe("Mains");
+    expect(ticketChip({ round: 1, lines: [{ ...line, course: 3 }] }, named)).toBe("Course 3");
+  });
+  it("reads the course of the lines still to make, not of one voided", () => {
+    expect(ticketChip({ round: 1, lines: [line, { ...line, id: 2, course: 2, status: "voided" as const }] }, named)).toBeNull();
   });
 });

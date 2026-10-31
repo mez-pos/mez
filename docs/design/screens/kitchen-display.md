@@ -72,9 +72,10 @@ type gets smaller.
   on the board (ADR-381, over ADR-178's line under the all-day strip): on a
   768 screen they cost a ticket's height.
 - **Foot, chrome, 76px (56px under `short:`, its buttons still 48px):**
-  **Change station**; **Sound on** or **Sound off**; **Group by table** and
-  **Night mode** as switches that say On or Off; and on a terminal, at the
-  right, **Lock · Ravi**. No script line (ADR-381).
+  **Change station**; then switches that say On or Off: **Sound** (a switch
+  like its neighbours, KDS-16), **Group by table**, **Skip preparing** (KDS-17)
+  and **Night mode**; and on a terminal, at the right, **Lock · Ravi**. No
+  script line (ADR-381).
 
 **At the venue's sizes**, with one counter ticket of three lines:
 
@@ -97,8 +98,11 @@ colour, and 16px of padding (12px under `short:`):
   under half of it, mustard and **WAITING** from half, the danger tint and
   **LATE** from the late time. The word is `text-xl`, on the digits' line. A
   ready card has "Ready · 2m" instead, at `text-xl`.
-- Under them, one line: a small icon for how it leaves the pass, then who,
-  how and when it was placed: "4 guests · Dine-in · 12:20 AM". D10's icon
+- Under them, one line: **New** for a minute after it arrived, a chip for a
+  later send of the order to this station (its course when a later one,
+  "Mains", or **Add-on**; KDS-12, ADR-392), a small icon for how it leaves
+  the pass, then who, how and when it was placed: "4 guests · Dine-in ·
+  12:20 AM". D10's icon
   tile is gone (ADR-381): on a 300px column it pushed where it goes onto two
   lines.
 - The order's notes in a mustard box (`chip-warning`) that starts with
@@ -106,7 +110,9 @@ colour, and 16px of padding (12px under `short:`):
 - **The lines:** the quantity and the name at `text-kitchen`, semibold;
   choices under them at `text-kitchen`, normal weight; each of a line's notes
   in a **Note:** box, so a note differs from a choice by more than its colour.
-  A line voided after it was sent is struck through, "Void". A ready card
+  A line voided after it was sent has its quantity and name struck through
+  and a danger chip, **Void**, that is not; the void reaches the board as it
+  happens, and chimes two falling notes (KDS-13, ADR-392). A ready card
   shows names, quantities and notes; not the choices.
 - In Preparing, a bar towards late, mustard, then terracotta once late.
 - The column's button, full width, 64px.
@@ -161,6 +167,7 @@ differs.
 | Recall | Asks for a second tap: "Tap again to recall", for 4 s (KDS-15); then `.../recall` | `ticket.recalled` | The card is back in New Orders |
 | Sound | Toggles the chime | | Two rising notes, twice, half a second apart, when a ticket arrives in New Orders (ADR-391) |
 | Group by table | Toggles | | In each column an order's tickets sit together, at the place of its first |
+| Skip preparing | Toggles, off to start | | New Orders' button is **Mark ready**: one tap puts the ticket on the pass, for a bar (KDS-17, ADR-392) |
 | Night mode | Toggles the surface, on to start | | Off is paper, for a bright kitchen. Kept across a reload |
 | Change station | Asks for a second tap: "Tap again to change station", for 4 s (KDS-15); then back to the choice | | |
 | Lock (a terminal) | Signs the cook out | | Staff Login, on paper |

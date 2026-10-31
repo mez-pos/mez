@@ -8,6 +8,19 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 20: the kitchen display, heard and trusted** (KDS-1,
+KDS-2, KDS-3, KDS-14, KDS-15, KDS-9, ADR-391), 2026-10-31. Sound is on by
+default (older kept choices take it once); while the browser holds it back
+a band says "Sound is blocked by the browser. Tap here..." and any tap
+unblocks it; the chime is two figures, louder. A new ticket says New for a
+minute, and "1 new below" points to one under the fold. After 10 s without
+the live stream a brick band says the board is not up to date. A tap within
+700 ms of the board moving is not taken. Failed moves are in the kitchen's
+words and clear after 8 s. Recall and Change station take a second tap. On
+night every action has a 2px edge (a new `ink:` variant). Seen in a browser
+at 1366x768 (the blocked band with Chrome's rule emulated, the stale band
+by stopping the server).
+
 **Phase 17, Task 19: sold out without opacity; warning toasts as chips**
 (TECH-13, ADR-390), 2026-10-31. A sold-out card on the till and on the
 guest's menu is sunken (the well's fill, the photo in grey, name and price

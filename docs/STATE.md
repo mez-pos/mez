@@ -13,7 +13,7 @@ the UI audit (`docs/design/ui-audit-2026-10-31.md`). Tasks 1 and 4 to
 12 are done: at the human's word the device-fit pass came first, built
 and seen at 1024x768, 1366x768 and 1920x1080 on 2026-10-31 (ADR-381,
 ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s,
-Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 20 (ADR-384 to ADR-391). It runs before Phase 16, which is mostly
+Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 21 (ADR-384 to ADR-392). It runs before Phase 16, which is mostly
 `mez-cloud`'s.
 
 Before it, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
@@ -28,23 +28,22 @@ list below.
 
 ## Last completed task
 
-**Phase 17, Task 20: the kitchen display, heard and trusted** (KDS-1,
-KDS-2, KDS-3, KDS-14, KDS-15, KDS-9, ADR-391), 2026-10-31. Sound is on by
-default (older kept choices take it once); while the browser holds it back
-a band says "Sound is blocked by the browser. Tap here..." and any tap
-unblocks it; the chime is two figures, louder. A new ticket says New for a
-minute, and "1 new below" points to one under the fold. After 10 s without
-the live stream a brick band says the board is not up to date. A tap within
-700 ms of the board moving is not taken. Failed moves are in the kitchen's
-words and clear after 8 s. Recall and Change station take a second tap. On
-night every action has a 2px edge (a new `ink:` variant). Seen in a browser
-at 1366x768 (the blocked band with Chrome's rule emulated, the stale band
-by stopping the server).
+**Phase 17, Task 21: the kitchen display says what changed** (KDS-12,
+KDS-13, KDS-16, KDS-17, KDS-18, TECH-19, ADR-392), 2026-10-31. A ticket's
+`round` (`State.TicketRound`) gives its card a chip: the later course, or
+Add-on. A void of a sent line names its station (`LineVoided.Station`, set
+by the service), so the stream brings it at once; the card strikes the dish
+and says **Void** in a danger chip, and the board chimes falling notes.
+Sound is a switch; **Skip preparing**, a new switch, makes New Orders' button
+Mark ready. The station picker keeps the night surface on /pass. Cards are
+memo'd and their clocks are leaves. Seen in a browser at 1366: Add-on on a
+second send, a void on the board 248 ms after Void it, Skip preparing, the
+picker on ink.
 
 ## Next task
 
-**Here: Phase 17 Task 21, the kitchen display: what changed (KDS-12, KDS-13, KDS-16, KDS-17, KDS-18, TECH-19)**,
-then Task 22 onward; Tasks 1 to 20 are done. Each screen is checked by eye at
+**Here: Phase 17 Task 22, names and labels (TILL-8, TBS-7, TILL-9 and the rest the phase file lists)**,
+then Task 23 onward; Tasks 1 to 21 are done. Each screen is checked by eye at
 1024x768 and 1366x768 before it is ticked: the audit's walk (a demo venue
 from `mez setup -demo-menu` in a scratch data directory, a scripted
 Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel

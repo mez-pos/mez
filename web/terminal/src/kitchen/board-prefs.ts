@@ -12,6 +12,8 @@ export interface BoardPrefs {
   sound: boolean;
   /** A table's tickets sit together in each column. */
   groupByTable: boolean;
+  /** New Orders go straight to ready in one tap: a bar's 30-second drink (KDS-17, ADR-392). */
+  skipPreparing: boolean;
 }
 
 /**
@@ -20,7 +22,7 @@ export interface BoardPrefs {
  * a hot pass is the wrong tool. A silent board loses tickets, so sound is on
  * until a kitchen turns it off (ADR-381, ADR-391, over ADR-177).
  */
-export const defaultPrefs: BoardPrefs = { night: true, sound: true, groupByTable: false };
+export const defaultPrefs: BoardPrefs = { night: true, sound: true, groupByTable: false, skipPreparing: false };
 
 export const prefsKey = "mez.kitchen.prefs";
 
@@ -39,7 +41,7 @@ export function readPrefs(storage: Pick<Storage, "getItem"> | null): BoardPrefs 
     const kept = raw as Record<string, unknown>;
     const flag = (key: keyof BoardPrefs) => (typeof kept[key] === "boolean" ? kept[key] : defaultPrefs[key]);
     const sound = kept.v === prefsVersion ? flag("sound") : defaultPrefs.sound;
-    return { night: flag("night"), sound, groupByTable: flag("groupByTable") };
+    return { night: flag("night"), sound, groupByTable: flag("groupByTable"), skipPreparing: flag("skipPreparing") };
   } catch {
     return defaultPrefs;
   }
@@ -102,4 +104,17 @@ export function noteArrivals(prev: Arrived, fresh: readonly KitchenTicketRespons
   const at = new Map([...prev.at].filter(([id]) => ids.has(id)));
   for (const id of arrivals(prev.seen, fresh)) at.set(id, now);
   return { seen: ids, at };
+}
+
+/** Each voided line on the board, by its order and line: a line's id is its order's own (KDS-13). */
+export function voidedKeys(tickets: readonly KitchenTicketResponse[]): Set<string> {
+  const keys = new Set<string>();
+  for (const t of tickets) for (const l of t.lines) if (l.status === "voided") keys.add(`${t.order_id}:${l.id}`);
+  return keys;
+}
+
+/** The lines voided since the board was last read; none at the first read, whatever it holds (ADR-392). */
+export function newlyVoided(seen: ReadonlySet<string> | null, tickets: readonly KitchenTicketResponse[]): string[] {
+  if (seen === null) return [];
+  return [...voidedKeys(tickets)].filter((k) => !seen.has(k));
 }
