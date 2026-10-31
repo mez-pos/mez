@@ -63,7 +63,7 @@ export function PrinterFormModal({ title, initial, prints, onSave, onClose }: Pr
           </p>
         )}
         <Field label="Name" error={on("name")}>
-          {(id) => <input id={id} className={inputClass} value={form.name} maxLength={40} onChange={(e) => set({ name: e.target.value })} />}
+          {(id, aria) => <input id={id} {...aria} className={inputClass} value={form.name} maxLength={40} onChange={(e) => set({ name: e.target.value })} />}
         </Field>
         <Choice
           label="How it connects"
@@ -80,9 +80,10 @@ export function PrinterFormModal({ title, initial, prints, onSave, onClose }: Pr
           hint={usb ? "As Windows shows it under Printers, like EPSON TM-T82." : "Like 192.168.1.50. Port 9100 unless you add another."}
           error={on("address")}
         >
-          {(id) => (
+          {(id, aria) => (
             <input
               id={id}
+              {...aria}
               className={cx(inputClass, !usb && "font-mono")}
               value={form.address}
               autoComplete="off"

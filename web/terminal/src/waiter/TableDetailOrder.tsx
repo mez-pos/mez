@@ -49,7 +49,7 @@ interface TableDetailOrderProps {
 }
 
 const tile =
-  "flex min-h-charge items-center justify-center gap-2 rounded px-3 text-base font-semibold outline-offset-2 outline-attention focus-visible:outline-3 disabled:opacity-40";
+  "flex min-h-charge items-center justify-center gap-2 rounded px-3 text-base font-semibold outline-offset-2 outline-focus focus-visible:outline-3 disabled:opacity-40";
 
 export function TableDetailOrder({ table, title, orderId, sendWaits, onAddItems, onBill, floor, act, onMoving }: TableDetailOrderProps) {
   const { order, loading, error, refetch, send, fire, addNote } = useTableOrder(orderId);
@@ -136,7 +136,7 @@ export function TableDetailOrder({ table, title, orderId, sendWaits, onAddItems,
           <button
             type="button"
             onClick={() => setSheet("note")}
-            className="mt-3 flex min-h-tap w-full items-center justify-center gap-2 rounded-pill border border-dashed border-line-strong text-base font-semibold text-fg-muted outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+            className="mt-3 flex min-h-tap w-full items-center justify-center gap-2 rounded-pill border border-dashed border-line-strong text-base font-semibold text-fg-muted outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
           >
             <PlusIcon aria-hidden="true" size={16} />
             Add note

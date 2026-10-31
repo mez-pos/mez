@@ -18,7 +18,7 @@ interface PanelProps {
 }
 
 const moreClass =
-  "-my-3 inline-flex min-h-tap shrink-0 items-center rounded-tight text-base font-bold text-attention-text outline-offset-2 outline-line-focus hover:underline focus-visible:outline-2";
+  "-my-3 inline-flex min-h-tap shrink-0 items-center rounded-tight text-base font-bold text-attention-text outline-offset-2 outline-focus hover:underline focus-visible:outline-3";
 
 export function Panel({ title, more, aside, className, children }: PanelProps) {
   return (

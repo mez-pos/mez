@@ -49,7 +49,7 @@ export function ItemPhotoField({ current, change, onChange, error }: ItemPhotoFi
         <div className="flex flex-wrap gap-tap-gap">
           <label
             htmlFor={inputId}
-            className="inline-flex min-h-tap cursor-pointer items-center rounded border border-line-strong bg-raised-high px-4 text-base font-semibold focus-within:outline-2 focus-within:outline-line-focus"
+            className="inline-flex min-h-tap cursor-pointer items-center rounded border border-line-strong bg-raised-high px-4 text-base font-semibold focus-within:outline-3 focus-within:outline-focus"
           >
             {busy ? "Preparing" : shown ? "Choose another" : "Choose a photo"}
             <input

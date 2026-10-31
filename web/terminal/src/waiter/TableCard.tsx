@@ -27,7 +27,7 @@ export function TableCard({ table, names, onOpen, wants = false }: TableCardProp
       type="button"
       onClick={() => onOpen(table)}
       className={cx(
-        "flex min-h-30 w-full items-center gap-3.5 rounded-card border p-4 text-left outline-offset-2 outline-attention focus-visible:outline-3",
+        "flex min-h-30 w-full items-center gap-3.5 rounded-card border p-4 text-left outline-offset-2 outline-focus focus-visible:outline-3",
         tone.border,
         tone.wash,
       )}

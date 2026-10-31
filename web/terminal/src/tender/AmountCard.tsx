@@ -35,7 +35,7 @@ interface AmountCardProps {
 }
 
 const chip =
-  "flex min-h-tap items-center justify-center rounded border px-2 text-base outline-offset-2 outline-attention focus-visible:outline-3 disabled:opacity-40";
+  "flex min-h-tap items-center justify-center rounded border px-2 text-base outline-offset-2 outline-focus focus-visible:outline-3 disabled:opacity-40";
 
 export function AmountCard(props: AmountCardProps) {
   const { method, target, share, amount, active, quick, change, busy, onActivate, onKey, onQuick, onCustom } = props;

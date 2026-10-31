@@ -85,7 +85,7 @@ export function RailLines(props: RailLinesProps) {
           <button
             type="button"
             onClick={clear.onClear}
-            className="inline-flex min-h-tap items-center gap-2 rounded-pill bg-danger-tint px-4 text-base font-semibold text-danger outline-offset-2 outline-line-focus hover:bg-danger-tint-hover focus-visible:outline-2"
+            className="inline-flex min-h-tap items-center gap-2 rounded-pill bg-danger-tint px-4 text-base font-semibold text-danger outline-offset-2 outline-focus hover:bg-danger-tint-hover focus-visible:outline-3"
           >
             <Trash2Icon aria-hidden="true" size={16} />
             Clear
@@ -101,7 +101,7 @@ export function RailLines(props: RailLinesProps) {
         type="button"
         disabled={!order}
         onClick={onNote}
-        className="mt-3 flex min-h-tap w-full items-center rounded bg-raised-high px-4 text-base text-fg-muted outline-offset-2 outline-line-focus hover:bg-sunken focus-visible:outline-2 disabled:opacity-40"
+        className="mt-3 flex min-h-tap w-full items-center rounded bg-raised-high px-4 text-base text-fg-muted outline-offset-2 outline-focus hover:bg-sunken focus-visible:outline-3 disabled:opacity-40"
       >
         Add a note to this order
       </button>
@@ -137,7 +137,7 @@ function OrderLine({ line, diet, course, notes, ready, paid, onOpen, onVoid, onR
         className={cx(
           "col-start-1 row-start-1 text-left outline-none short:col-span-2 short:col-start-1",
           // The hit area, the hover and the focus ring are the whole line's.
-          "after:absolute after:inset-0 after:-z-10 after:rounded after:outline-offset-2 after:outline-line-focus hover:after:bg-raised-high focus-visible:after:outline-2",
+          "after:absolute after:inset-0 after:-z-10 after:rounded after:outline-offset-2 after:outline-focus hover:after:bg-raised-high focus-visible:after:outline-3",
         )}
       >
         <span className={cx("flex items-start gap-2", voided && "line-through opacity-60")}>
@@ -185,7 +185,7 @@ function OrderLine({ line, diet, course, notes, ready, paid, onOpen, onVoid, onR
             type="button"
             aria-label={bin.label}
             onClick={bin.act}
-            className="flex size-tap items-center justify-center rounded-round text-danger outline-offset-2 outline-line-focus hover:bg-danger-tint focus-visible:outline-2"
+            className="flex size-tap items-center justify-center rounded-round text-danger outline-offset-2 outline-focus hover:bg-danger-tint focus-visible:outline-3"
           >
             <Trash2Icon aria-hidden="true" size={18} />
           </button>

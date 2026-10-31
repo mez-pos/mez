@@ -69,7 +69,7 @@ function Frame({ children }: { children: ReactNode }) {
           aria-expanded={navOpen}
           aria-controls={sectionNavId}
           onClick={() => setNavOpen((o) => !o)}
-          className="flex size-12 shrink-0 items-center justify-center rounded outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2 md:hidden"
+          className="flex size-12 shrink-0 items-center justify-center rounded outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3 md:hidden"
         >
           <MenuIcon aria-hidden="true" size={24} />
         </button>
@@ -86,7 +86,7 @@ function Frame({ children }: { children: ReactNode }) {
           {till && (
             <a
               href={till}
-              className="inline-flex min-h-tap items-center gap-2 rounded-pill border border-line-strong bg-raised px-4 text-base font-semibold outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+              className="inline-flex min-h-tap items-center gap-2 rounded-pill border border-line-strong bg-raised px-4 text-base font-semibold outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
             >
               <MonitorIcon aria-hidden="true" size={18} />
               <span className="hidden sm:inline">Till</span>

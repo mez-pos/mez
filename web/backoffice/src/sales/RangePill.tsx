@@ -14,7 +14,7 @@ import { quickRange, quickRangeOf, quickRanges, type SalesRange } from "./sales-
 
 /** A pill in the head of a screen: the range, and what sits beside it. */
 export const headPill =
-  "inline-flex min-h-tap items-center gap-2 whitespace-nowrap rounded-pill px-5 text-base font-semibold outline-offset-2 outline-attention focus-visible:outline-3";
+  "inline-flex min-h-tap items-center gap-2 whitespace-nowrap rounded-pill px-5 text-base font-semibold outline-offset-2 outline-focus focus-visible:outline-3";
 /** What a head pill opens. */
 export const headPanel = "absolute right-0 top-full z-20 mt-2 rounded-card border border-line bg-raised p-4 shadow-card";
 

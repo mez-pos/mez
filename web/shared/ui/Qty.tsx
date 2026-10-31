@@ -7,6 +7,7 @@
 
 import { canStep, defaultQtyBounds, stepQty, type QtyBounds } from "./qty-step";
 import { cx } from "./cx";
+import { focusButton } from "./focus";
 
 export interface QtyProps {
   value: number;
@@ -24,8 +25,7 @@ export function Qty({ value, onChange, bounds = defaultQtyBounds, label, classNa
   }
 
   const step = (by: 1 | -1) => () => onChange(stepQty(value, by, bounds));
-  const button =
-    "inline-flex size-tap items-center justify-center rounded-pill text-xl hover:bg-raised-high outline-line-focus focus-visible:outline-2 disabled:opacity-40";
+  const button = `inline-flex size-tap items-center justify-center rounded-pill text-xl hover:bg-raised-high ${focusButton} disabled:opacity-40`;
 
   return (
     <span

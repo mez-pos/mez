@@ -48,7 +48,7 @@ export function ProfileTiles({ people, selectedId, page, onChoose, onPage }: Pro
               type="button"
               aria-pressed={chosen}
               onClick={() => onChoose(member)}
-              className={cx(slot, "group flex flex-col items-center rounded text-center outline-offset-4 outline-line-focus focus-visible:outline-2")}
+              className={cx(slot, "group flex flex-col items-center rounded text-center outline-offset-4 outline-focus focus-visible:outline-3")}
             >
               <span
                 aria-hidden="true"
@@ -73,7 +73,7 @@ export function ProfileTiles({ people, selectedId, page, onChoose, onPage }: Pro
             type="button"
             onClick={() => onPage(view.prev ?? 0)}
             aria-label={`Previous profiles, page ${view.page} of ${view.pages}`}
-            className={cx(slot, "flex flex-col items-center pt-3 text-center outline-offset-4 outline-line-focus focus-visible:outline-2 2xl:pt-6")}
+            className={cx(slot, "flex flex-col items-center pt-3 text-center outline-offset-4 outline-focus focus-visible:outline-3 2xl:pt-6")}
           >
             <span className="flex size-14 items-center justify-center rounded-round border border-line-strong bg-raised hover:bg-raised-high">
               <ChevronLeftIcon aria-hidden="true" size={24} strokeWidth={2} />
@@ -88,7 +88,7 @@ export function ProfileTiles({ people, selectedId, page, onChoose, onPage }: Pro
             type="button"
             onClick={() => onPage(view.next)}
             aria-label={`More profiles, page ${view.page + 1} of ${view.pages}`}
-            className={cx(slot, "flex flex-col items-center pt-3 text-center outline-offset-4 outline-line-focus focus-visible:outline-2 2xl:pt-6")}
+            className={cx(slot, "flex flex-col items-center pt-3 text-center outline-offset-4 outline-focus focus-visible:outline-3 2xl:pt-6")}
           >
             <span className="flex size-14 items-center justify-center rounded-round border border-line-strong bg-raised hover:bg-raised-high">
               <ChevronRightIcon aria-hidden="true" size={24} strokeWidth={2} />

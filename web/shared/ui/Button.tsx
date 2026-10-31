@@ -7,6 +7,7 @@
 
 import type { ButtonHTMLAttributes } from "react";
 import { cx } from "./cx";
+import { focusButton } from "./focus";
 
 export type ButtonVariant = "primary" | "attention" | "secondary" | "ghost" | "danger" | "tint";
 export type ButtonSize = "sm" | "md" | "tap" | "charge";
@@ -46,7 +47,7 @@ export function Button({ variant = "secondary", size = "tap", type = "button", c
       type={type}
       className={cx(
         "inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-pill font-semibold",
-        "outline-offset-2 outline-attention focus-visible:outline-3",
+        focusButton,
         "disabled:pointer-events-none disabled:opacity-40",
         variants[variant],
         sizes[size],

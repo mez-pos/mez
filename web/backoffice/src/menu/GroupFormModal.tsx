@@ -73,13 +73,16 @@ export function GroupFormModal({ title, currency, initial, usedBy, onSave, onClo
         </p>
       )}
       <Field label="Name" hint="As staff see it on the order screen: Milk, Extras, Doneness." error={on("name")}>
-        {(id) => <input id={id} className={inputClass} value={form.name} maxLength={60} autoFocus onChange={(e) => set({ name: e.target.value })} />}
+        {(id, aria) => (
+          <input id={id} {...aria} className={inputClass} value={form.name} maxLength={60} autoFocus onChange={(e) => set({ name: e.target.value })} />
+        )}
       </Field>
       <div className="grid grid-cols-2 gap-4">
         <Field label="Fewest to pick" hint="0 makes it optional." error={on("min_select")}>
-          {(id) => (
+          {(id, aria) => (
             <input
               id={id}
+              {...aria}
               className={cx(inputClass, "text-right font-mono")}
               value={form.min}
               inputMode="numeric"
@@ -88,9 +91,10 @@ export function GroupFormModal({ title, currency, initial, usedBy, onSave, onClo
           )}
         </Field>
         <Field label="Most to pick" error={on("max_select")}>
-          {(id) => (
+          {(id, aria) => (
             <input
               id={id}
+              {...aria}
               className={cx(inputClass, "text-right font-mono")}
               value={form.max}
               inputMode="numeric"

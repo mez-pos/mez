@@ -5,6 +5,7 @@
 
 import { useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from "react";
 import { cx } from "../../ui/cx";
+import { radioGroup } from "../../ui/radio-group";
 
 // 16px text: a smaller field makes a phone's browser zoom in (tokens.md).
 const control =
@@ -125,7 +126,13 @@ export function CardChoice<T extends string>({ label, value, options, onChange, 
   return (
     <div className="flex flex-col gap-1.5">
       <p className="text-base font-semibold">{label}</p>
-      <div role="radiogroup" aria-label={label} className="grid gap-3" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${min}, 1fr))` }}>
+      <div
+        role="radiogroup"
+        {...radioGroup}
+        aria-label={label}
+        className="grid gap-3"
+        style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${min}, 1fr))` }}
+      >
         {options.map((o) => {
           const chosen = o.value === value;
           return (
@@ -136,7 +143,7 @@ export function CardChoice<T extends string>({ label, value, options, onChange, 
               aria-checked={chosen}
               onClick={() => onChange(o.value)}
               className={cx(
-                "flex min-h-tap items-start gap-3 rounded border px-4 py-3 text-left outline-offset-2 outline-line-focus focus-visible:outline-2",
+                "flex min-h-tap items-start gap-3 rounded border px-4 py-3 text-left outline-offset-2 outline-focus focus-visible:outline-3",
                 chosen ? "border-accent bg-accent-tint" : "border-line-strong bg-raised hover:bg-raised-high",
               )}
             >

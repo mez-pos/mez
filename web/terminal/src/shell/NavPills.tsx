@@ -33,7 +33,7 @@ export function NavPills({ items, active, mayLeave }: NavPillsProps) {
         const Icon = icons[item.id];
         const pressed = item.id === active;
         const shape = cx(
-          "inline-flex min-h-tap items-center gap-2.5 rounded-pill px-5 text-base outline-offset-2 outline-line-focus focus-visible:outline-2",
+          "inline-flex min-h-tap items-center gap-2.5 rounded-pill px-5 text-base outline-offset-2 outline-focus focus-visible:outline-3",
           pressed ? "bg-accent font-semibold text-accent-fg" : "font-medium text-fg hover:bg-raised-high",
         );
         const body = (

@@ -327,7 +327,7 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
             <Link
               href={back.href}
               aria-label={back.label}
-              className="flex size-tap shrink-0 items-center justify-center rounded-round bg-sunken outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+              className="flex size-tap shrink-0 items-center justify-center rounded-round bg-sunken outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
             >
               <ArrowLeftIcon aria-hidden="true" size={20} />
             </Link>

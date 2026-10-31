@@ -56,7 +56,7 @@ export function SoldOutCard({ title, body, menuHref }: { title: string; body: st
       {menuHref && (
         <a
           href={menuHref}
-          className="mt-3.5 inline-flex min-h-tap w-full items-center justify-center rounded-pill border border-chip-warning-border bg-raised px-5 text-base font-bold outline-offset-2 outline-attention focus-visible:outline-3"
+          className="mt-3.5 inline-flex min-h-tap w-full items-center justify-center rounded-pill border border-chip-warning-border bg-raised px-5 text-base font-bold outline-offset-2 outline-focus focus-visible:outline-3"
         >
           Review the menu
         </a>

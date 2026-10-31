@@ -21,7 +21,7 @@ export function BackupBand({ standing }: { standing: BackupStanding }) {
       <p className="min-w-0 flex-1 text-base">{standing.sentence}</p>
       <Link
         href="/settings/backup"
-        className="inline-flex min-h-tap items-center rounded-tight text-base font-semibold underline underline-offset-2 outline-offset-2 outline-line-focus focus-visible:outline-2"
+        className="inline-flex min-h-tap items-center rounded-tight text-base font-semibold underline underline-offset-2 outline-offset-2 outline-focus focus-visible:outline-3"
       >
         {failing ? "See why" : "Set up the backup"}
       </Link>

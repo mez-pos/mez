@@ -204,7 +204,7 @@ function Opened({ open, items, currency, api, onOpen, onClose }: OpenedProps) {
                   <button
                     type="button"
                     onClick={() => onOpen({ kind: "move", item: it, move: open.move })}
-                    className="flex min-h-tap w-full items-center justify-between gap-3 rounded px-4 text-left text-base outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+                    className="flex min-h-tap w-full items-center justify-between gap-3 rounded px-4 text-left text-base outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
                   >
                     <span className="min-w-0 truncate font-semibold">{it.name}</span>
                     <span className="shrink-0 font-mono text-sm tabular-nums text-fg-muted">{formatQty(it.on_hand, it.unit)}</span>

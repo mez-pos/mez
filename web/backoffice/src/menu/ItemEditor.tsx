@@ -19,7 +19,7 @@ import { OnAMirror } from "../../../shared/shell/OnAMirror";
 import { useOnMirror } from "../../../shared/use-mirror";
 import { useVenueClock } from "../../../shared/use-venue";
 import { venueDateTime } from "../../../shared/venue-clock";
-import { CheckField, Choice, Field, inputClass } from "../FormFields";
+import { CheckField, Choice, Field, inputClass, type FieldAria } from "../FormFields";
 import { useDraftHeld } from "../shell/leave-guard";
 import { groupsChanged } from "./group-logic";
 import { ItemGroupsField } from "./ItemGroupsField";
@@ -149,11 +149,13 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
 
           <fieldset disabled={readOnly} className="mt-5 grid min-w-0 gap-4 sm:grid-cols-2">
             <Field label="Item name" error={on("name")}>
-              {(id) => <input id={id} className={inputClass} value={form.name} maxLength={60} required onChange={(e) => set({ name: e.target.value })} />}
+              {(id, aria) => (
+                <input id={id} {...aria} className={inputClass} value={form.name} maxLength={60} required onChange={(e) => set({ name: e.target.value })} />
+              )}
             </Field>
             <Field label="Category" error={on("category_id")}>
-              {(id) => (
-                <Select id={id} value={form.categoryId} onChange={(categoryId) => set({ categoryId })}>
+              {(id, aria) => (
+                <Select id={id} {...aria} value={form.categoryId} onChange={(categoryId) => set({ categoryId })}>
                   {choices(menu.categories, form.categoryId).map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.active ? c.name : `${c.name} (retired)`}
@@ -163,9 +165,10 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
               )}
             </Field>
             <Field label={`Price, ${menu.currency}`} hint="As the order screen charges it, like 180 or 180.50." error={on("price")}>
-              {(id) => (
+              {(id, aria) => (
                 <input
                   id={id}
+                  {...aria}
                   className={cx(inputClass, "font-mono tabular-nums")}
                   value={form.price}
                   inputMode="decimal"
@@ -175,8 +178,8 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
               )}
             </Field>
             <Field label="Tax class" error={on("tax_class_id")}>
-              {(id) => (
-                <Select id={id} value={form.taxClassId} onChange={(taxClassId) => set({ taxClassId })}>
+              {(id, aria) => (
+                <Select id={id} {...aria} value={form.taxClassId} onChange={(taxClassId) => set({ taxClassId })}>
                   {menu.tax_classes
                     .filter((t) => t.active || t.id === form.taxClassId)
                     .map((t) => (
@@ -193,9 +196,10 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
                 hint={menu.needs_hsn ? "4, 6 or 8 digits. Every GST invoice line shows it." : "Not needed at this venue. You can leave it empty."}
                 error={on("hsn")}
               >
-                {(id) => (
+                {(id, aria) => (
                   <input
                     id={id}
+                    {...aria}
                     className={cx(inputClass, "font-mono")}
                     value={form.hsn}
                     inputMode="numeric"
@@ -215,9 +219,10 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
 
           <fieldset disabled={readOnly} className="mt-4 min-w-0">
             <Field label="Description" error={on("description")}>
-              {(id) => (
+              {(id, aria) => (
                 <textarea
                   id={id}
+                  {...aria}
                   rows={2}
                   className={cx(inputClass, "py-3 leading-relaxed")}
                   value={form.description}
@@ -240,7 +245,7 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
                 aria-pressed={tab === t.id}
                 onClick={() => setTab(t.id)}
                 className={cx(
-                  "min-h-tap rounded-pill px-5 text-base outline-offset-2 outline-line-focus focus-visible:outline-2",
+                  "min-h-tap rounded-pill px-5 text-base outline-offset-2 outline-focus focus-visible:outline-3",
                   tab === t.id ? "bg-attention font-semibold text-attention-fg" : "hover:bg-raised-high",
                 )}
               >
@@ -262,8 +267,8 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
           </fieldset>
           <fieldset disabled={readOnly} hidden={tab !== "kitchen"} className="mt-4 grid min-w-0 gap-4 sm:grid-cols-2">
             <Field label="Made at" hint="Stations are set up under Stations and courses." error={on("station_id")}>
-              {(id) => (
-                <Select id={id} value={form.stationId} onChange={(stationId) => set({ stationId })}>
+              {(id, aria) => (
+                <Select id={id} {...aria} value={form.stationId} onChange={(stationId) => set({ stationId })}>
                   {choices(menu.stations, form.stationId).map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.active ? s.name : `${s.name} (retired)`}
@@ -273,8 +278,8 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
               )}
             </Field>
             <Field label="Course" hint="When it is sent to the kitchen." error={on("course_id")}>
-              {(id) => (
-                <Select id={id} value={form.courseId} onChange={(courseId) => set({ courseId })}>
+              {(id, aria) => (
+                <Select id={id} {...aria} value={form.courseId} onChange={(courseId) => set({ courseId })}>
                   {choices(menu.courses, form.courseId).map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.active ? courseText(c) : `${courseText(c)} (retired)`}
@@ -331,9 +336,9 @@ export function ItemEditor({ menu, item, state, soldOutUntil, initial, onSave, o
 }
 
 /** A native select of ids. With nothing to choose it says so, and sends 0 for the server to refuse. */
-function Select({ id, value, onChange, children }: { id: string; value: number; onChange: (v: number) => void; children: ReactNode[] }) {
+function Select({ id, value, onChange, children, ...aria }: { id: string; value: number; onChange: (v: number) => void; children: ReactNode[] } & FieldAria) {
   return (
-    <select id={id} className={inputClass} value={value} onChange={(e) => onChange(Number(e.target.value))}>
+    <select id={id} {...aria} className={inputClass} value={value} onChange={(e) => onChange(Number(e.target.value))}>
       {children.length === 0 ? <option value={0}>None set up yet</option> : children}
     </select>
   );

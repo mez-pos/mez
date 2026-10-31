@@ -42,7 +42,7 @@ export function Bill({ code, table, onBack, onReceipt }: BillProps) {
           type="button"
           aria-label="Back to the menu"
           onClick={onBack}
-          className="flex size-tap items-center justify-center rounded-round outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+          className="flex size-tap items-center justify-center rounded-round outline-focus hover:bg-raised-high focus-visible:outline-3"
         >
           <svg
             aria-hidden="true"
@@ -187,7 +187,7 @@ function PayByUPI({ bill, code, quiet }: { bill: GuestBillResponse; code: string
       <a
         href={link}
         className={cx(
-          "flex min-h-charge w-full items-center justify-center rounded-pill px-5 text-lg font-bold outline-offset-2 outline-attention focus-visible:outline-3",
+          "flex min-h-charge w-full items-center justify-center rounded-pill px-5 text-lg font-bold outline-offset-2 outline-focus focus-visible:outline-3",
           quiet ? upiQuiet : upiLoud,
         )}
       >
@@ -201,7 +201,7 @@ function PayByUPI({ bill, code, quiet }: { bill: GuestBillResponse; code: string
       <IHavePaid code={code} told={bill.paid_told === true} />
       {/* For paying from another phone. Closed until asked for: a code on screen invites a scan by the next table. */}
       <details className="mt-3 border-t border-line-soft pt-3 text-left" onToggle={(e) => setShown(e.currentTarget.open)}>
-        <summary className="flex min-h-tap cursor-pointer items-center justify-center text-base font-semibold text-accent-text outline-line-focus focus-visible:outline-2">
+        <summary className="flex min-h-tap cursor-pointer items-center justify-center text-base font-semibold text-accent-text outline-focus focus-visible:outline-3">
           Pay from another phone
         </summary>
         {shown && <UpiQr code={code} amountMinor={bill.upi.amount.minor} alt={`QR code to pay ${formatMoney(bill.upi.amount)} to ${bill.upi.payee} by UPI`} />}
@@ -305,7 +305,7 @@ function PayOnline({ bill, online }: { bill: GuestBillResponse; online: ChargeAp
           </p>
           <p className="mt-1 text-base">{words.line}</p>
           {again && (
-            <a href={again} className="mt-2 inline-flex min-h-tap items-center font-semibold underline outline-line-focus focus-visible:outline-2">
+            <a href={again} className="mt-2 inline-flex min-h-tap items-center font-semibold underline outline-focus focus-visible:outline-3">
               Open the payment page again
             </a>
           )}
@@ -383,7 +383,7 @@ function SplitChooser({ bill, choice, onChoose, gap }: SplitChooserProps) {
             key={way}
             className={cx(
               "flex min-h-tap cursor-pointer items-center justify-center rounded border px-2 text-center text-base font-semibold",
-              "has-focus-visible:outline-2 has-focus-visible:outline-line-focus",
+              "has-focus-visible:outline-3 has-focus-visible:outline-focus",
               choice.way === way ? "border-accent bg-accent-tint text-accent-text" : "border-line-strong bg-raised text-fg",
             )}
           >
@@ -422,7 +422,7 @@ function SplitChooser({ bill, choice, onChoose, gap }: SplitChooserProps) {
             autoComplete="off"
             value={choice.typed}
             onChange={(e) => onChoose({ ...choice, typed: e.target.value })}
-            className="mt-1 block min-h-tap w-full rounded border border-line-strong bg-raised px-3 text-right font-mono text-lg tabular-nums outline-line-focus focus-visible:outline-2"
+            className="mt-1 block min-h-tap w-full rounded border border-line-strong bg-raised px-3 text-right font-mono text-lg tabular-nums outline-accent-tint focus-visible:border-accent focus-visible:outline-3"
           />
         </label>
       )}

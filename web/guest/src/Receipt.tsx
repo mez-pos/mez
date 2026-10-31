@@ -32,7 +32,7 @@ export function Receipt({ code, table, bill, onBack }: ReceiptProps) {
           type="button"
           aria-label="Back to the bill"
           onClick={onBack}
-          className="flex size-tap items-center justify-center rounded-round outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+          className="flex size-tap items-center justify-center rounded-round outline-focus hover:bg-raised-high focus-visible:outline-3"
         >
           <svg
             aria-hidden="true"

@@ -28,7 +28,7 @@ export function BillMore({ onInvoice, onHistory, onVoid }: BillMoreProps) {
         onClick={toggle}
         className={cx(
           "inline-flex min-h-tap flex-auto items-center justify-center gap-2 whitespace-nowrap rounded-pill border border-line-strong bg-raised px-4 text-base font-semibold",
-          "outline-offset-2 outline-attention hover:bg-raised-high focus-visible:outline-3",
+          "outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3",
           open && "bg-raised-high",
         )}
       >

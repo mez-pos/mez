@@ -346,7 +346,7 @@ function StockHealthCard({ health }: { health: ReturnType<typeof stockHealth> })
       </ul>
       <Link
         href="/stock"
-        className="mt-6 inline-flex min-h-tap items-center justify-center gap-2 rounded-pill bg-attention px-5 text-base font-semibold text-attention-fg outline-offset-2 outline-attention hover:bg-attention-hover focus-visible:outline-3"
+        className="mt-6 inline-flex min-h-tap items-center justify-center gap-2 rounded-pill bg-attention px-5 text-base font-semibold text-attention-fg outline-offset-2 outline-focus hover:bg-attention-hover focus-visible:outline-3"
       >
         <PackageIcon aria-hidden="true" size={17} />
         Go to inventory

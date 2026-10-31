@@ -112,3 +112,42 @@ export function problemOf(err: unknown): Problem {
   }
   return { field: null, message: "Something went wrong. Try again." };
 }
+
+/** A cell's place in the grid. */
+export interface Place {
+  x: number;
+  y: number;
+}
+
+/**
+ * Where a key moves the floor grid's focus from (x, y) (TECH-20, ADR-403):
+ * the arrows one cell over, past cells with nothing to press, stopping at the
+ * edge; Home and End to the row's first and last. Null for any other key, or
+ * when there is nowhere to go.
+ */
+export function gridStep(key: string, from: Place, columns: number, rows: number, pressable: (p: Place) => boolean): Place | null {
+  // The first cell with something to press from start, going (dx, dy); none
+  // if that is where the focus already is.
+  const walk = (dx: number, dy: number, start: Place): Place | null => {
+    for (let x = start.x, y = start.y; x >= 0 && x < columns && y >= 0 && y < rows; x += dx, y += dy) {
+      if (!pressable({ x, y })) continue;
+      return x === from.x && y === from.y ? null : { x, y };
+    }
+    return null;
+  };
+  switch (key) {
+    case "ArrowRight":
+      return walk(1, 0, { x: from.x + 1, y: from.y });
+    case "ArrowLeft":
+      return walk(-1, 0, { x: from.x - 1, y: from.y });
+    case "ArrowDown":
+      return walk(0, 1, { x: from.x, y: from.y + 1 });
+    case "ArrowUp":
+      return walk(0, -1, { x: from.x, y: from.y - 1 });
+    case "Home":
+      return walk(1, 0, { x: 0, y: from.y });
+    case "End":
+      return walk(-1, 0, { x: columns - 1, y: from.y });
+  }
+  return null;
+}

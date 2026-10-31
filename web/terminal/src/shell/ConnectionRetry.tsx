@@ -14,7 +14,7 @@ export function ConnectionRetry() {
     <button
       type="button"
       onClick={reconnectNow}
-      className="inline-flex min-h-tap items-center gap-2 rounded-pill border border-line-strong bg-raised px-4 text-base font-semibold outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+      className="inline-flex min-h-tap items-center gap-2 rounded-pill border border-line-strong bg-raised px-4 text-base font-semibold outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
     >
       <WifiOffIcon aria-hidden="true" size={17} />
       Retry now

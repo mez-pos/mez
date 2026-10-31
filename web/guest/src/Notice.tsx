@@ -15,7 +15,7 @@ export function Notice({ text, onDismiss }: NoticeProps) {
       <button
         type="button"
         onClick={onDismiss}
-        className="-my-2 -mr-2 min-h-tap shrink-0 rounded-pill px-3 text-base font-bold underline outline-line-focus focus-visible:outline-2"
+        className="-my-2 -mr-2 min-h-tap shrink-0 rounded-pill px-3 text-base font-bold underline outline-focus focus-visible:outline-3"
       >
         OK
       </button>

@@ -10,6 +10,7 @@ import { Button, Money, Qty } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
 import { maxWays, type TillSplit } from "../tender/split-logic";
 import { billModes, shareStatus, type ShareRow } from "./bill-logic";
+import { radioGroup } from "../../../shared/ui/radio-group";
 
 interface BillSharesProps {
   /** The split on screen: equal while it is made here, or the one completed. */
@@ -36,7 +37,7 @@ export function BillShares({ kind, fixed, partPaid, ways, rows, each, settling, 
   return (
     <section aria-label="Split">
       <div className="flex flex-wrap items-center gap-3">
-        <div role="radiogroup" aria-label="How the bill is split" className="inline-flex gap-1 rounded-pill bg-sunken p-1">
+        <div role="radiogroup" {...radioGroup} aria-label="How the bill is split" className="inline-flex gap-1 rounded-pill bg-sunken p-1">
           {billModes.map((m) => {
             const on = m.kind === kind;
             return (
@@ -48,7 +49,7 @@ export function BillShares({ kind, fixed, partPaid, ways, rows, each, settling, 
                 disabled={disabled || fixed || (m.kind === "item" && partPaid)}
                 onClick={() => onMode(m.kind)}
                 className={cx(
-                  "min-h-tap rounded-pill px-5 text-base outline-offset-2 outline-attention focus-visible:outline-3",
+                  "min-h-tap rounded-pill px-5 text-base outline-offset-2 outline-focus focus-visible:outline-3",
                   on ? "bg-accent font-semibold text-accent-fg" : "text-fg hover:bg-raised-high disabled:opacity-40",
                 )}
               >

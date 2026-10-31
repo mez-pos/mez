@@ -38,7 +38,7 @@ interface MenuProps {
   strip?: ReactNode;
 }
 
-const chip = "inline-flex min-h-tap shrink-0 items-center rounded-pill border px-4 text-base outline-offset-2 outline-line-focus focus-visible:outline-2";
+const chip = "inline-flex min-h-tap shrink-0 items-center rounded-pill border px-4 text-base outline-offset-2 outline-focus focus-visible:outline-3";
 const chipOff = "border-line-strong bg-raised text-fg";
 const chipOn = "border-accent bg-accent font-semibold text-accent-fg";
 
@@ -162,7 +162,7 @@ export function Menu({ table, menu, cart, onViewCart, strip }: MenuProps) {
           <button
             type="button"
             onClick={onViewCart}
-            className="flex min-h-charge w-full items-center justify-between gap-3 rounded-card bg-accent px-5 text-accent-fg shadow-modal outline-offset-2 outline-line-focus focus-visible:outline-2"
+            className="flex min-h-charge w-full items-center justify-between gap-3 rounded-card bg-accent px-5 text-accent-fg shadow-modal outline-offset-2 outline-focus focus-visible:outline-3"
           >
             <span className="text-lg font-bold">View cart</span>
             <span aria-live="polite" className="text-base">
@@ -193,7 +193,7 @@ function DishCard({ item, framed, inCart, onOpen, onAdd }: DishCardProps) {
     // contrast, never a fade (TECH-13, ADR-390).
     <li className={cx("flex flex-col overflow-hidden rounded-card border border-line", item.sold_out ? "bg-sunken" : "bg-raised shadow-rest")}>
       {/* The whole of the card above the button opens the dish. */}
-      <button type="button" onClick={onOpen} className="flex flex-1 flex-col text-left outline-offset-[-2px] outline-line-focus focus-visible:outline-2">
+      <button type="button" onClick={onOpen} className="flex flex-1 flex-col text-left outline-offset-[-3px] outline-focus focus-visible:outline-3">
         {framed &&
           (item.photo ? (
             // Below the fold on a slow link a photo is fetched when it is

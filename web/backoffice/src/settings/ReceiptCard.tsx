@@ -68,9 +68,10 @@ export function ReceiptCard({ receipt, api, onDirty }: ReceiptCardProps) {
         hint={`One line per row, up to ${limits.maxLines} lines of ${limits.maxChars} characters: an address, a phone number. The printer prints plain letters and digits: accents print without them, and other scripts cannot be printed yet.`}
         error={d.on("header")}
       >
-        {(id) => (
+        {(id, aria) => (
           <textarea
             id={id}
+            {...aria}
             className={`${inputClass} min-h-28 py-3`}
             rows={3}
             value={form.header}
@@ -81,9 +82,10 @@ export function ReceiptCard({ receipt, api, onDirty }: ReceiptCardProps) {
         )}
       </Field>
       <Field label="At the bottom" hint="Thanks, the Wi-Fi password, opening hours. Same limits." error={d.on("footer")}>
-        {(id) => (
+        {(id, aria) => (
           <textarea
             id={id}
+            {...aria}
             className={`${inputClass} min-h-28 py-3`}
             rows={3}
             value={form.footer}

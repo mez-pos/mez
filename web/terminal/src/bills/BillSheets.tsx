@@ -59,7 +59,7 @@ export function PickPaymentSheet({ tenders, onPick, onClose }: PickPaymentSheetP
             <button
               type="button"
               onClick={() => onPick(t)}
-              className="flex min-h-charge w-full items-center justify-between gap-3 rounded border border-line-strong bg-raised px-4 text-left text-base outline-offset-2 outline-attention hover:bg-raised-high focus-visible:outline-3"
+              className="flex min-h-charge w-full items-center justify-between gap-3 rounded border border-line-strong bg-raised px-4 text-left text-base outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
             >
               <span className="font-semibold">
                 {methodNames[t.method]}

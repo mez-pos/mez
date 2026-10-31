@@ -33,8 +33,8 @@ interface LoginPadProps {
 }
 
 const keyShape = cx(
-  "flex h-[clamp(3rem,7vh,4.75rem)] items-center justify-center rounded-card bg-sunken outline-offset-2 outline-line-focus transition-colors",
-  "hover:bg-raised-high focus-visible:outline-2 active:bg-line disabled:opacity-50 disabled:hover:bg-sunken",
+  "flex h-[clamp(3rem,7vh,4.75rem)] items-center justify-center rounded-card bg-sunken outline-offset-2 outline-focus transition-colors",
+  "hover:bg-raised-high focus-visible:outline-3 active:bg-line disabled:opacity-50 disabled:hover:bg-sunken",
 );
 
 export function LoginPad({ name, length, disabled, canSubmit, busy, onKey, onSubmit }: LoginPadProps) {
@@ -73,7 +73,7 @@ export function LoginPad({ name, length, disabled, canSubmit, busy, onKey, onSub
           onClick={onSubmit}
           className={cx(
             "flex h-[clamp(3rem,7vh,4.75rem)] items-center justify-center gap-2.5 rounded-card bg-accent text-lg font-semibold text-accent-fg shadow-action",
-            "outline-offset-2 outline-line-focus transition-colors hover:bg-accent-hover focus-visible:outline-2",
+            "outline-offset-2 outline-focus transition-colors hover:bg-accent-hover focus-visible:outline-3",
             "disabled:opacity-50 disabled:shadow-none disabled:hover:bg-accent",
           )}
         >

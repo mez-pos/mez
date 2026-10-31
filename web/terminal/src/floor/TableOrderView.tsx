@@ -93,7 +93,7 @@ export function TableOrderView({ table, orderId, onAddItems, onSettle, onMode, o
             }}
             onClick={() => setTab(t.id)}
             className={cx(
-              "min-h-tap border-b-3 text-base outline-offset-2 outline-attention focus-visible:outline-3",
+              "min-h-tap border-b-3 text-base outline-offset-2 outline-focus focus-visible:outline-3",
               tab === t.id ? "border-attention font-bold text-attention-text" : "border-transparent text-fg-muted hover:text-fg",
             )}
           >

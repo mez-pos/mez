@@ -46,7 +46,7 @@ export function Cart({ cart, order, onBack, onPlaced, onBill, collect = false, t
             type="button"
             aria-label="Back to the menu"
             onClick={onBack}
-            className="flex size-tap items-center justify-center rounded-round outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+            className="flex size-tap items-center justify-center rounded-round outline-focus hover:bg-raised-high focus-visible:outline-3"
           >
             <svg
               aria-hidden="true"
@@ -113,7 +113,7 @@ export function Cart({ cart, order, onBack, onPlaced, onBill, collect = false, t
             <button
               type="button"
               onClick={onBack}
-              className="mt-3 flex min-h-tap items-center justify-between gap-3 rounded-card border border-line bg-accent-tint px-4 py-3 text-left outline-offset-2 outline-line-focus focus-visible:outline-2"
+              className="mt-3 flex min-h-tap items-center justify-between gap-3 rounded-card border border-line bg-accent-tint px-4 py-3 text-left outline-offset-2 outline-focus focus-visible:outline-3"
             >
               <span>
                 <span className="block text-base font-bold text-accent-text">Add more dishes</span>

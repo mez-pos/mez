@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import type { Money as Amount } from "../../../shared/api-types";
 import { Money } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { selectedRing } from "../../../shared/ui/focus";
 
 interface SplitFrameProps {
   /** "Table T4", or how the order is served. */
@@ -108,17 +109,14 @@ export function GuestCard({ seat, name, paid, lines, due, settling = false, sele
     </>
   );
   return (
-    <article
-      aria-label={name}
-      className={cx("flex flex-col rounded-card border bg-raised p-4", selected ? "border-accent outline-3 outline-accent-tint" : "border-line")}
-    >
+    <article aria-label={name} className={cx("flex flex-col rounded-card border bg-raised p-4", selected ? cx("border-accent", selectedRing) : "border-line")}>
       <div className="flex items-center gap-2.5">
         {onSelect ? (
           <button
             type="button"
             aria-pressed={selected}
             onClick={onSelect}
-            className="-m-1 flex min-h-tap min-w-0 flex-1 items-center gap-2.5 rounded p-1 text-left outline-offset-2 outline-attention focus-visible:outline-3"
+            className="-m-1 flex min-h-tap min-w-0 flex-1 items-center gap-2.5 rounded p-1 text-left outline-offset-2 outline-focus focus-visible:outline-3"
           >
             {title}
           </button>
@@ -143,7 +141,7 @@ export function GuestCard({ seat, name, paid, lines, due, settling = false, sele
                     type="button"
                     aria-label={`Take ${l.label} off ${name}`}
                     onClick={l.onRemove}
-                    className="flex size-tap shrink-0 items-center justify-center rounded-round text-fg-muted outline-offset-2 outline-attention hover:bg-raised-high focus-visible:outline-3"
+                    className="flex size-tap shrink-0 items-center justify-center rounded-round text-fg-muted outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
                   >
                     <XIcon aria-hidden="true" size={18} />
                   </button>

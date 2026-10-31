@@ -26,7 +26,7 @@ const chips: readonly { key: keyof DietFilter; icon: LucideIcon; tone: string }[
   { key: "glutenFree", icon: WheatOffIcon, tone: "border-chip-warning-border bg-chip-warning-bg text-chip-warning-fg" },
 ];
 
-const pill = "inline-flex min-h-tap items-center gap-2 rounded-pill border px-4 text-base outline-offset-2 outline-attention focus-visible:outline-3";
+const pill = "inline-flex min-h-tap items-center gap-2 rounded-pill border px-4 text-base outline-offset-2 outline-focus focus-visible:outline-3";
 const pillOff = "border-line-strong bg-raised text-fg-2 hover:bg-raised-high";
 
 export function MenuHeader({ title, filter, onFilter }: MenuHeaderProps) {

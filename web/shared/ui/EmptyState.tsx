@@ -5,6 +5,7 @@
 import type { ReactNode } from "react";
 import { Button } from "./Button";
 import { cx } from "./cx";
+import { focusButton } from "./focus";
 
 export interface EmptyStateProps {
   icon: ReactNode;
@@ -26,7 +27,7 @@ export function EmptyState({ icon, line, action, className }: EmptyStateProps) {
           // A plain link, drawn as the button: the page it leads to is another bundle.
           <a
             href={action.href}
-            className="inline-flex min-h-tap items-center justify-center rounded-pill border border-line-strong bg-raised px-5 text-base font-semibold text-fg outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+            className={`inline-flex min-h-tap items-center justify-center rounded-pill border border-line-strong bg-raised px-5 text-base font-semibold text-fg hover:bg-raised-high ${focusButton}`}
           >
             {action.label}
           </a>

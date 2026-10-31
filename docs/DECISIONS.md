@@ -15473,3 +15473,47 @@ Because: a till is a shop's register: one failed card should cost that card, not
 whoever looks after mez should hear of it without asking the cashier what the screen said.
 Cost: a production stack is minified names, so it says which bundle and where in it, not which
 source file. The guest's failures are still unheard.
+
+## ADR-403 - One focus rule, one field rule, arrows in every group
+2026-10 · Status: accepted. Phase 17 Task 30 (TECH-10, TECH-11, TECH-12, TECH-14, TECH-20).
+Context: tokens.md draws a button's focus as a 3px terracotta outline and a field's as a green
+border with a green-tint halo. The kit's Button did; 93 other pressable things drew a 2px
+outline in `line-focus`, the field's green, so a till had two focus rings, and two floor plans
+drew a picked table with the focus outline itself. The back office's `Field` (65 uses) put its
+hint and its error under a control without linking either to it. The connection word was a
+live region with its countdown inside, so a screen reader heard "retrying in 4s, 3s, 2s". Twelve
+groups of radios drawn as buttons, and the floor editor's grid, took no arrow keys, and the grid
+was up to 96 tab stops. The pairing window's two sentences were 11px, the size kept for
+uppercase metadata, and the kitchen's On/Off switch label 13px.
+Decision:
+  - **One focus rule**, in `web/shared/ui/focus.ts`: `focusButton` (a 3px outline in a new
+    token, `--focus-ring`, terracotta on paper and mustard at night, 2px off the edge) for
+    everything pressable; `focusField` (a green border and a 3px green-tint halo) for every
+    field. `--line-focus` is gone; every `outline-line-focus` and `outline-attention` became
+    `outline-focus`, and every focus outline is 3px. A filled button whose outline sits on its
+    own fill takes `outline-current`. A test reads every source file and fails on either old
+    colour, on a focus outline that is not 3px, and on a choice drawn with an outline.
+  - **Selection is never drawn as focus**: a picked table, a chosen grid tile or split part
+    is `selectedRing`, a 3px green ring inside its edge, so a keyboard's place and a choice
+    show at once and apart.
+  - **One field rule**: `Field` gives its control `aria-describedby` (its hint, and its error
+    when there is one) and `aria-invalid`, beside its id: `{(id, aria) => <input id={id}
+    {...aria} />}`, as the setup wizard's fields already did. A field drawn with the button's
+    focus (a printer's select, a tip's time, the guest's split amount) takes the field's.
+  - **The connection says its word, not its countdown**: only the word is the live region.
+  - **Arrows in every group**: `radioGroup` (`web/shared/ui/radio-group.ts`), spread on a
+    `role="radiogroup"`, keeps one tab stop on the chosen radio, by watching the group rather
+    than by a tabIndex on each, and moves with the arrows, Home and End, past a disabled radio,
+    by clicking the radio, so an arrow does what a tap does. It is on all fourteen groups,
+    the item window's and the guest's single-choice groups among them. The floor editor's grid
+    is the grid pattern: one tab stop, arrows between cells past empty ones on a read-only
+    floor, Home and End along a row.
+  - **The floors hold**: the pairing window's sentences are 13px, the kitchen switch's label 15px.
+Rejected: keeping green as the button's focus (tokens.md says terracotta, and green is a
+field's and a chosen thing's); cloning each Field's child to add the aria (it misses a control
+wrapped in another element, silently); a tabIndex on every radio (fourteen groups of edits, and
+a group with nothing chosen must still be reachable).
+Because: a keyboard user, and anyone at a till with a scanner's keypad, has to see where they
+are, and tell it from what is chosen; a field's hint is half of what the field asks.
+Cost: the radio groups' tab stop is kept by a MutationObserver per group. The guest's bundle
+grows by about half a kilobyte (50.3 KB of 60).

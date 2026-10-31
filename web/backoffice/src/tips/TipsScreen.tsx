@@ -2,6 +2,7 @@
 // their hours when the rule needs them, each share as the server works it
 // out, and pooling once. Every share on screen is the server's.
 
+import { focusField } from "../../../shared/ui/focus";
 import { useState } from "react";
 import type { TipPoolResponse } from "../../../shared/api-types";
 import { Button, Confirm, EmptyState, InboxIcon, Meta, Money, useToast } from "../../../shared/ui";
@@ -135,7 +136,7 @@ function Choose({ shiftId, pool, staffList, commit }: ChooseProps) {
                     aria-pressed={r.inPool}
                     onClick={() => set(i, { inPool: !r.inPool })}
                     className={cx(
-                      "min-h-tap min-w-20 rounded-pill border px-4 font-semibold outline-offset-2 outline-line-focus focus-visible:outline-2",
+                      "min-h-tap min-w-20 rounded-pill border px-4 font-semibold outline-offset-2 outline-focus focus-visible:outline-3",
                       r.inPool ? "border-accent bg-accent-tint text-accent-text" : "border-line-strong bg-raised text-fg-muted",
                     )}
                   >
@@ -195,7 +196,7 @@ function TimeField({ label, value, onChange }: { label: string; value: string; o
       value={value}
       maxLength={2}
       onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
-      className="min-h-tap w-14 rounded border border-line bg-raised px-2 text-right font-mono text-base outline-offset-2 outline-line-focus focus-visible:outline-2"
+      className={`min-h-tap w-14 rounded border border-line-strong bg-raised px-2 text-right font-mono text-base ${focusField}`}
     />
   );
 }

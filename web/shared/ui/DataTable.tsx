@@ -9,6 +9,7 @@
 import type { ReactNode } from "react";
 import { Button } from "./Button";
 import { cx } from "./cx";
+import { focusButton } from "./focus";
 import { SortIcon } from "./icons";
 import { nextSort, type Sort } from "./table-state";
 
@@ -96,7 +97,7 @@ function HeaderCell<T>({ column, sort, onSortChange }: { column: Column<T>; sort
         onClick={() => onSortChange(nextSort(sort, column.id))}
         className={cx(
           "inline-flex h-10 w-full items-center gap-1.5 px-4 text-meta font-bold uppercase hover:text-fg",
-          "outline-offset-2 outline-line-focus focus-visible:outline-2",
+          focusButton,
           right && "flex-row-reverse",
           direction && "text-fg",
         )}

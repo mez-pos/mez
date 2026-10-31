@@ -24,6 +24,7 @@ import {
   type PrinterChoice,
   type TestOutcome,
 } from "./printer-logic";
+import { radioGroup } from "../../ui/radio-group";
 
 /** The key of the choice that is "enter an address", which no found printer can have. */
 const typedKey = "typed";
@@ -125,7 +126,7 @@ export function PrinterStep({ api, onDone }: { api: ApiClient; onDone: (kept: bo
               {search.state === "searching" ? "Searching" : "Search again"}
             </Button>
           </div>
-          <div role="radiogroup" aria-label="Printers found" aria-busy={search.state === "searching"} className="flex flex-col gap-2">
+          <div role="radiogroup" {...radioGroup} aria-label="Printers found" aria-busy={search.state === "searching"} className="flex flex-col gap-2">
             {search.state === "searching" && (
               <p role="status" className="rounded border border-line bg-sunken px-4 py-3 text-base text-fg-2">
                 Looking on this network and this computer. It takes a few seconds.
@@ -236,7 +237,7 @@ function Option({ chosen, onPick, label, detail, mono }: { chosen: boolean; onPi
       aria-checked={chosen}
       onClick={onPick}
       className={cx(
-        "flex min-h-tap items-center gap-3 rounded border px-4 py-2.5 text-left outline-offset-2 outline-line-focus focus-visible:outline-2",
+        "flex min-h-tap items-center gap-3 rounded border px-4 py-2.5 text-left outline-offset-2 outline-focus focus-visible:outline-3",
         chosen ? "border-accent bg-accent-tint" : "border-line-strong bg-raised hover:bg-raised-high",
       )}
     >

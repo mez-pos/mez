@@ -64,7 +64,7 @@ export function RemoteCard() {
                 href={data.cloud.messages_url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex min-h-tap items-center rounded-tight text-base font-semibold text-attention-text underline-offset-2 outline-offset-2 outline-line-focus hover:underline focus-visible:outline-2"
+                className="inline-flex min-h-tap items-center rounded-tight text-base font-semibold text-attention-text underline-offset-2 outline-offset-2 outline-focus hover:underline focus-visible:outline-3"
               >
                 Change what is sent
               </a>
@@ -95,7 +95,7 @@ function Address({ value }: { value: string }) {
         href={value}
         target="_blank"
         rel="noreferrer"
-        className="max-w-full min-w-0 rounded-tight font-mono text-base font-semibold break-all text-attention-text outline-offset-2 outline-line-focus hover:underline focus-visible:outline-2"
+        className="max-w-full min-w-0 rounded-tight font-mono text-base font-semibold break-all text-attention-text outline-offset-2 outline-focus hover:underline focus-visible:outline-3"
       >
         {value}
       </a>

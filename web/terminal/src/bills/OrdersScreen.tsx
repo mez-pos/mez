@@ -249,7 +249,7 @@ function OrderRow({ selected, number, time, table, type, items, amount, status, 
         onClick={onPick}
         className={cx(
           columns,
-          "min-h-14 w-full rounded px-3 text-left text-base -outline-offset-2 outline-attention focus-visible:outline-3",
+          "min-h-14 w-full rounded px-3 text-left text-base -outline-offset-3 outline-focus focus-visible:outline-3",
           selected ? "bg-accent-tint" : "hover:bg-raised-high",
         )}
       >

@@ -217,7 +217,7 @@ function AreaPills({ areas, chosen, onChoose }: AreaPillsProps) {
           aria-pressed={a.id === chosen}
           onClick={() => onChoose(a.id)}
           className={cx(
-            "min-h-tap rounded-pill border px-5 text-base outline-offset-2 outline-attention focus-visible:outline-3",
+            "min-h-tap rounded-pill border px-5 text-base outline-offset-2 outline-focus focus-visible:outline-3",
             a.id === chosen
               ? "border-attention bg-attention font-semibold text-attention-fg"
               : "border-line-strong bg-raised font-medium text-fg hover:bg-raised-high",

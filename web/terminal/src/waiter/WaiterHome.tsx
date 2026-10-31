@@ -176,7 +176,7 @@ export function WaiterHome() {
       <footer className="flex h-24 shrink-0 items-center gap-3.5 border-t border-line bg-chrome px-7 short:h-18">
         <Link
           href={route.orders}
-          className="inline-flex min-h-charge items-center gap-2.5 rounded-pill border border-line-strong px-5 text-base font-semibold outline-offset-2 outline-attention hover:bg-raised-high focus-visible:outline-3"
+          className="inline-flex min-h-charge items-center gap-2.5 rounded-pill border border-line-strong px-5 text-base font-semibold outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
         >
           <TimerIcon aria-hidden="true" size={20} />
           Active Orders
@@ -221,7 +221,7 @@ function FilterPill({ pressed, count, badge, onPick, children }: FilterPillProps
       aria-pressed={pressed}
       onClick={onPick}
       className={cx(
-        "inline-flex h-13 items-center gap-2.5 rounded-pill border px-5 text-base outline-offset-2 outline-attention focus-visible:outline-3 short:h-tap",
+        "inline-flex h-13 items-center gap-2.5 rounded-pill border px-5 text-base outline-offset-2 outline-focus focus-visible:outline-3 short:h-tap",
         pressed ? "border-accent bg-accent font-semibold text-accent-fg" : "border-line-strong bg-raised font-medium text-fg hover:bg-raised-high",
       )}
     >

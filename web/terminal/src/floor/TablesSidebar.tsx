@@ -21,7 +21,7 @@ const views: readonly { view: TablesView; label: string; icon: LucideIcon }[] = 
   { view: "list", label: "Table List", icon: ListIcon },
 ];
 
-const entry = "flex min-h-tap w-full items-center gap-3 rounded px-3 text-left text-base outline-offset-2 outline-attention focus-visible:outline-3 2xl:px-4";
+const entry = "flex min-h-tap w-full items-center gap-3 rounded px-3 text-left text-base outline-offset-2 outline-focus focus-visible:outline-3 2xl:px-4";
 
 export function TablesSidebar({ view, onView }: TablesSidebarProps) {
   return (

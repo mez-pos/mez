@@ -9,6 +9,7 @@ import { BanknoteIcon, CreditCardIcon, QrCodeIcon, type LucideIcon } from "lucid
 import type { PaymentMethod } from "../../../shared/api-types";
 import { cx } from "../../../shared/ui/cx";
 import { methodNames, type PayStep } from "./tender-logic";
+import { radioGroup } from "../../../shared/ui/radio-group";
 
 interface PayStepsProps {
   step: PayStep;
@@ -56,7 +57,7 @@ export function PaySteps({ step, disabled, onPayment, onSplit }: PayStepsProps) 
                 type="button"
                 disabled={disabled}
                 onClick={s.id === "payment" ? onPayment : onSplit}
-                className={cx(shape, "outline-offset-2 outline-attention focus-visible:outline-3 disabled:opacity-60", !on && "hover:bg-raised-high")}
+                className={cx(shape, "outline-offset-2 outline-focus focus-visible:outline-3 disabled:opacity-60", !on && "hover:bg-raised-high")}
               >
                 {body}
               </button>
@@ -83,7 +84,7 @@ interface MethodTilesProps {
 
 export function MethodTiles({ method, disabled, onChoose }: MethodTilesProps) {
   return (
-    <div role="radiogroup" aria-label="Payment method" className="grid grid-cols-3 gap-3.5">
+    <div role="radiogroup" {...radioGroup} aria-label="Payment method" className="grid grid-cols-3 gap-3.5">
       {methods.map(({ method: m, icon: Icon }) => {
         const on = m === method;
         return (
@@ -97,7 +98,7 @@ export function MethodTiles({ method, disabled, onChoose }: MethodTilesProps) {
             className={cx(
               // On a short screen the icon sits beside the word, and the row is a key's height.
               "flex h-20 flex-col items-center justify-center gap-2 rounded-card border text-lg short:h-14 short:flex-row short:gap-3 2xl:h-29 2xl:gap-3",
-              "outline-offset-2 outline-attention focus-visible:outline-3 disabled:opacity-40",
+              "outline-offset-2 outline-focus focus-visible:outline-3 disabled:opacity-40",
               on ? "border-accent bg-accent-tint font-bold text-accent-text" : "border-line-strong bg-raised font-semibold text-fg hover:bg-raised-high",
             )}
           >

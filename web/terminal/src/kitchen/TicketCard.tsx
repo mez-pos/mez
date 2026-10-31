@@ -47,7 +47,7 @@ const tonePill: Readonly<Record<TimerTone, string>> = {
 // the fills alone are 1.3 to 1.5:1 there, and a button with no edge is a
 // guess (KDS-9, ADR-391).
 const action =
-  "mt-4 flex min-h-16 w-full items-center justify-center gap-2.5 rounded-pill text-xl font-semibold outline-offset-2 outline-line-focus focus-visible:outline-4 disabled:opacity-50 short:mt-3 ink:border-2 ink:border-fg-muted";
+  "mt-4 flex min-h-16 w-full items-center justify-center gap-2.5 rounded-pill text-xl font-semibold outline-offset-2 outline-focus focus-visible:outline-3 disabled:opacity-50 short:mt-3 ink:border-2 ink:border-fg-muted";
 
 /** How long Recall waits for its second tap. */
 const recallArmedMs = 4000;

@@ -63,9 +63,10 @@ export function MovementModal({ item, kind, onSave, onDone, onClose }: MovementM
       refusal={problem && problem.field === null ? problem.message : null}
     >
       <Field label={`${c.qty}, in ${item.unit}`} error={on("qty")}>
-        {(id) => (
+        {(id, aria) => (
           <input
             id={id}
+            {...aria}
             className={cx(inputClass, "text-right font-mono tabular-nums")}
             value={form.qty}
             inputMode="decimal"
@@ -88,8 +89,8 @@ export function MovementModal({ item, kind, onSave, onDone, onClose }: MovementM
       )}
       {kind === "wasted" && (
         <Field label="Why" error={on("reason")}>
-          {(id) => (
-            <select id={id} className={inputClass} value={form.reason} onChange={(e) => set({ reason: e.target.value as MovementForm["reason"] })}>
+          {(id, aria) => (
+            <select id={id} {...aria} className={inputClass} value={form.reason} onChange={(e) => set({ reason: e.target.value as MovementForm["reason"] })}>
               <option value="">Choose a reason</option>
               {reasons.map((r) => (
                 <option key={r.value} value={r.value}>
@@ -105,7 +106,7 @@ export function MovementModal({ item, kind, onSave, onDone, onClose }: MovementM
         {...(kind === "adjusted" ? { hint: "Say why it is being corrected." } : {})}
         error={on("note")}
       >
-        {(id) => <input id={id} className={inputClass} value={form.note} maxLength={200} onChange={(e) => set({ note: e.target.value })} />}
+        {(id, aria) => <input id={id} {...aria} className={inputClass} value={form.note} maxLength={200} onChange={(e) => set({ note: e.target.value })} />}
       </Field>
     </FormModal>
   );

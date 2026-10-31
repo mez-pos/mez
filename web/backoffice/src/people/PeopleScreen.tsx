@@ -216,7 +216,7 @@ function StaffTable({ staff, roleId, now, api, readOnly, onRole, onOpen, onProbl
                     <button
                       type="button"
                       onClick={() => onRole(p.role_id)}
-                      className="flex min-h-tap w-full items-center gap-3 rounded px-2 text-left outline-offset-2 outline-line-focus focus-visible:outline-2"
+                      className="flex min-h-tap w-full items-center gap-3 rounded px-2 text-left outline-offset-2 outline-focus focus-visible:outline-3"
                     >
                       <span
                         aria-hidden="true"

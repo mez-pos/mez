@@ -86,10 +86,12 @@ export function TableFormModal({ title, initial, areas, columns, rows, onSave, o
       <div className="flex flex-col gap-5">
         <Overall problem={state.problem} />
         <Field label="Name" hint="What staff call it, like 4 or T4." error={state.on("name")}>
-          {(id) => <input id={id} className={inputClass} value={form.name} maxLength={20} onChange={(e) => set({ name: e.target.value })} />}
+          {(id, aria) => <input id={id} {...aria} className={inputClass} value={form.name} maxLength={20} onChange={(e) => set({ name: e.target.value })} />}
         </Field>
         <Field label="Seats" error={state.on("seats")}>
-          {(id) => <input id={id} className={numberClass} inputMode="numeric" value={form.seats} onChange={(e) => set({ seats: e.target.value })} />}
+          {(id, aria) => (
+            <input id={id} {...aria} className={numberClass} inputMode="numeric" value={form.seats} onChange={(e) => set({ seats: e.target.value })} />
+          )}
         </Field>
         <Choice
           label="Shape"
@@ -103,8 +105,8 @@ export function TableFormModal({ title, initial, areas, columns, rows, onSave, o
           error={state.on("shape")}
         />
         <Field label="Area" error={state.on("area_id")}>
-          {(id) => (
-            <select id={id} className={inputClass} value={form.areaId} onChange={(e) => set({ areaId: Number(e.target.value) })}>
+          {(id, aria) => (
+            <select id={id} {...aria} className={inputClass} value={form.areaId} onChange={(e) => set({ areaId: Number(e.target.value) })}>
               {choosable.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.name}
@@ -116,10 +118,14 @@ export function TableFormModal({ title, initial, areas, columns, rows, onSave, o
         </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Column" hint={`1 to ${columns}, from the left`} error={state.on("x")}>
-            {(id) => <input id={id} className={numberClass} inputMode="numeric" value={form.column} onChange={(e) => set({ column: e.target.value })} />}
+            {(id, aria) => (
+              <input id={id} {...aria} className={numberClass} inputMode="numeric" value={form.column} onChange={(e) => set({ column: e.target.value })} />
+            )}
           </Field>
           <Field label="Row" hint={`1 to ${rows}, from the top`} error={state.on("y")}>
-            {(id) => <input id={id} className={numberClass} inputMode="numeric" value={form.row} onChange={(e) => set({ row: e.target.value })} />}
+            {(id, aria) => (
+              <input id={id} {...aria} className={numberClass} inputMode="numeric" value={form.row} onChange={(e) => set({ row: e.target.value })} />
+            )}
           </Field>
         </div>
       </div>
@@ -142,9 +148,10 @@ export function AreaFormModal({ title, initial, onSave, onClose }: AreaFormModal
       <div className="flex flex-col gap-5">
         <Overall problem={state.problem} />
         <Field label="Name" hint="Like Inside, Terrace or Upstairs." error={state.on("name")}>
-          {(id) => (
+          {(id, aria) => (
             <input
               id={id}
+              {...aria}
               className={inputClass}
               value={name}
               maxLength={30}

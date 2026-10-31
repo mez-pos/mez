@@ -112,7 +112,7 @@ export function TerminalShell({ children }: { children: ReactNode }) {
               aria-label={`${waiting} ${pillLabel(asking, paying, stray)}, waiting`}
               className={cx(
                 "inline-flex min-h-tap items-center gap-2 rounded-pill px-4 text-base font-semibold outline-offset-2 focus-visible:outline-3",
-                stray > 0 ? "bg-danger-tint text-danger outline-line-focus" : "bg-attention-tint text-attention-text outline-attention",
+                stray > 0 ? "bg-danger-tint text-danger outline-focus" : "bg-attention-tint text-attention-text outline-focus",
               )}
             >
               <BellRingIcon aria-hidden="true" size={17} />
@@ -124,7 +124,7 @@ export function TerminalShell({ children }: { children: ReactNode }) {
               type="button"
               onClick={() => setPrintOpen(true)}
               aria-label={`Print queue: ${failing} not printed`}
-              className="inline-flex min-h-tap items-center gap-2 rounded-pill bg-danger-tint px-4 text-base font-semibold text-danger outline-offset-2 outline-line-focus focus-visible:outline-2"
+              className="inline-flex min-h-tap items-center gap-2 rounded-pill bg-danger-tint px-4 text-base font-semibold text-danger outline-offset-2 outline-focus focus-visible:outline-3"
             >
               <PrinterIcon aria-hidden="true" size={17} />
               Not printed <span className="font-mono tabular-nums">{failing}</span>

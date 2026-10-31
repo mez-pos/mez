@@ -39,7 +39,7 @@ export function ProfileMenu({ name, role, actions, compact = false }: ProfileMen
         onClick={toggle}
         aria-label={compact ? `${name}, ${roleText(role)}` : undefined}
         className={cx(
-          "flex min-h-tap shrink-0 items-center gap-2.5 rounded-pill pl-1 outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2",
+          "flex min-h-tap shrink-0 items-center gap-2.5 rounded-pill pl-1 outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3",
           compact ? "pr-1 sm:pr-3" : "pr-3",
         )}
       >
@@ -84,7 +84,7 @@ function Item({ icon: Icon, label, onClick }: { icon: LucideIcon; label: string;
     <button
       type="button"
       onClick={onClick}
-      className="flex min-h-tap w-full items-center gap-3 rounded px-4 text-left text-base outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+      className="flex min-h-tap w-full items-center gap-3 rounded px-4 text-left text-base outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
     >
       <Icon aria-hidden="true" size={18} />
       {label}

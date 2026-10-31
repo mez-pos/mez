@@ -76,7 +76,7 @@ export function StationBoard({ station, onStation, signedIn }: StationBoardProps
         <button
           type="button"
           onClick={() => onStation(previous.code)}
-          className="inline-flex min-h-tap w-fit items-center gap-2 rounded-pill border border-line-strong bg-raised px-5 text-base font-semibold outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+          className="inline-flex min-h-tap w-fit items-center gap-2 rounded-pill border border-line-strong bg-raised px-5 text-base font-semibold outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
         >
           <ArrowLeftIcon aria-hidden="true" size={18} />
           Back to {previous.name}
@@ -95,7 +95,7 @@ export function StationBoard({ station, onStation, signedIn }: StationBoardProps
             key={s.code}
             type="button"
             onClick={() => onStation(s.code)}
-            className="min-h-24 rounded-card border-2 border-line-strong bg-raised px-6 text-left font-serif text-display shadow-card outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-4"
+            className="min-h-24 rounded-card border-2 border-line-strong bg-raised px-6 text-left font-serif text-display shadow-card outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
           >
             {s.name}
           </button>
@@ -108,7 +108,7 @@ export function StationBoard({ station, onStation, signedIn }: StationBoardProps
           <button
             type="button"
             onClick={signedIn.onLock}
-            className="inline-flex min-h-tap items-center gap-2 rounded-pill border border-line-strong bg-raised px-5 text-base font-semibold outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+            className="inline-flex min-h-tap items-center gap-2 rounded-pill border border-line-strong bg-raised px-5 text-base font-semibold outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
           >
             <LockIcon aria-hidden="true" size={18} />
             Lock

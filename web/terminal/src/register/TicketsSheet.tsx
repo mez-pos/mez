@@ -80,7 +80,7 @@ export function TicketsSheet({ open, currentId, names, onPick, onNew, onPastBill
                     onClick={() => void pick(t)}
                     className={cx(
                       "grid min-h-tap w-full grid-cols-[1fr_auto] items-center gap-3 rounded border px-4 py-3 text-left",
-                      "outline-offset-2 outline-line-focus focus-visible:outline-2",
+                      "outline-offset-2 outline-focus focus-visible:outline-3",
                       here ? "border-accent bg-accent-tint text-accent-text" : "border-line bg-raised hover:bg-raised-high",
                     )}
                   >

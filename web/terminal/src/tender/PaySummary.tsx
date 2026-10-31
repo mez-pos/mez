@@ -89,7 +89,7 @@ export function PaySummary({ order, title, busy, onDiscount, onNote, onBack }: P
                 type="button"
                 disabled={busy}
                 onClick={onNote}
-                className="flex min-h-tap w-full items-center gap-2.5 rounded-pill bg-raised-high px-5 text-left text-base text-fg-muted outline-offset-2 outline-attention hover:bg-sunken focus-visible:outline-3 disabled:opacity-40"
+                className="flex min-h-tap w-full items-center gap-2.5 rounded-pill bg-raised-high px-5 text-left text-base text-fg-muted outline-offset-2 outline-focus hover:bg-sunken focus-visible:outline-3 disabled:opacity-40"
               >
                 <FileTextIcon aria-hidden="true" size={17} />
                 Add order note

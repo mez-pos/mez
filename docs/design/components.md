@@ -23,6 +23,8 @@ the same task, don't invent a one-off.
 | `Timeline` | renders an order's event stream. Every event type has words, or the build fails |
 | `Logo` | the table mark and wordmark, inline, in the surface's colours. `variant="mark"` is the table alone |
 | `Meta` | the small-caps trail: `TERMINAL · REGISTER`. Items in ordinary case, uppercased by CSS |
+| `focusButton`, `focusField`, `selectedRing` | `ui/focus.ts`: the one focus rule (ADR-403). Every pressable thing takes `focusButton`, every field `focusField`; a chosen tile `selectedRing`. A test fails on a second focus colour or width |
+| `radioGroup` | `ui/radio-group.ts`: spread on any `role="radiogroup"` of radio buttons. One tab stop on the chosen radio; arrows, Home and End choose, past a disabled one (TECH-20, ADR-403) |
 | `ErrorBoundary` | where a screen's failure stops (TECH-8, ADR-402), imported by path. `size`: page (around an app or a screen with no shell: a card and Reload), region (a card with Try again and Reload, inside a shell, or in a `frame` of its own, as the order rail's column), modal (inside `Modal` and `Sheet`, already). `where` names it in the report the server logs; `resetKey` clears it; `onRetry` reads afresh before Try again draws (`useFreshRetry`); `line` is a place's own words. `RouteBoundary` (`web/shared`) is the route's, cleared by the address |
 
 Built primitives live in `web/shared/ui/` and are exported from its

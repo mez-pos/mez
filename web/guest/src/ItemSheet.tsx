@@ -9,6 +9,7 @@ import { firstUnmet, groupHint, groupState, initialSelection, lineTotal, toggle,
 import { formatMoney } from "../../shared/money";
 import { Button } from "../../shared/ui/Button";
 import { cx } from "../../shared/ui/cx";
+import { radioGroup } from "../../shared/ui/radio-group";
 import { Qty } from "../../shared/ui/Qty";
 import { Sheet } from "../../shared/ui/Sheet";
 import { MAX_QTY, groupsFor, type CartLine } from "./cart-logic";
@@ -95,7 +96,7 @@ function Choices({ group, selection, onToggle }: ChoicesProps) {
         <span className="font-serif text-lg">{group.name}</span>
         <span className={cx("text-sm font-semibold", required && !state.satisfied ? "text-danger" : "text-fg-muted")}>{groupHint(group)}</span>
       </legend>
-      <div className="mt-2 flex flex-col gap-2">
+      <div role={one ? "radiogroup" : "group"} aria-label={group.name} {...(one ? radioGroup : {})} className="mt-2 flex flex-col gap-2">
         {group.modifiers.map((m) => {
           const on = chosen.includes(m.id);
           // A full pick-several group takes no more until one is let go.
@@ -109,7 +110,7 @@ function Choices({ group, selection, onToggle }: ChoicesProps) {
               disabled={blocked}
               onClick={() => onToggle(m.id)}
               className={cx(
-                "flex min-h-tap items-center gap-3 rounded border px-4 text-left text-base outline-offset-2 outline-line-focus focus-visible:outline-2 disabled:opacity-50",
+                "flex min-h-tap items-center gap-3 rounded border px-4 text-left text-base outline-offset-2 outline-focus focus-visible:outline-3 disabled:opacity-50",
                 on ? "border-accent bg-accent-tint" : "border-line-strong bg-raised",
               )}
             >

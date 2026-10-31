@@ -8,6 +8,17 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 29: error boundaries** (TECH-8, ADR-402), 2026-10-31.
+A screen that fails to draw now costs only its own part: a boundary behind
+each app's gate (a page), inside each shell (a region, the header and way
+out kept), around the till's order rail (the menu still rings up) and its
+pay screen (a payment taken is said to be kept), and inside every Modal and
+Sheet (title and Close kept). Try again reads the data afresh before it
+draws. Each failure goes to the server's log, "a screen failed to draw",
+through `POST /api/v1/client-errors` (device token, no person, 30 a minute a device;
+open from away and on a mirror). Seen at 1024 and 1366 by bending the
+server's answers so each part threw, and in `logs/mez.log`.
+
 **Phase 17, Task 28: the GST composition scheme** (SET-7, ADR-401),
 2026-10-31, the proposal put to the human and agreed. A fifth profile,
 `gst_in_composition`: no tax computed; its bill is a bill of supply with

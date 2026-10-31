@@ -203,7 +203,7 @@ function PayForOrder({ placed, online }: { placed: Placed; online: ChargeApi }) 
           </p>
           <p className="mt-1 text-base">{words.line}</p>
           {again && (
-            <a href={again} className="mt-2 inline-flex min-h-tap items-center font-semibold underline outline-line-focus focus-visible:outline-2">
+            <a href={again} className="mt-2 inline-flex min-h-tap items-center font-semibold underline outline-focus focus-visible:outline-3">
               Open the payment page again
             </a>
           )}
@@ -239,7 +239,7 @@ export function OrderStrip({ placed, venue, onOpen, collect = false }: { placed:
       type="button"
       onClick={onOpen}
       className={cx(
-        "mx-auto flex min-h-tap w-full max-w-md items-center justify-between gap-3 border-b px-4 py-2 text-left text-base font-semibold outline-offset-[-2px] outline-line-focus focus-visible:outline-2",
+        "mx-auto flex min-h-tap w-full max-w-md items-center justify-between gap-3 border-b px-4 py-2 text-left text-base font-semibold outline-offset-[-3px] outline-focus focus-visible:outline-3",
         toneOf(status, progress),
       )}
     >

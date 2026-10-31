@@ -42,8 +42,11 @@ const preset = {
         DEFAULT: v("line"),
         soft: v("line-soft"),
         strong: v("line-strong"),
-        focus: v("line-focus"),
       },
+
+      // The focus outline of everything pressable (TECH-12, ADR-403): use
+      // focusButton from web/shared/ui/focus.ts rather than this alone.
+      focus: v("focus-ring"),
 
       accent: {
         DEFAULT: v("accent"),

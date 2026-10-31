@@ -103,7 +103,7 @@ export function MoveTable({ floor, party, title, order, startIn, act, onMoving, 
               setFailure(null);
             }}
             className={cx(
-              "inline-flex min-h-tap items-center gap-2 rounded-pill px-5 text-base outline-offset-2 outline-attention focus-visible:outline-3",
+              "inline-flex min-h-tap items-center gap-2 rounded-pill px-5 text-base outline-offset-2 outline-focus focus-visible:outline-3",
               mode === id ? "bg-accent font-semibold text-accent-fg" : "text-fg-2 hover:bg-raised-high",
             )}
           >
@@ -126,7 +126,7 @@ export function MoveTable({ floor, party, title, order, startIn, act, onMoving, 
                 disabled={!pickable || busy}
                 onClick={() => setPicked(pickTile(mode, picked, tile))}
                 className={cx(
-                  "flex min-h-20 w-full flex-col items-center justify-center gap-1 rounded border outline-offset-2 outline-attention focus-visible:outline-3",
+                  "flex min-h-20 w-full flex-col items-center justify-center gap-1 rounded border outline-offset-2 outline-focus focus-visible:outline-3",
                   tileLook(tile, on),
                   !pickable && "opacity-60",
                 )}

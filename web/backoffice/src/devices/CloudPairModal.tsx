@@ -107,9 +107,10 @@ export function CloudPairModal({ onPair, onClose }: CloudPairModalProps) {
           }
           error={problem?.field === "code" ? problem.message : null}
         >
-          {(id) => (
+          {(id, aria) => (
             <input
               id={id}
+              {...aria}
               className={`${inputClass} font-mono tracking-widest uppercase`}
               value={typed}
               // Eight characters, and room for the spaces or the hyphen a person types between them.

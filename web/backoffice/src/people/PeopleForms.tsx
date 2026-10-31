@@ -88,10 +88,10 @@ function PinFields({
   return (
     <>
       <Field label="PIN" hint={pinHint(min)} error={on("pin")}>
-        {(id) => <input id={id} {...props} value={pin} onChange={(e) => onChange({ pin: e.target.value })} />}
+        {(id, aria) => <input id={id} {...aria} {...props} value={pin} onChange={(e) => onChange({ pin: e.target.value })} />}
       </Field>
       <Field label="The PIN again" error={on("again")}>
-        {(id) => <input id={id} {...props} value={again} onChange={(e) => onChange({ again: e.target.value })} />}
+        {(id, aria) => <input id={id} {...aria} {...props} value={again} onChange={(e) => onChange({ again: e.target.value })} />}
       </Field>
     </>
   );
@@ -126,11 +126,13 @@ export function StaffModal({ person, roles, held, onSave, onClose }: StaffModalP
     <Frame title={person ? `Edit ${person.name}` : "Add a person"} busy={s.busy} onSave={submit} onClose={onClose} problem={s.problem}>
       {cloudNote && <p className="text-base text-fg-2">{cloudNote}</p>}
       <Field label="Name" error={s.on("name")}>
-        {(id) => <input id={id} className={inputClass} value={form.name} maxLength={40} autoFocus onChange={(e) => set({ name: e.target.value })} />}
+        {(id, aria) => (
+          <input id={id} {...aria} className={inputClass} value={form.name} maxLength={40} autoFocus onChange={(e) => set({ name: e.target.value })} />
+        )}
       </Field>
       <Field label="Role" error={s.on("role_id")}>
-        {(id) => (
-          <select id={id} className={inputClass} value={form.roleId} onChange={(e) => set({ roleId: Number(e.target.value) })}>
+        {(id, aria) => (
+          <select id={id} {...aria} className={inputClass} value={form.roleId} onChange={(e) => set({ roleId: Number(e.target.value) })}>
             {form.roleId === 0 && <option value={0}>Choose a role</option>}
             {roles.map((r) => {
               const mine = mayGive(held, r.permissions);
@@ -216,9 +218,10 @@ export function RoleModal({ role, held, onSave, onClose }: RoleModalProps) {
       size="md"
     >
       <Field label="Name" error={s.on("name")}>
-        {(id) => (
+        {(id, aria) => (
           <input
             id={id}
+            {...aria}
             className={inputClass}
             value={form.name}
             maxLength={40}

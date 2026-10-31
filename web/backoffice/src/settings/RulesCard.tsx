@@ -61,9 +61,10 @@ export function RulesCard({ rules, onSave, onDirty }: RulesCardProps) {
         }
         error={d.on("day_start")}
       >
-        {(id) => (
+        {(id, aria) => (
           <input
             id={id}
+            {...aria}
             type="time"
             className={`${inputClass} max-w-40 font-mono`}
             value={form.dayStart}
@@ -127,9 +128,10 @@ export function RulesCard({ rules, onSave, onDirty }: RulesCardProps) {
         hint="Over or short by more than this, closing the shift needs a reason. 0 asks for a reason on any difference."
         error={d.on("variance_threshold")}
       >
-        {(id) => (
+        {(id, aria) => (
           <input
             id={id}
+            {...aria}
             className={`${inputClass} max-w-40 font-mono`}
             value={form.variance}
             disabled={busy}
@@ -179,9 +181,10 @@ export function RulesCard({ rules, onSave, onDirty }: RulesCardProps) {
         hint={`A card or UPI tip is never counted in the drawer, and every tip is shared out. 0 to ${MAX_TIP_MAX_PERCENT}; 0 asks for a manager on every tip.`}
         error={d.on("tips_max_percent")}
       >
-        {(id) => (
+        {(id, aria) => (
           <input
             id={id}
+            {...aria}
             className={`${inputClass} max-w-28 font-mono`}
             value={form.tipMax}
             disabled={busy}
@@ -197,9 +200,10 @@ export function RulesCard({ rules, onSave, onDirty }: RulesCardProps) {
         hint={`The order screen shows its time as late once it has been open this long. ${MIN_LATE_MINUTES} to ${MAX_LATE_MINUTES}.`}
         error={d.on("ticket_late_minutes")}
       >
-        {(id) => (
+        {(id, aria) => (
           <input
             id={id}
+            {...aria}
             className={`${inputClass} max-w-28 font-mono`}
             value={form.lateMinutes}
             disabled={busy}

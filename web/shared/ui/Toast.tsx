@@ -105,7 +105,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number)
             onDismiss(toast.id);
             toast.button?.run();
           }}
-          className="pointer-events-auto inline-flex min-h-tap shrink-0 items-center rounded-pill px-3 text-base font-bold underline underline-offset-4 outline-current focus-visible:outline-2"
+          className="pointer-events-auto inline-flex min-h-tap shrink-0 items-center rounded-pill px-3 text-base font-bold underline underline-offset-4 outline-current focus-visible:outline-3"
         >
           {toast.button.label}
         </button>
@@ -115,7 +115,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number)
         type="button"
         aria-label="Dismiss"
         onClick={() => onDismiss(toast.id)}
-        className="pointer-events-auto inline-flex size-tap shrink-0 items-center justify-center rounded-pill outline-current focus-visible:outline-2"
+        className="pointer-events-auto inline-flex size-tap shrink-0 items-center justify-center rounded-pill outline-current focus-visible:outline-3"
       >
         <CloseIcon />
       </button>

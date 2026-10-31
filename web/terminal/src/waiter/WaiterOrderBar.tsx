@@ -44,14 +44,14 @@ export function WaiterOrderBar() {
       <Link
         href={back.href}
         aria-label={back.label}
-        className="flex size-tap shrink-0 items-center justify-center rounded-round bg-sunken outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+        className="flex size-tap shrink-0 items-center justify-center rounded-round bg-sunken outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
       >
         <ArrowLeftIcon aria-hidden="true" size={20} />
       </Link>
       {service === "dine_in" && (
         <Link
           href={route.tables}
-          className={cx(pill, "min-w-0 bg-attention-tint font-bold text-attention-text outline-offset-2 outline-attention focus-visible:outline-3")}
+          className={cx(pill, "min-w-0 bg-attention-tint font-bold text-attention-text outline-offset-2 outline-focus focus-visible:outline-3")}
         >
           <ArmchairIcon aria-hidden="true" size={20} className="shrink-0" />
           <span className="min-w-0 truncate">{needsTable(order, opening, service) ? "Pick a table" : railTitle(where, service, names)}</span>

@@ -64,7 +64,9 @@ export function BackupCard({ backup, onSave, onDirty }: BackupCardProps) {
           hint="Written in full, like D:\mez-backup or \\nas\backups\cafe. On another disk, a USB drive or a network share: a folder on this computer's own disk is lost with it."
           error={d.on("folder")}
         >
-          {(id) => <input id={id} className={mono} value={form.folder} disabled={busy} {...verbatim} onChange={(e) => set({ folder: e.target.value })} />}
+          {(id, aria) => (
+            <input id={id} {...aria} className={mono} value={form.folder} disabled={busy} {...verbatim} onChange={(e) => set({ folder: e.target.value })} />
+          )}
         </Field>
       )}
 
@@ -72,12 +74,15 @@ export function BackupCard({ backup, onSave, onDirty }: BackupCardProps) {
         <>
           <p className="text-base text-fg-2">Amazon S3, Cloudflare R2, or any other service that speaks S3.</p>
           <Field label="Bucket" hint="The bucket's name." error={d.on("bucket")}>
-            {(id) => <input id={id} className={mono} value={form.bucket} disabled={busy} {...verbatim} onChange={(e) => set({ bucket: e.target.value })} />}
+            {(id, aria) => (
+              <input id={id} {...aria} className={mono} value={form.bucket} disabled={busy} {...verbatim} onChange={(e) => set({ bucket: e.target.value })} />
+            )}
           </Field>
           <Field label="Folder in the bucket" hint="Leave empty to use mez." error={d.on("path")}>
-            {(id) => (
+            {(id, aria) => (
               <input
                 id={id}
+                {...aria}
                 className={mono}
                 value={form.path}
                 placeholder="mez"
@@ -92,9 +97,10 @@ export function BackupCard({ backup, onSave, onDirty }: BackupCardProps) {
             hint="For Cloudflare R2 and other services, their address, like https://account.r2.cloudflarestorage.com. Leave empty for Amazon S3."
             error={d.on("endpoint")}
           >
-            {(id) => (
+            {(id, aria) => (
               <input
                 id={id}
+                {...aria}
                 className={mono}
                 value={form.endpoint}
                 disabled={busy}
@@ -105,11 +111,21 @@ export function BackupCard({ backup, onSave, onDirty }: BackupCardProps) {
             )}
           </Field>
           <Field label="Region" hint="Amazon S3 needs it, like ap-south-1. Others can leave it empty." error={d.on("region")}>
-            {(id) => <input id={id} className={mono} value={form.region} disabled={busy} {...verbatim} onChange={(e) => set({ region: e.target.value })} />}
+            {(id, aria) => (
+              <input id={id} {...aria} className={mono} value={form.region} disabled={busy} {...verbatim} onChange={(e) => set({ region: e.target.value })} />
+            )}
           </Field>
           <Field label="Access key ID" error={d.on("access_key_id")}>
-            {(id) => (
-              <input id={id} className={mono} value={form.accessKeyId} disabled={busy} {...verbatim} onChange={(e) => set({ accessKeyId: e.target.value })} />
+            {(id, aria) => (
+              <input
+                id={id}
+                {...aria}
+                className={mono}
+                value={form.accessKeyId}
+                disabled={busy}
+                {...verbatim}
+                onChange={(e) => set({ accessKeyId: e.target.value })}
+              />
             )}
           </Field>
           <Field
@@ -121,9 +137,10 @@ export function BackupCard({ backup, onSave, onDirty }: BackupCardProps) {
             }
             error={d.on("secret_access_key")}
           >
-            {(id) => (
+            {(id, aria) => (
               <input
                 id={id}
+                {...aria}
                 type="password"
                 className={mono}
                 value={form.secret}

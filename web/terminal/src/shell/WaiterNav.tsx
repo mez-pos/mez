@@ -19,7 +19,7 @@ const icons: Record<Exclude<WaiterNavId, "more">, LucideIcon> = {
 
 const tile = (pressed: boolean) =>
   cx(
-    "flex h-15 w-24 flex-col items-center justify-center gap-0.5 rounded text-base outline-offset-2 outline-line-focus focus-visible:outline-2",
+    "flex h-15 w-24 flex-col items-center justify-center gap-0.5 rounded text-base outline-offset-2 outline-focus focus-visible:outline-3",
     pressed ? "bg-accent font-bold text-accent-fg" : "font-medium text-fg hover:bg-raised-high",
   );
 
@@ -31,7 +31,7 @@ interface WaiterNavProps {
 export function WaiterNav({ active, onPrintQueue }: WaiterNavProps) {
   const { open, toggle, box, trigger, panel, panelId, pick, leaves } = useDisclosure();
   const row =
-    "flex min-h-tap w-full items-center gap-3 rounded px-4 text-left text-base outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2";
+    "flex min-h-tap w-full items-center gap-3 rounded px-4 text-left text-base outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3";
 
   return (
     <nav aria-label="Main" className="ml-4 flex gap-2">

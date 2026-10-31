@@ -65,9 +65,10 @@ export function PaymentsCard({ payments, onSave, onDirty }: PaymentsCardProps) {
         hint="Like cafe@okbank: the one on your counter's UPI sticker. Leave empty to offer no UPI on a guest's phone."
         error={d.on("upi_address")}
       >
-        {(id) => (
+        {(id, aria) => (
           <input
             id={id}
+            {...aria}
             className={`${inputClass} font-mono`}
             value={form.address}
             disabled={busy}
@@ -84,9 +85,10 @@ export function PaymentsCard({ payments, onSave, onDirty }: PaymentsCardProps) {
         hint={`What a guest's UPI app shows before they pay. Leave empty to use the venue's name, ${payments.venue_name}.`}
         error={d.on("upi_payee")}
       >
-        {(id) => (
+        {(id, aria) => (
           <input
             id={id}
+            {...aria}
             className={inputClass}
             value={form.payee}
             placeholder={payments.venue_name}

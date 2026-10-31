@@ -44,9 +44,10 @@ export function VenueSection({ venue, onSave, onDirty }: VenueSectionProps) {
       columns={2}
     >
       <Field label="Venue name" hint="Shown on the lock screen and on receipts." error={d.on("name")}>
-        {(id) => (
+        {(id, aria) => (
           <input
             id={id}
+            {...aria}
             className={inputClass}
             value={form.name}
             disabled={busy}
@@ -56,9 +57,10 @@ export function VenueSection({ venue, onSave, onDirty }: VenueSectionProps) {
         )}
       </Field>
       <Field label="Legal name" hint="Printed on invoices. Leave empty to use the venue's name." error={d.on("legal_name")}>
-        {(id) => (
+        {(id, aria) => (
           <input
             id={id}
+            {...aria}
             className={inputClass}
             value={form.legalName}
             disabled={busy}
@@ -68,10 +70,11 @@ export function VenueSection({ venue, onSave, onDirty }: VenueSectionProps) {
         )}
       </Field>
       <Field label="Timezone" hint="Like Asia/Kolkata. Decides where a day starts and what time a receipt shows." error={d.on("timezone")}>
-        {(id) => (
+        {(id, aria) => (
           <>
             <input
               id={id}
+              {...aria}
               className={inputClass}
               list={zoneListId}
               value={form.timezone}

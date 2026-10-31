@@ -42,7 +42,7 @@ export function MoreActions({ orderCount, hasOrder, canDiscount, nextCourse, onO
         aria-controls={panelId}
         onClick={toggle}
         className={cx(
-          "relative flex size-tap items-center justify-center rounded-round border border-line-strong outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2",
+          "relative flex size-tap items-center justify-center rounded-round border border-line-strong outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3",
           open && "bg-raised-high",
         )}
       >
@@ -118,7 +118,7 @@ export function ActionItem({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="flex min-h-tap w-full items-center gap-3 rounded px-4 py-2 text-left text-base outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2 disabled:hover:bg-transparent"
+      className="flex min-h-tap w-full items-center gap-3 rounded px-4 py-2 text-left text-base outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3 disabled:hover:bg-transparent"
     >
       <Icon aria-hidden="true" size={18} className={disabled ? "opacity-40" : undefined} />
       <span className="flex-1">

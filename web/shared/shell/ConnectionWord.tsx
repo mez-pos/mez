@@ -35,10 +35,14 @@ export function ConnectionWord({ brief = false, className }: ConnectionWordProps
   const Wifi = reaching ? WifiIcon : WifiOffIcon;
 
   return (
-    <span role="status" aria-live="polite" className={cx("inline-flex items-center gap-1.5 whitespace-nowrap font-semibold", toneClass[link.tone], className)}>
+    <span className={cx("inline-flex items-center gap-1.5 whitespace-nowrap font-semibold", toneClass[link.tone], className)}>
       <Wifi aria-hidden="true" size={15} strokeWidth={2} className="shrink-0" />
-      {/* In a bar with no room it is cut short with an ellipsis and never pushes its neighbours out. */}
-      <span className="min-w-0 truncate">{link.word}</span>
+      {/* In a bar with no room it is cut short with an ellipsis and never pushes its neighbours out.
+          Only the word is a live region: it changes when the connection does, and is said once.
+          The detail beside it counts down every second, and is read only when it is reached (TECH-11). */}
+      <span role="status" aria-live="polite" className="min-w-0 truncate">
+        {link.word}
+      </span>
       {link.detail && !brief && <span className="font-normal text-fg-muted">{link.detail}</span>}
     </span>
   );

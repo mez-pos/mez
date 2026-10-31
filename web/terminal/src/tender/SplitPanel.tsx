@@ -39,6 +39,7 @@ import {
   type TillSplit,
 } from "./split-logic";
 import { ColumnHeading, GuestCard, GuestGrid, SplitFrame, chosen, type ShareLine } from "./SplitParts";
+import { radioGroup } from "../../../shared/ui/radio-group";
 
 interface SplitPanelProps {
   order: OrderResponse;
@@ -108,7 +109,7 @@ export function SplitPanel({ order, title, draft, onDraft, onUse, onBack }: Spli
         });
 
   const modeSwitch = (
-    <div role="radiogroup" aria-label="Split mode" className="flex gap-1 rounded-pill bg-sunken p-1">
+    <div role="radiogroup" {...radioGroup} aria-label="Split mode" className="flex gap-1 rounded-pill bg-sunken p-1">
       {modes.map(({ kind, icon: Icon }) => {
         const on = draft.kind === kind;
         return (
@@ -121,7 +122,7 @@ export function SplitPanel({ order, title, draft, onDraft, onUse, onBack }: Spli
             onClick={() => set({ kind, ways: Math.min(draft.ways, kind === "item" ? maxWays - 1 : maxWays) })}
             className={cx(
               "flex min-h-tap items-center justify-center gap-2 whitespace-nowrap rounded-pill border px-3.5 text-base",
-              "outline-offset-2 outline-attention focus-visible:outline-3 disabled:opacity-40",
+              "outline-offset-2 outline-focus focus-visible:outline-3 disabled:opacity-40",
               on ? chosen : "border-transparent font-semibold text-fg-2 hover:bg-raised-high",
             )}
           >
@@ -239,7 +240,7 @@ export function SplitPanel({ order, title, draft, onDraft, onUse, onBack }: Spli
                     aria-pressed={on}
                     onClick={() => setPicked(payer)}
                     className={cx(
-                      "flex min-h-tap items-center gap-2.5 rounded-pill border px-4 text-base outline-offset-2 outline-attention focus-visible:outline-3",
+                      "flex min-h-tap items-center gap-2.5 rounded-pill border px-4 text-base outline-offset-2 outline-focus focus-visible:outline-3",
                       on ? chosen : "border-line-strong bg-raised font-semibold text-fg hover:bg-raised-high",
                     )}
                   >
@@ -262,7 +263,7 @@ export function SplitPanel({ order, title, draft, onDraft, onUse, onBack }: Spli
                         type="button"
                         aria-label={`Give ${l.name} to Guest ${guest + 1}`}
                         onClick={() => onDraft(assign(draft, l.id, [guest]))}
-                        className="flex min-h-tap min-w-0 flex-1 items-center gap-2.5 rounded-tight px-2.5 text-left text-base outline-offset-2 outline-attention hover:bg-raised-high focus-visible:outline-3"
+                        className="flex min-h-tap min-w-0 flex-1 items-center gap-2.5 rounded-tight px-2.5 text-left text-base outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
                       >
                         <span className="min-w-0 flex-1">
                           {l.qty} × {l.name}
@@ -281,7 +282,7 @@ export function SplitPanel({ order, title, draft, onDraft, onUse, onBack }: Spli
                             ),
                           )
                         }
-                        className="min-h-tap shrink-0 rounded-tight px-3 text-base font-semibold text-attention-text outline-offset-2 outline-attention hover:bg-attention-tint focus-visible:outline-3"
+                        className="min-h-tap shrink-0 rounded-tight px-3 text-base font-semibold text-attention-text outline-offset-2 outline-focus hover:bg-attention-tint focus-visible:outline-3"
                       >
                         Share
                       </button>
@@ -305,7 +306,7 @@ export function SplitPanel({ order, title, draft, onDraft, onUse, onBack }: Spli
                 set({ ways: draft.ways + 1 });
                 setPicked(draft.ways);
               }}
-              className="flex min-h-40 flex-col items-center justify-center gap-2.5 rounded-card border border-dashed border-line-strong p-4 text-base font-semibold text-fg-muted outline-offset-2 outline-attention hover:bg-raised-high focus-visible:outline-3 disabled:opacity-40"
+              className="flex min-h-40 flex-col items-center justify-center gap-2.5 rounded-card border border-dashed border-line-strong p-4 text-base font-semibold text-fg-muted outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3 disabled:opacity-40"
             >
               <UserPlusIcon aria-hidden="true" size={26} strokeWidth={1.75} />
               Add another guest

@@ -6,11 +6,16 @@
 //
 // A cell is never under 48px, the touch floor: so twelve columns still fit
 // beside the chosen table's card at 1280px. Past that the grid scrolls sideways.
+//
+// From a keyboard the grid is one tab stop, and the arrows move between its
+// cells, Home and End along a row (TECH-20, ADR-403): the grid pattern, not
+// ninety-six tab stops.
 
-import { useRef, useState, type PointerEvent } from "react";
+import { useRef, useState, type FocusEvent, type KeyboardEvent, type PointerEvent } from "react";
 import type { TableResponse } from "../../../shared/api-types";
 import { cx } from "../../../shared/ui/cx";
-import { seatsText, type Cell } from "./floor-logic";
+import { selectedRing } from "../../../shared/ui/focus";
+import { gridStep, seatsText, type Cell, type Place } from "./floor-logic";
 
 interface FloorGridProps {
   cells: Cell[][];
@@ -42,6 +47,40 @@ export function FloorGrid({ cells, chosen, moving, readOnly = false, onCell, onT
   // A click follows the pointerup that ended a drag; it must not also choose the table.
   const justDragged = useRef(false);
   const columns = cells[0]?.length ?? 0;
+  const grid = useRef<HTMLDivElement>(null);
+
+  // The one cell a Tab lands on: the last one focused, else the chosen
+  // table's, else the first with something to press.
+  const pressable = ({ x, y }: Place): boolean => {
+    const cell = cells[y]?.[x];
+    return cell !== undefined && !(readOnly && cell.table === null);
+  };
+  const [last, setLast] = useState<Place | null>(null);
+  const stop: Place | null =
+    (last && pressable(last) ? last : null) ??
+    cells.flat().find((c) => c.table !== null && c.table.id === chosen) ??
+    cells.flat().find((c) => pressable(c)) ??
+    null;
+  const isStop = (c: Cell): boolean => stop !== null && stop.x === c.x && stop.y === c.y;
+  const placeOf = (el: EventTarget): Place | null => {
+    const at = (el as HTMLElement).closest?.<HTMLElement>("[data-cell]")?.dataset.cell;
+    if (!at) return null;
+    const [x, y] = at.split(",").map(Number);
+    return x === undefined || y === undefined ? null : { x, y };
+  };
+  const onFocus = (e: FocusEvent<HTMLDivElement>) => {
+    const at = placeOf(e.target);
+    if (at) setLast(at);
+  };
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    const from = placeOf(e.target);
+    const to = from && gridStep(e.key, from, columns, cells.length, pressable);
+    if (!to) return;
+    e.preventDefault();
+    setLast(to);
+    grid.current?.querySelector<HTMLElement>(`[data-cell="${to.x},${to.y}"] button`)?.focus();
+  };
 
   const cellAt = (clientX: number, clientY: number): Cell | null => {
     const el = document.elementFromPoint(clientX, clientY)?.closest<HTMLElement>("[data-cell]");
@@ -71,7 +110,15 @@ export function FloorGrid({ cells, chosen, moving, readOnly = false, onCell, onT
 
   return (
     <div className="relative overflow-x-auto rounded border border-line bg-sunken p-2">
-      <div role="grid" aria-label="Floor plan" className="grid gap-1" style={{ gridTemplateColumns: `repeat(${columns}, minmax(3rem, 1fr))` }}>
+      <div
+        ref={grid}
+        role="grid"
+        aria-label="Floor plan"
+        onFocus={onFocus}
+        onKeyDown={onKeyDown}
+        className="grid gap-1"
+        style={{ gridTemplateColumns: `repeat(${columns}, minmax(3rem, 1fr))` }}
+      >
         {cells.map((row, y) => (
           <div role="row" key={y} className="contents">
             {row.map((cell) => {
@@ -84,16 +131,18 @@ export function FloorGrid({ cells, chosen, moving, readOnly = false, onCell, onT
                   ) : t === null ? (
                     <button
                       type="button"
+                      tabIndex={isStop(cell) ? 0 : -1}
                       aria-label={moving ? `Move here: column ${cell.x + 1}, row ${cell.y + 1}` : `Place a table at column ${cell.x + 1}, row ${cell.y + 1}`}
                       onClick={() => onCell(cell)}
                       className={cx(
-                        "absolute inset-0 rounded border border-dashed outline-offset-2 outline-line-focus focus-visible:outline-2",
+                        "absolute inset-0 rounded border border-dashed outline-offset-2 outline-focus focus-visible:outline-3",
                         moving ? "border-line-strong bg-raised" : "border-line",
                       )}
                     />
                   ) : (
                     <button
                       type="button"
+                      tabIndex={isStop(cell) ? 0 : -1}
                       aria-label={`Table ${t.name}, ${seatsText(t.seats)}`}
                       aria-pressed={chosen === t.id}
                       onPointerDown={down(t)}
@@ -109,12 +158,12 @@ export function FloorGrid({ cells, chosen, moving, readOnly = false, onCell, onT
                       }}
                       style={dragged ? { transform: `translate(${drag.dx}px, ${drag.dy}px)` } : undefined}
                       className={cx(
-                        "absolute inset-0 flex touch-none select-none items-center justify-center outline-offset-2 outline-line-focus focus-visible:outline-2",
+                        "absolute inset-0 flex touch-none select-none items-center justify-center outline-offset-2 outline-focus focus-visible:outline-3",
                         dragged && "pointer-events-none z-10 opacity-80",
-                        chosen === t.id && "outline-2",
                       )}
                     >
-                      <TableShapeTile table={t} />
+                      {/* Chosen is a green ring inside the tile's edge; focus is the outline outside the cell (TECH-12). */}
+                      <TableShapeTile table={t} chosen={chosen === t.id} />
                     </button>
                   )}
                 </div>
@@ -128,7 +177,7 @@ export function FloorGrid({ cells, chosen, moving, readOnly = false, onCell, onT
 }
 
 /** The table drawn as its shape, with its name and seats. */
-function TableShapeTile({ table: t }: { table: TableResponse }) {
+function TableShapeTile({ table: t, chosen }: { table: TableResponse; chosen: boolean }) {
   return (
     <span
       className={cx(
@@ -137,6 +186,7 @@ function TableShapeTile({ table: t }: { table: TableResponse }) {
         t.shape === "square" && "h-[88%] w-[88%] rounded",
         // Its name and seats need 40px: a 56px cell's 60% would cut them.
         t.shape === "long" && "h-[60%] min-h-11 w-full rounded",
+        chosen && selectedRing,
       )}
     >
       <span className="max-w-full truncate px-1 font-serif text-lg leading-tight">{t.name}</span>

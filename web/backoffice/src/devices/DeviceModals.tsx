@@ -85,13 +85,13 @@ export function PairModal({ onPair, onClose }: PairModalProps) {
                 <PlaceBand key={place.url} place={place} named={main.length > 1} />
               ))}
               {code.named_url && (
-                <p className="text-meta text-fg-muted">
+                <p className="text-sm text-fg-muted">
                   By name, on an iPhone, iPad, Mac or Windows PC: <span className="font-mono tabular-nums">{typedAddress(code.named_url)}</span>. The name stays
                   the same when the computer&apos;s address changes.
                 </p>
               )}
               {others.length > 0 && (
-                <p className="text-meta text-fg-muted">
+                <p className="text-sm text-fg-muted">
                   Also at{" "}
                   {others.map((p, i) => (
                     <span key={p.url}>
@@ -159,9 +159,10 @@ export function PairModal({ onPair, onClose }: PairModalProps) {
           </p>
         )}
         <Field label="Name" hint="What the device will be called: Counter 1, Pass, Office." error={on("name")}>
-          {(id) => (
+          {(id, aria) => (
             <input
               id={id}
+              {...aria}
               className={inputClass}
               value={name}
               maxLength={64}
@@ -223,9 +224,10 @@ export function RenameModal({ device, onRename, onClose }: RenameModalProps) {
       refusal={problem && problem.field !== "name" ? problem.message : null}
     >
       <Field label="Name" hint="Its label on every screen and in the history. It keeps working." error={problem?.field === "name" ? problem.message : null}>
-        {(id) => (
+        {(id, aria) => (
           <input
             id={id}
+            {...aria}
             className={inputClass}
             value={name}
             maxLength={64}

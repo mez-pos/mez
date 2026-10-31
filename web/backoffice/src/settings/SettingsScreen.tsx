@@ -93,7 +93,7 @@ const relatedIcons: Record<RelatedScreen["id"], LucideIcon> = { printers: Printe
 
 // The same entries as the shell's navigation: the current one terracotta, a
 // section not built yet muted with Soon, and not a link.
-const entry = "flex min-h-tap items-center gap-3 rounded px-4 text-base outline-offset-2 outline-line-focus focus-visible:outline-2";
+const entry = "flex min-h-tap items-center gap-3 rounded px-4 text-base outline-offset-2 outline-focus focus-visible:outline-3";
 
 function Rail({ current, onGo }: { current: SettingsSection; onGo: (e: MouseEvent, path: string) => void }) {
   const related = relatedScreens(usePermissions());

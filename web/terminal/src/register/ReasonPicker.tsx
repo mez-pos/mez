@@ -3,6 +3,7 @@
 
 import { cx } from "../../../shared/ui/cx";
 import type { Reason } from "./cart-logic";
+import { radioGroup } from "../../../shared/ui/radio-group";
 
 interface ReasonPickerProps {
   reasons: readonly Reason[];
@@ -15,7 +16,7 @@ export function ReasonPicker({ reasons, chosen, onChoose, label }: ReasonPickerP
   return (
     <fieldset>
       <legend className="text-lg font-semibold">{label}</legend>
-      <div role="radiogroup" aria-label={label} className="mt-3 grid grid-cols-2 gap-tap-gap">
+      <div role="radiogroup" {...radioGroup} aria-label={label} className="mt-3 grid grid-cols-2 gap-tap-gap">
         {reasons.map((r) => (
           <button
             key={r.code}
@@ -25,7 +26,7 @@ export function ReasonPicker({ reasons, chosen, onChoose, label }: ReasonPickerP
             onClick={() => onChoose(r.code)}
             className={cx(
               "min-h-tap rounded border px-4 py-2.5 text-left text-base",
-              "outline-offset-2 outline-line-focus focus-visible:outline-2",
+              "outline-offset-2 outline-focus focus-visible:outline-3",
               chosen === r.code ? "border-accent bg-accent-tint font-semibold text-accent-text" : "border-line bg-raised text-fg-2",
             )}
           >

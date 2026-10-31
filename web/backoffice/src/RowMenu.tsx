@@ -32,7 +32,7 @@ export function RowMenu({ name, disabled, up, actions, hidden = false }: RowMenu
         aria-disabled={disabled || undefined}
         onClick={disabled ? undefined : toggle}
         className={cx(
-          "flex size-12 items-center justify-center rounded text-fg-muted outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2",
+          "flex size-12 items-center justify-center rounded text-fg-muted outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3",
           disabled && "opacity-40",
         )}
       >
@@ -51,7 +51,7 @@ export function RowMenu({ name, disabled, up, actions, hidden = false }: RowMenu
               key={a.label}
               type="button"
               onClick={pick(a.run)}
-              className="flex min-h-tap w-full items-center rounded px-4 text-left text-base outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+              className="flex min-h-tap w-full items-center rounded px-4 text-left text-base outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
             >
               {a.label}
             </button>

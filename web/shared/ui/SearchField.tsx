@@ -9,6 +9,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { cx } from "./cx";
+import { focusField } from "./focus";
 import { debounce } from "./debounce";
 import { CloseIcon, SearchIcon } from "./icons";
 
@@ -74,7 +75,7 @@ export function SearchField({ onSearch, label, debounceMs = 200, initialQuery = 
         spellCheck={false}
         className={cx(
           "h-tap w-full rounded-pill border border-line-strong bg-raised pl-11 pr-12 text-fg placeholder:text-fg-muted",
-          "outline-accent-tint focus-visible:border-accent focus-visible:outline-3",
+          focusField,
           // The browser's own clear button would be a second, smaller one.
           "[&::-webkit-search-cancel-button]:appearance-none",
         )}

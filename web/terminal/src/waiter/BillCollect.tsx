@@ -17,11 +17,12 @@ import { AmountField } from "../tender/AmountField";
 import { TipNote } from "../tender/TipCard";
 import { methodNames, quickShown, tipFor, tipPercents, type TenderPlan } from "../tender/tender-logic";
 import { billMethods } from "./bill-logic";
+import { radioGroup } from "../../../shared/ui/radio-group";
 
 const icons: Readonly<Record<PaymentMethod, LucideIcon>> = { upi: QrCodeIcon, card: CreditCardIcon, cash: BanknoteIcon, other: BanknoteIcon };
 
 const chip =
-  "flex min-h-tap items-center justify-center rounded border px-3 text-base outline-offset-2 outline-attention focus-visible:outline-3 disabled:opacity-40";
+  "flex min-h-tap items-center justify-center rounded border px-3 text-base outline-offset-2 outline-focus focus-visible:outline-3 disabled:opacity-40";
 const chipOn = "border-accent bg-accent-tint font-bold text-accent-text";
 const chipOff = "border-line-strong bg-raised font-semibold hover:bg-raised-high";
 
@@ -97,7 +98,7 @@ export function BillCollect(props: BillCollectProps) {
         {from && ` from ${from}`}
       </h2>
 
-      <div role="radiogroup" aria-label="Payment method" className="mt-3 grid grid-cols-3 gap-2.5">
+      <div role="radiogroup" {...radioGroup} aria-label="Payment method" className="mt-3 grid grid-cols-3 gap-2.5">
         {billMethods.map((m) => {
           const on = m === method;
           const Tile = icons[m];
@@ -114,7 +115,7 @@ export function BillCollect(props: BillCollectProps) {
               }}
               className={cx(
                 "flex h-20 flex-col items-center justify-center gap-1.5 rounded-card border text-base",
-                "outline-offset-2 outline-attention focus-visible:outline-3 disabled:opacity-40",
+                "outline-offset-2 outline-focus focus-visible:outline-3 disabled:opacity-40",
                 on ? "border-accent bg-accent-tint font-bold text-accent-text" : "border-line-strong bg-raised font-semibold hover:bg-raised-high",
               )}
             >

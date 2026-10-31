@@ -135,7 +135,9 @@ function ClassModal({
       refusal={problem && problem.field === null ? problem.message : null}
     >
       <Field label="Name" hint="Like Food, Drinks or Alcohol." error={on("name")}>
-        {(id) => <input id={id} className={inputClass} value={form.name} maxLength={40} autoComplete="off" onChange={(e) => set({ name: e.target.value })} />}
+        {(id, aria) => (
+          <input id={id} {...aria} className={inputClass} value={form.name} maxLength={40} autoComplete="off" onChange={(e) => set({ name: e.target.value })} />
+        )}
       </Field>
       <Choice
         label="Tax"
@@ -149,10 +151,11 @@ function ClassModal({
       />
       {!form.exempt && (
         <Field label="Rate" hint="The whole rate, like 5 or 12. Under GST it is split in half into CGST and SGST on the invoice." error={on("rate")}>
-          {(id) => (
+          {(id, aria) => (
             <div className="flex items-center gap-2">
               <input
                 id={id}
+                {...aria}
                 className={`${inputClass} max-w-32 font-mono`}
                 value={form.rate}
                 inputMode="decimal"

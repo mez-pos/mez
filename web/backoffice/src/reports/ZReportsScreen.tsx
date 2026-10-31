@@ -87,7 +87,7 @@ function ReportRow({ z }: { z: ZSummary }) {
   return (
     <Link
       href={`/reports/${z.number}`}
-      className="grid min-h-tap grid-cols-[6rem_1fr_auto] items-center gap-4 rounded border border-line bg-raised px-4 py-3 outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+      className="grid min-h-tap grid-cols-[6rem_1fr_auto] items-center gap-4 rounded border border-line bg-raised px-4 py-3 outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
     >
       <span className="font-mono text-lg tabular-nums">Z {z.number}</span>
       <span className="flex min-w-0 flex-col gap-1">

@@ -1,7 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../../shared/api";
 import type { FloorResponse, TableResponse } from "../../../shared/api-types";
-import { areaToShow, cellsOf, emptyTableForm, moveTo, placeText, problemOf, retiredIn, seatsText, tableFormFrom, toTableSettings } from "./floor-logic";
+import {
+  areaToShow,
+  cellsOf,
+  emptyTableForm,
+  gridStep,
+  moveTo,
+  placeText,
+  problemOf,
+  retiredIn,
+  seatsText,
+  tableFormFrom,
+  toTableSettings,
+} from "./floor-logic";
 
 const table = (extra: Partial<TableResponse> = {}): TableResponse => ({
   id: 1,
@@ -140,5 +152,35 @@ describe("problemOf", () => {
     expect(problemOf(new ApiError("network", "x")).message).toMatch(/Can't reach/);
     expect(problemOf(new ApiError("forbidden", "x", 403)).message).toMatch(/Only someone/);
     expect(problemOf(new Error("boom")).message).toBe("Something went wrong. Try again.");
+  });
+});
+
+describe("gridStep (TECH-20)", () => {
+  const every = () => true;
+  it("moves one cell with each arrow, and stops at the edge", () => {
+    expect(gridStep("ArrowRight", { x: 1, y: 1 }, 4, 3, every)).toEqual({ x: 2, y: 1 });
+    expect(gridStep("ArrowLeft", { x: 1, y: 1 }, 4, 3, every)).toEqual({ x: 0, y: 1 });
+    expect(gridStep("ArrowDown", { x: 1, y: 1 }, 4, 3, every)).toEqual({ x: 1, y: 2 });
+    expect(gridStep("ArrowUp", { x: 1, y: 1 }, 4, 3, every)).toEqual({ x: 1, y: 0 });
+    expect(gridStep("ArrowRight", { x: 3, y: 1 }, 4, 3, every)).toBeNull();
+    expect(gridStep("ArrowUp", { x: 0, y: 0 }, 4, 3, every)).toBeNull();
+  });
+
+  it("goes to the row's ends with Home and End", () => {
+    expect(gridStep("Home", { x: 2, y: 1 }, 4, 3, every)).toEqual({ x: 0, y: 1 });
+    expect(gridStep("End", { x: 0, y: 2 }, 4, 3, every)).toEqual({ x: 3, y: 2 });
+    expect(gridStep("Home", { x: 0, y: 1 }, 4, 3, every)).toBeNull();
+  });
+
+  it("passes over cells with nothing to press: a read-only floor's empty cells", () => {
+    const tables = (p: { x: number; y: number }) => (p.x === 0 && p.y === 0) || (p.x === 3 && p.y === 0) || (p.x === 0 && p.y === 2);
+    expect(gridStep("ArrowRight", { x: 0, y: 0 }, 4, 3, tables)).toEqual({ x: 3, y: 0 });
+    expect(gridStep("ArrowDown", { x: 0, y: 0 }, 4, 3, tables)).toEqual({ x: 0, y: 2 });
+    expect(gridStep("ArrowDown", { x: 3, y: 0 }, 4, 3, tables)).toBeNull();
+    expect(gridStep("End", { x: 0, y: 0 }, 4, 3, tables)).toEqual({ x: 3, y: 0 });
+  });
+
+  it("does nothing for another key", () => {
+    expect(gridStep("Enter", { x: 1, y: 1 }, 4, 3, every)).toBeNull();
   });
 });

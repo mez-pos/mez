@@ -4,21 +4,52 @@
 
 import { useId, type ReactNode } from "react";
 import { cx } from "../../shared/ui/cx";
+import { focusButton, focusField } from "../../shared/ui/focus";
+import { radioGroup } from "../../shared/ui/radio-group";
 
-export const inputClass =
-  "min-h-tap w-full rounded border border-line-strong bg-raised px-4 text-fg outline-accent-tint focus-visible:border-accent focus-visible:outline-3";
+export const inputClass = `min-h-tap w-full rounded border border-line-strong bg-raised px-4 text-fg ${focusField}`;
 
-export function Field({ label, hint, error, children }: { label: string; hint?: string; error: string | null; children: (id: string) => ReactNode }) {
+/**
+ * What a field's control takes beside its id (TECH-10, ADR-403): the hint and
+ * the error it is described by, and whether it is refused, so a screen reader
+ * reads them with it. Spread it on the control: `<input id={id} {...aria} />`.
+ */
+export interface FieldAria {
+  "aria-describedby"?: string;
+  "aria-invalid"?: true;
+}
+
+/** The ids a field's hint and error take, and what its control is described by. */
+export function fieldAria(id: string, hint: boolean, error: boolean): FieldAria {
+  const by = [hint ? `${id}-hint` : null, error ? `${id}-error` : null].filter((x) => x !== null).join(" ");
+  return { ...(by !== "" ? { "aria-describedby": by } : {}), ...(error ? { "aria-invalid": true as const } : {}) };
+}
+
+export function Field({
+  label,
+  hint,
+  error,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  error: string | null;
+  children: (id: string, aria: FieldAria) => ReactNode;
+}) {
   const id = useId();
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={id} className="text-base font-semibold">
         {label}
       </label>
-      {children(id)}
-      {hint && <p className="text-sm text-fg-muted">{hint}</p>}
+      {children(id, fieldAria(id, Boolean(hint), Boolean(error)))}
+      {hint && (
+        <p id={`${id}-hint`} className="text-sm text-fg-muted">
+          {hint}
+        </p>
+      )}
       {error && (
-        <p role="alert" className="text-sm text-danger">
+        <p id={`${id}-error`} role="alert" className="text-sm text-danger">
           {error}
         </p>
       )}
@@ -38,7 +69,7 @@ export function Choice<T extends string>({ label, value, options, onChange, erro
   return (
     <div className="flex flex-col gap-1.5">
       <p className="text-base font-semibold">{label}</p>
-      <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-tap-gap">
+      <div role="radiogroup" {...radioGroup} aria-label={label} className="flex flex-wrap gap-tap-gap">
         {options.map((o) => (
           <button
             key={o.value}
@@ -47,7 +78,8 @@ export function Choice<T extends string>({ label, value, options, onChange, erro
             aria-checked={value === o.value}
             onClick={() => onChange(o.value)}
             className={cx(
-              "min-h-tap rounded border px-4 text-base outline-offset-2 outline-line-focus focus-visible:outline-2",
+              "min-h-tap rounded border px-4 text-base",
+              focusButton,
               value === o.value ? "border-accent bg-accent-tint font-semibold text-accent-text" : "border-line-strong bg-raised text-fg hover:bg-raised-high",
             )}
           >

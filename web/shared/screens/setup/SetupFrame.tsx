@@ -113,7 +113,7 @@ function Steps({ steps, current, skipped, onStep }: StepsProps) {
                   type="button"
                   onClick={() => onStep(i)}
                   aria-label={`Back to step ${i + 1}, ${step.name}`}
-                  className={cx(round, "outline-offset-2 outline-attention hover:bg-accent-hover focus-visible:outline-3")}
+                  className={cx(round, "outline-offset-2 outline-focus hover:bg-accent-hover focus-visible:outline-3")}
                 >
                   <CheckIcon aria-hidden="true" size={20} strokeWidth={3} />
                 </button>

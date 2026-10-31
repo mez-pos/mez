@@ -203,8 +203,12 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
   order rail and its pay screen, and inside every Modal and Sheet; Try again
   reads afresh before it draws; each failure is told to the server's log
   through `POST /api/v1/client-errors`.
-- [ ] **Task 30 - One focus rule, one field rule (TECH-10, TECH-11,
-  TECH-12, TECH-20, TECH-14).**
+- [x] **Task 30 - One focus rule, one field rule (TECH-10, TECH-11,
+  TECH-12, TECH-20, TECH-14).** Done 2026-11-01 (ADR-403): `focusButton`
+  and `focusField`, one focus colour (`--focus-ring`) at 3px, selection a
+  ring apart from focus; `Field` links its hint and error; the connection
+  word alone is announced; `radioGroup` on fourteen groups and the grid
+  pattern on the floor editor; the pairing sentences at 13px.
 - [ ] **Task 31 - Kit cleanup (TECH-21 to TECH-24, BO-12, BO-13, BO-16 to
   BO-18).**
 - [ ] **Task 32 - Split the terminal bundle (TECH-25).**

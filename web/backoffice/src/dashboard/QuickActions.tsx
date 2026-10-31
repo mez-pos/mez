@@ -34,7 +34,7 @@ export function QuickActions({ held }: { held: readonly Permission[] }) {
           <li key={id}>
             <Link
               href={section(id).path}
-              className="flex min-h-tap items-center gap-2.5 rounded border border-line-strong px-3 text-base font-semibold outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+              className="flex min-h-tap items-center gap-2.5 rounded border border-line-strong px-3 text-base font-semibold outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
             >
               <Icon aria-hidden="true" size={17} className="shrink-0" />
               <span className="truncate">{label}</span>

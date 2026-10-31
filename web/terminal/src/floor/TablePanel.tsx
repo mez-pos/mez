@@ -105,7 +105,7 @@ function Picked({
             onClick={onClose}
             // Not "Close the table": that would sound like settling it.
             aria-label="Show the whole floor"
-            className="flex size-tap shrink-0 items-center justify-center rounded-round border border-line-strong bg-raised outline-offset-2 outline-attention hover:bg-raised-high focus-visible:outline-3 xl:hidden"
+            className="flex size-tap shrink-0 items-center justify-center rounded-round border border-line-strong bg-raised outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3 xl:hidden"
           >
             <XIcon aria-hidden="true" size={20} />
           </button>
@@ -132,7 +132,7 @@ function Picked({
           <button
             type="button"
             onClick={() => setPickedOrder(null)}
-            className="mt-2 inline-flex min-h-tap items-center gap-1.5 rounded-pill text-base font-semibold text-attention-text outline-offset-2 outline-attention focus-visible:outline-3"
+            className="mt-2 inline-flex min-h-tap items-center gap-1.5 rounded-pill text-base font-semibold text-attention-text outline-offset-2 outline-focus focus-visible:outline-3"
           >
             <ChevronLeftIcon aria-hidden="true" size={16} />
             All {t.orders.length} orders at this table
@@ -203,7 +203,7 @@ function Picked({
                   <button
                     type="button"
                     onClick={() => setPickedOrder(id)}
-                    className="grid min-h-tap w-full grid-cols-[1fr_auto] items-center gap-3 rounded border border-line-strong bg-raised px-4 py-3 text-left outline-offset-2 outline-attention hover:bg-raised-high focus-visible:outline-3"
+                    className="grid min-h-tap w-full grid-cols-[1fr_auto] items-center gap-3 rounded border border-line-strong bg-raised px-4 py-3 text-left outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
                   >
                     <span className="flex min-w-0 flex-col gap-1">
                       <span className="truncate font-mono text-base font-semibold">{id}</span>

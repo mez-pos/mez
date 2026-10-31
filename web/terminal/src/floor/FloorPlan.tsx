@@ -7,6 +7,7 @@ import { BellRingIcon, UsersIcon } from "lucide-react";
 import type { AreaResponse, LiveFloorResponse, LiveTableResponse } from "../../../shared/api-types";
 import { Money, StatusChip } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { selectedRing } from "../../../shared/ui/focus";
 import { paidTable, tableChip, tablePaid, tableStatuses } from "../../../shared/ui/status";
 import { packed, tileText, tilesOf, turnOrder } from "./floor-logic";
 import { tableTone } from "./tones";
@@ -97,9 +98,10 @@ function TableTile({ table: t, now, names, picked, wants, onTap }: TableTileProp
       aria-label={`Table ${t.name}, ${tableChip(t.status, paid).word}, ${text.people}${text.time ? `, ${text.time}` : ""}${wants ? ", wants to order" : ""}`}
       className={cx(
         "relative flex h-full w-full flex-col items-center justify-center gap-1 rounded-card border-2 bg-raised p-1.5 shadow-rest 2xl:gap-1.5 2xl:p-3",
-        "outline-offset-2 outline-attention hover:bg-raised-high focus-visible:outline-3",
+        "outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3",
         tone.border,
-        picked && "outline-3",
+        // Chosen is a green ring inside its edge; focus is the outline outside it (TECH-12).
+        picked && selectedRing,
       )}
     >
       {/* The table itself, in its state's colour: round if it is a round one. */}

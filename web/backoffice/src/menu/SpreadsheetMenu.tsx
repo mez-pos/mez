@@ -66,7 +66,7 @@ export function SpreadsheetMenu({ exported, disabled, readOnly = false, onImport
               key={c.label}
               type="button"
               onClick={pick(c.run)}
-              className="flex min-h-tap w-full items-start gap-3 rounded px-3 py-2.5 text-left outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+              className="flex min-h-tap w-full items-start gap-3 rounded px-3 py-2.5 text-left outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
             >
               <c.icon aria-hidden="true" size={18} className="mt-0.5 shrink-0 text-fg-muted" />
               <span className="min-w-0">

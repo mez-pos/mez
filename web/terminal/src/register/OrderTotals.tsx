@@ -61,7 +61,7 @@ export function OrderTotals({ order, currency, onRemoveDiscount, fold = false }:
             type="button"
             aria-expanded={open}
             onClick={() => setOpen((o) => !o)}
-            className="hidden w-full gap-1 rounded text-left outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2 short:grid"
+            className="hidden w-full gap-1 rounded text-left outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3 short:grid"
           >
             <TotalRow label="Subtotal" amount={subtotal} />
             <span className="flex items-center justify-between gap-2 text-fg-2">
@@ -103,7 +103,7 @@ function TotalRow({ label, amount, tone = "default", onRemove, className }: Tota
           type="button"
           aria-label={`Remove ${label}`}
           onClick={onRemove}
-          className="flex size-tap shrink-0 items-center justify-center rounded-round outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+          className="flex size-tap shrink-0 items-center justify-center rounded-round outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
         >
           <XIcon aria-hidden="true" size={16} />
         </button>

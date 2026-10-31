@@ -9,6 +9,7 @@
 
 import type { KeyboardEvent, ReactNode } from "react";
 import { cx } from "./cx";
+import { focusButton } from "./focus";
 import { BackspaceIcon } from "./icons";
 import { keyFromKeyboard, type NumKey } from "./numpad-keys";
 
@@ -66,7 +67,8 @@ export function NumPad({ layout, onKey, label, size = "md", disabled = false, cl
             className={cx(
               // A well-coloured key with no border; pressed, it darkens one step.
               "flex min-w-tap select-none items-center justify-center rounded bg-sunken text-fg",
-              "outline-offset-2 outline-line-focus focus-visible:outline-2 active:bg-line-strong disabled:opacity-40",
+              focusButton,
+              "active:bg-line-strong disabled:opacity-40",
               size === "lg" ? "h-16" : "h-14",
               key === "clear" ? "text-base font-semibold" : "font-mono text-xl font-semibold tabular-nums",
             )}

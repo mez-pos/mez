@@ -57,13 +57,16 @@ export function StockItemModal({ item, currency, onSave, onCorrect, onSetActive,
       refusal={problem && problem.field === null ? problem.message : null}
     >
       <Field label="Name" error={on("name")}>
-        {(id) => <input id={id} className={inputClass} value={form.name} maxLength={60} autoFocus onChange={(e) => set({ name: e.target.value })} />}
+        {(id, aria) => (
+          <input id={id} {...aria} className={inputClass} value={form.name} maxLength={60} autoFocus onChange={(e) => set({ name: e.target.value })} />
+        )}
       </Field>
       <Choice label="Counted in" value={form.unit} options={units} onChange={(unit) => set({ unit })} error={on("unit")} />
       <Field label={`Low at, in ${form.unit}`} hint="Shown as low at or under this. Empty for never." error={on("low_level")}>
-        {(id) => (
+        {(id, aria) => (
           <input
             id={id}
+            {...aria}
             className={cx(inputClass, "text-right font-mono tabular-nums")}
             value={form.low}
             inputMode="decimal"
@@ -77,9 +80,10 @@ export function StockItemModal({ item, currency, onSave, onCorrect, onSetActive,
         hint="What you pay for it. It values a count that comes up short or over. Empty for not known."
         error={on("cost")}
       >
-        {(id) => (
+        {(id, aria) => (
           <input
             id={id}
+            {...aria}
             className={cx(inputClass, "text-right font-mono tabular-nums")}
             value={form.cost}
             inputMode="decimal"

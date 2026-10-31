@@ -82,7 +82,7 @@ export function DrawerCounter({ title, currency, value, onChange, disabled = fal
                       className={cx(
                         columns,
                         "min-h-tap w-full rounded border text-left",
-                        "outline-offset-2 outline-line-focus focus-visible:outline-2 disabled:opacity-40",
+                        "outline-offset-2 outline-focus focus-visible:outline-3 disabled:opacity-40",
                         here ? "border-accent bg-accent-tint text-accent-text" : "border-line bg-raised hover:bg-raised-high",
                       )}
                     >

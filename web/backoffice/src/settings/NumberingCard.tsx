@@ -92,9 +92,10 @@ export function NumberingCard({ numbering: n, api, onDirty }: NumberingCardProps
         }`}
         error={d.on("template")}
       >
-        {(id) => (
+        {(id, aria) => (
           <input
             id={id}
+            {...aria}
             className={`${inputClass} font-mono`}
             value={form.template}
             disabled={busy}
@@ -113,9 +114,10 @@ export function NumberingCard({ numbering: n, api, onDirty }: NumberingCardProps
         }
         error={d.on("financial_year_start_month")}
       >
-        {(id) => (
+        {(id, aria) => (
           <select
             id={id}
+            {...aria}
             className={`${inputClass} max-w-56`}
             value={form.month}
             disabled={busy || n.fy_locked}
@@ -134,9 +136,10 @@ export function NumberingCard({ numbering: n, api, onDirty }: NumberingCardProps
         hint={`${stepRange(max)}. The smallest, ${stepText(1, max)}, rounds nothing. Saved now; payments do not apply it yet.`}
         error={d.on("cash_rounding_step")}
       >
-        {(id) => (
+        {(id, aria) => (
           <input
             id={id}
+            {...aria}
             className={`${inputClass} max-w-32 font-mono`}
             value={form.step}
             disabled={busy}
@@ -167,9 +170,10 @@ function Series(props: {
       <p className="text-base font-semibold">{props.label}</p>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Series code" hint="Capitals and digits, up to 8. Its own counter." error={props.seriesError}>
-          {(id) => (
+          {(id, aria) => (
             <input
               id={id}
+              {...aria}
               className={`${inputClass} font-mono uppercase`}
               value={props.series}
               disabled={props.disabled}
@@ -181,9 +185,10 @@ function Series(props: {
           )}
         </Field>
         <Field label="Prefix" hint="What {prefix} writes. Follows the code unless you change it." error={props.prefixError}>
-          {(id) => (
+          {(id, aria) => (
             <input
               id={id}
+              {...aria}
               className={`${inputClass} font-mono`}
               value={props.prefix}
               disabled={props.disabled}

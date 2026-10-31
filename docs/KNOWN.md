@@ -10,6 +10,23 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **One focus rule, one field rule, arrows in every group** (ADR-403, Phase 17
+  Task 30; 2026-11-01). Seen in a scripted Chromium at 1024x768 and
+  1366x768 on a demo venue: a till button's focus, a 3px terracotta
+  outline; a field's, the green halo; a picked table's green ring inside
+  its edge beside a focused table's outline; the venue form's fields
+  described by their hints, and a refused one by its error with
+  `aria-invalid`; Right on the item window's Size, the pay screen's
+  payment method and Left on Settings' tax profile, each moving the choice
+  and the one tab stop with it; the floor editor's grid, one tab stop of 96,
+  Right, Down and End moving between cells; "Online" alone the live region.
+  **Not seen:** the pairing window's "By name" and "Also at" sentences
+  (the walk's server listened on loopback, so it had no addresses to list;
+  the change is their class, `text-sm`); the kitchen's On/Off label; focus
+  at night (the token is mustard there); a read-only floor grid passing
+  over its empty cells (tested by `gridStep`); the guest's choice groups
+  with arrows (the same helper).
+
 - **Error boundaries, told to the server's log** (ADR-402, Phase 17 Task 29;
   2026-10-31). Seen in a scripted Chromium at 1024x768 and 1366x768 on the
   composition venue of Task 28, each part made to throw by bending the

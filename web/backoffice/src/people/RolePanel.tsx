@@ -106,9 +106,10 @@ export function RolePanel({ roles, role, staff, held, readOnly = false, onRole, 
 
         <div className="mt-4">
           <Field label="Role name" error={problem?.field === "name" ? problem.message : null}>
-            {(id) => (
+            {(id, aria) => (
               <input
                 id={id}
+                {...aria}
                 className={inputClass}
                 value={form.name}
                 maxLength={40}
@@ -187,7 +188,7 @@ function Switch({ label, on, disabled, onChange }: SwitchProps) {
       disabled={disabled}
       onClick={() => onChange(!on)}
       className={cx(
-        "flex min-h-tap w-full items-center gap-3 rounded text-left text-base outline-offset-2 outline-line-focus focus-visible:outline-2",
+        "flex min-h-tap w-full items-center gap-3 rounded text-left text-base outline-offset-2 outline-focus focus-visible:outline-3",
         disabled && "text-fg-muted",
       )}
     >

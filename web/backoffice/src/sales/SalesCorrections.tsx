@@ -19,7 +19,7 @@ import { analysisCsvPath, analysisPath, type SalesRange } from "./sales-logic";
 import { useCsvDownload } from "./use-csv-download";
 
 const linkClass =
-  "font-semibold text-fg underline decoration-line-strong underline-offset-2 outline-offset-2 outline-line-focus hover:decoration-fg focus-visible:outline-2";
+  "font-semibold text-fg underline decoration-line-strong underline-offset-2 outline-offset-2 outline-focus hover:decoration-fg focus-visible:outline-3";
 
 export function Corrections({ range }: { range: SalesRange }) {
   const store = useAuthStore();

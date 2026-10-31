@@ -42,9 +42,10 @@ export function NameModal({ title, initial, code, onSave, onClose }: NameModalPr
   return (
     <FormModal title={title} busy={busy} onSave={() => void save()} onClose={onClose} refusal={problem && problem.field === null ? problem.message : null}>
       <Field label="Name" error={on("name")}>
-        {(id) => (
+        {(id, aria) => (
           <input
             id={id}
+            {...aria}
             className={inputClass}
             value={name}
             maxLength={60}
@@ -62,9 +63,10 @@ export function NameModal({ title, initial, code, onSave, onClose }: NameModalPr
           hint="Short and lowercase, like bar. Empty makes one from the name. It cannot be changed later: tickets and screens find the station by it."
           error={on("code")}
         >
-          {(id) => (
+          {(id, aria) => (
             <input
               id={id}
+              {...aria}
               className={`${inputClass} max-w-48 font-mono`}
               value={chosen}
               maxLength={32}
@@ -153,9 +155,10 @@ export function RetireModal({ kind, row, rows, onRetire, onClose }: RetireModalP
                 {...(row.items === 0 ? { hint: "Nothing is made here. Leave this empty if it has no printer." } : {})}
                 error={problem?.field === "move_to" ? problem.message : null}
               >
-                {(id) => (
+                {(id, aria) => (
                   <select
                     id={id}
+                    {...aria}
                     className={inputClass}
                     value={moveTo}
                     disabled={busy}

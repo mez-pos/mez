@@ -176,7 +176,8 @@
   --line: var(--hairline);
   --line-soft: var(--hairline-soft);
   --line-strong: var(--hairline-strong);
-  --line-focus: var(--green);
+  /* A button's focus (tokens.md): terracotta on paper. A field's is green, its own border and halo. */
+  --focus-ring: var(--terracotta);
 
   /* Green commits. */
   --accent: var(--green);
@@ -257,7 +258,8 @@
   --line: var(--night-line);
   --line-soft: var(--night-line); /* stand-in */
   --line-strong: var(--night-line-strong);
-  --line-focus: var(--mustard);
+  /* Focus at night is mustard, on buttons and fields alike. */
+  --focus-ring: var(--mustard);
 
   --accent: var(--green);
   --accent-hover: var(--green-press);

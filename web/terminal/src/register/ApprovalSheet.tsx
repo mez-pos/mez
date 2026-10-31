@@ -186,7 +186,7 @@ function Approver({ approver, onChoose, pin, onKey, disabled }: ApproverProps) {
               onClick={() => onChoose(s)}
               className={cx(
                 "min-h-tap w-full rounded border px-4 text-left text-base",
-                "outline-offset-2 outline-line-focus focus-visible:outline-2",
+                "outline-offset-2 outline-focus focus-visible:outline-3",
                 chosen?.id === s.id ? "border-accent bg-accent-tint font-semibold text-accent-text" : "border-line bg-raised text-fg-2",
               )}
             >

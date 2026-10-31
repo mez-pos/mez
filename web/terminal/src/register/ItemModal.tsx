@@ -14,6 +14,7 @@ import type { CourseResponse, LineModifier, LineResponse, MenuItemResponse, Modi
 import { photoUrl } from "../../../shared/menu";
 import { Button, CloseIcon, Money, Qty } from "../../../shared/ui";
 import { cx } from "../../../shared/ui/cx";
+import { radioGroup } from "../../../shared/ui/radio-group";
 import { useDialog } from "../../../shared/ui/use-dialog";
 import { DietMark } from "../../../shared/ui/DietMark";
 import { firstUnmet, groupHint, groupState, initialSelection, lineTotal, toggle, toModifiers, type GroupState } from "../../../shared/modifier-selection";
@@ -103,7 +104,7 @@ export function ItemModal({ item, groups, courses, line, error, blocked, busy = 
                 type="button"
                 aria-label="Close"
                 onClick={onClose}
-                className="flex size-tap items-center justify-center rounded-round bg-sunken text-fg outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+                className="flex size-tap items-center justify-center rounded-round bg-sunken text-fg outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
               >
                 <CloseIcon />
               </button>
@@ -212,6 +213,7 @@ function GroupPicker({ group, picked, state, onTap }: GroupPickerProps) {
       <div
         role={single ? "radiogroup" : "group"}
         aria-label={group.name}
+        {...(single ? radioGroup : {})}
         className={cx("mt-3 grid gap-3", single ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-1 sm:grid-cols-2")}
       >
         {group.modifiers.map((m) => {
@@ -232,7 +234,7 @@ function GroupPicker({ group, picked, state, onTap }: GroupPickerProps) {
               onClick={() => onTap(m.id)}
               className={cx(
                 "flex min-h-tap items-center gap-3 rounded border px-3.5 py-3 text-left text-base",
-                "outline-offset-2 outline-line-focus focus-visible:outline-2",
+                "outline-offset-2 outline-focus focus-visible:outline-3",
                 on ? "border-accent bg-accent-tint text-accent-text" : "border-line bg-raised text-fg hover:bg-raised-high",
                 full && "opacity-40",
               )}

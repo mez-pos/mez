@@ -6,7 +6,7 @@ import { useId, type ReactNode } from "react";
 import { whereOf, type FileProblem } from "./file-logic";
 
 const chooseClass =
-  "inline-flex min-h-tap cursor-pointer items-center rounded border border-line-strong bg-raised-high px-4 text-base font-semibold focus-within:outline-2 focus-within:outline-line-focus";
+  "inline-flex min-h-tap cursor-pointer items-center rounded border border-line-strong bg-raised-high px-4 text-base font-semibold focus-within:outline-3 focus-within:outline-focus";
 
 interface ChooseFileProps {
   label: string;

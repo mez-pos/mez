@@ -13,7 +13,7 @@ the UI audit (`docs/design/ui-audit-2026-10-31.md`). Tasks 1 and 4 to
 12 are done: at the human's word the device-fit pass came first, built
 and seen at 1024x768, 1366x768 and 1920x1080 on 2026-10-31 (ADR-381,
 ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s,
-Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 29 (ADR-384 to ADR-402; ADR-400 was out of phase). It runs before Phase 16, which is mostly
+Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 30 (ADR-384 to ADR-403; ADR-400 was out of phase). It runs before Phase 16, which is mostly
 `mez-cloud`'s.
 
 Before it, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
@@ -28,22 +28,22 @@ list below.
 
 ## Last completed task
 
-**Phase 17, Task 29: error boundaries** (TECH-8, ADR-402), 2026-10-31.
-A screen that fails to draw now costs only its own part: a boundary behind
-each app's gate (a page), inside each shell (a region, the header and way
-out kept), around the till's order rail (the menu still rings up) and its
-pay screen (a payment taken is said to be kept), and inside every Modal and
-Sheet (title and Close kept). Try again reads the data afresh before it
-draws. Each failure goes to the server's log, "a screen failed to draw",
-through `POST /api/v1/client-errors` (device token, no person, 30 a minute a device;
-open from away and on a mirror). Seen at 1024 and 1366 by bending the
-server's answers so each part threw, and in `logs/mez.log`.
+**Phase 17, Task 30: one focus rule, one field rule** (TECH-10, TECH-11,
+TECH-12, TECH-14, TECH-20, ADR-403), 2026-11-01. Every pressable thing
+takes `focusButton` (a 3px outline in `--focus-ring`, terracotta on paper,
+mustard at night), every field `focusField`; a chosen table or tile is
+`selectedRing`, never the focus outline; a test reads every source and
+fails on a second focus colour or width. `Field` links its hint and error
+(`{(id, aria) => ...}`, 65 controls). The connection word alone is the
+live region. `radioGroup` gives fourteen radio groups arrows and one tab
+stop; the floor editor's grid is one tab stop with arrows. The pairing
+sentences are 13px, the kitchen switch 15px. Seen at 1024 and 1366 on a
+demo venue.
 
 ## Next task
 
-**Here: Phase 17 Task 30, one focus rule, one field rule (TECH-10,
-TECH-11, TECH-12, TECH-20, TECH-14)**, then Task 31 onward; Tasks 1 to 29
-are done. Each screen is checked by eye at
+**Here: Phase 17 Task 31, kit cleanup (TECH-21 to TECH-24, BO-12, BO-13,
+BO-16 to BO-18)**, then Task 32 onward; Tasks 1 to 30 are done. Each screen is checked by eye at
 1024x768 and 1366x768 before it is ticked: the audit's walk (a demo venue
 from `mez setup -demo-menu` in a scratch data directory, a scripted
 Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel

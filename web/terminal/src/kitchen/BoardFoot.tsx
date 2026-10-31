@@ -33,8 +33,7 @@ interface BoardFootProps {
   signedIn?: SignedIn | undefined;
 }
 
-const shape =
-  "inline-flex min-h-tap items-center gap-2.5 rounded-pill px-4 text-base font-semibold outline-offset-2 outline-line-focus focus-visible:outline-4";
+const shape = "inline-flex min-h-tap items-center gap-2.5 rounded-pill px-4 text-base font-semibold outline-offset-2 outline-focus focus-visible:outline-3";
 const plain = cx(shape, "hover:bg-raised-high");
 
 export function BoardFoot({ prefs, onPrefs, onChangeStation, signedIn }: BoardFootProps) {
@@ -92,7 +91,7 @@ function Switch({ label, on, onChange }: SwitchProps) {
       >
         <span className="size-6 rounded-round bg-accent-fg" />
       </span>
-      <span className="w-7 text-left text-sm font-semibold text-fg-muted">{on ? "On" : "Off"}</span>
+      <span className="w-8 text-left text-base font-semibold text-fg-muted">{on ? "On" : "Off"}</span>
     </button>
   );
 }

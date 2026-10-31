@@ -34,7 +34,7 @@ interface CategoryRailProps {
 const icon = (scope: Scope): LucideIcon => (scope === "all" ? LayoutGridIcon : scope === "popular" ? StarIcon : UtensilsIcon);
 
 // A category's row, and Add a category under them.
-const row = "flex min-h-tap w-full items-center gap-2.5 rounded px-3 py-1.5 text-left text-base outline-offset-2 outline-line-focus focus-visible:outline-2";
+const row = "flex min-h-tap w-full items-center gap-2.5 rounded px-3 py-1.5 text-left text-base outline-offset-2 outline-focus focus-visible:outline-3";
 
 export function CategoryRail({ menu, scope, onScope, api, onAdd, onRename, onProblem }: CategoryRailProps) {
   const [confirmRetire, setConfirmRetire] = useState(false);

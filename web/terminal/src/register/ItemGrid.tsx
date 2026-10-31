@@ -56,7 +56,7 @@ export function ItemGrid({ items, groupsFor, iconFor, onTap, soldOut, dense = fa
               aria-label={cardLabel(item, formatMoney(item.price), choices, gone)}
               className={cx(
                 "flex h-full w-full flex-col overflow-hidden rounded-card border border-line text-left",
-                "outline-offset-2 outline-line-focus focus-visible:outline-2",
+                "outline-offset-2 outline-focus focus-visible:outline-3",
                 // Sold out is a sunken card with every word at full contrast, never a fade (TECH-13, ADR-390).
                 gone ? "cursor-not-allowed bg-sunken" : "bg-raised shadow-rest hover:bg-raised-high active:bg-raised-high",
               )}
@@ -114,7 +114,7 @@ export function ItemGrid({ items, groupsFor, iconFor, onTap, soldOut, dense = fa
                 className={cx(
                   // On its place-holder in the card's corner, which moves in with the padding on a short screen.
                   "absolute bottom-3.5 right-3.5 flex size-tap items-center justify-center rounded-round short:bottom-3 short:right-3",
-                  "outline-offset-2 outline-line-focus focus-visible:outline-2",
+                  "outline-offset-2 outline-focus focus-visible:outline-3",
                   "bg-attention text-attention-fg hover:bg-attention-hover",
                 )}
               >

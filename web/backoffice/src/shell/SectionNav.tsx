@@ -97,7 +97,7 @@ export function SectionNav({ current, held, open, onClose }: SectionNavProps) {
   );
 }
 
-const entry = "flex min-h-tap items-center gap-3 whitespace-nowrap rounded px-4 text-base outline-offset-2 outline-line-focus focus-visible:outline-2";
+const entry = "flex min-h-tap items-center gap-3 whitespace-nowrap rounded px-4 text-base outline-offset-2 outline-focus focus-visible:outline-3";
 
 function NavEntry({ section: s, active, onPick }: { section: Section; active: boolean; onPick: () => void }) {
   const Icon = icons[s.id];

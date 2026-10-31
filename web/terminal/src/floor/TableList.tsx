@@ -58,7 +58,7 @@ export function TableList({ data, areas, now, names, picked, onTap, wanting }: T
                     aria-pressed={picked === t.id}
                     className={cx(
                       columns,
-                      "min-h-14 w-full px-5 py-2 text-left text-base outline-offset-[-3px] outline-attention focus-visible:outline-3 short:min-h-tap short:py-1.5",
+                      "min-h-14 w-full px-5 py-2 text-left text-base outline-offset-[-3px] outline-focus focus-visible:outline-3 short:min-h-tap short:py-1.5",
                       picked === t.id ? "bg-accent-tint" : "hover:bg-raised-high",
                     )}
                   >

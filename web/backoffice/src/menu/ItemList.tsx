@@ -89,7 +89,7 @@ export function ItemList({ menu, filter, onOrder, openId, onOpen, api, onProblem
                   type="button"
                   aria-current={item.id === openId ? "true" : undefined}
                   onClick={() => onOpen(item)}
-                  className="flex min-h-tap min-w-0 flex-1 items-center gap-2.5 rounded p-2 text-left outline-offset-2 outline-line-focus focus-visible:outline-2"
+                  className="flex min-h-tap min-w-0 flex-1 items-center gap-2.5 rounded p-2 text-left outline-offset-2 outline-focus focus-visible:outline-3"
                 >
                   {item.photo ? (
                     <img src={photoUrl(item.photo)} alt="" loading="lazy" className="size-11 shrink-0 rounded-tight object-cover" />

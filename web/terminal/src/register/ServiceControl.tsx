@@ -47,7 +47,7 @@ export function ServiceControl({ value, locked, onChange, roomy = false }: Servi
             aria-describedby={shut && said ? reasonId : undefined}
             onClick={() => onChange(option)}
             className={cx(
-              "flex min-h-tap flex-1 items-center justify-center whitespace-nowrap rounded-pill text-base outline-offset-2 outline-attention focus-visible:outline-3",
+              "flex min-h-tap flex-1 items-center justify-center whitespace-nowrap rounded-pill text-base outline-offset-2 outline-focus focus-visible:outline-3",
               roomy ? "gap-2 px-4" : "gap-1.5 px-1.5 2xl:px-2",
               on ? "bg-accent font-semibold text-accent-fg" : "text-fg-2 hover:bg-raised-high disabled:opacity-40 disabled:hover:bg-transparent",
             )}

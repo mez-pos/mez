@@ -45,7 +45,7 @@ export function CategorySidebar({ entries, chosen, onChoose, search, waiter = fa
             onClick={() => onChoose(entry.view)}
             className={cx(
               "flex min-h-tap w-full items-center gap-3 rounded px-3 text-left text-base 2xl:px-4",
-              "outline-offset-2 outline-attention focus-visible:outline-3",
+              "outline-offset-2 outline-focus focus-visible:outline-3",
               active ? pressed : "text-fg hover:bg-raised-high",
             )}
           >

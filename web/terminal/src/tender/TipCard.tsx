@@ -63,7 +63,7 @@ export function TipCard({ bill, base, tip, collect, cash, note, active, busy, on
                   // A second tap takes the tip off again.
                   onClick={() => onTip(on ? 0 : o.minor)}
                   className={cx(
-                    "flex min-h-16 flex-col items-center justify-center gap-0.5 rounded border outline-offset-2 outline-attention focus-visible:outline-3 disabled:opacity-40",
+                    "flex min-h-16 flex-col items-center justify-center gap-0.5 rounded border outline-offset-2 outline-focus focus-visible:outline-3 disabled:opacity-40",
                     on ? "border-highlight bg-chip-warning-bg text-chip-warning-fg" : "border-line-strong bg-raised hover:bg-raised-high",
                   )}
                 >

@@ -63,7 +63,7 @@ export function TableItems({ order, courseName, canFire, onFire, addDisabled, on
           aria-pressed={byCourse}
           onClick={() => setByCourse((on) => !on)}
           className={cx(
-            "ml-auto inline-flex min-h-tap items-center rounded-pill border px-4 text-base font-semibold outline-offset-2 outline-attention focus-visible:outline-3",
+            "ml-auto inline-flex min-h-tap items-center rounded-pill border px-4 text-base font-semibold outline-offset-2 outline-focus focus-visible:outline-3",
             byCourse ? "border-accent bg-accent-tint text-accent-text" : "border-line-strong hover:bg-raised-high",
           )}
         >

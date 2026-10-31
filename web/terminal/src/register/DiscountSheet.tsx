@@ -10,6 +10,7 @@ import { ApprovalSheet } from "./ApprovalSheet";
 import { percent } from "../../../shared/ui/timeline-entries";
 import { discountProblem, discountReasons, discountRequest, type DiscountEntry } from "./cart-logic";
 import { ReasonPicker } from "./ReasonPicker";
+import { radioGroup } from "../../../shared/ui/radio-group";
 
 interface DiscountSheetProps {
   /** A line, by id and name, or the whole order. */
@@ -41,7 +42,7 @@ export function DiscountSheet({ target, worth, onSubmit, onClose }: DiscountShee
       onClose={onClose}
     >
       <div className="flex flex-col gap-6">
-        <div role="radiogroup" aria-label="Discount by" className="grid grid-cols-2 gap-tap-gap">
+        <div role="radiogroup" {...radioGroup} aria-label="Discount by" className="grid grid-cols-2 gap-tap-gap">
           {(["pct", "amount"] as const).map((k) => (
             <button
               key={k}
@@ -54,7 +55,7 @@ export function DiscountSheet({ target, worth, onSubmit, onClose }: DiscountShee
               }}
               className={cx(
                 "min-h-tap rounded border px-4 text-base",
-                "outline-offset-2 outline-line-focus focus-visible:outline-2",
+                "outline-offset-2 outline-focus focus-visible:outline-3",
                 kind === k ? "border-accent bg-accent-tint font-semibold text-accent-text" : "border-line bg-raised text-fg-2",
               )}
             >

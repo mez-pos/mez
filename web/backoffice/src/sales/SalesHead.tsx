@@ -139,7 +139,7 @@ export function ExportMenu({ file, files, disabled }: ExportMenuProps) {
               key={f.path}
               type="button"
               onClick={pick(() => void file.download(f.path))}
-              className="flex min-h-tap w-full items-center rounded px-4 text-left text-base outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+              className="flex min-h-tap w-full items-center rounded px-4 text-left text-base outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
             >
               {f.label}
             </button>

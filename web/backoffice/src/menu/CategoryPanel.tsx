@@ -30,9 +30,10 @@ export function CategoryFormModal({ title, initial, onSave, onClose }: CategoryF
   return (
     <FormModal title={title} busy={busy} onSave={() => void save()} onClose={onClose}>
       <Field label="Name" error={problem}>
-        {(id) => (
+        {(id, aria) => (
           <input
             id={id}
+            {...aria}
             className={inputClass}
             value={name}
             maxLength={60}

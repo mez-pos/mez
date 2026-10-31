@@ -42,6 +42,7 @@ import {
   waiting,
   type RecoverStepKey,
 } from "./recover-logic";
+import { radioGroup } from "../../ui/radio-group";
 
 export interface RecoverFlowProps {
   api: ApiClient;
@@ -316,7 +317,7 @@ export function RecoverFlow({ api, token, pair, onStep, onBegun, onNewVenue, onL
         <Head title={any ? "Choose your venue" : "Nothing to bring back"}>{venuesLead(owner, venues)}</Head>
         {problem && problem.field === null && <Alert>{problem.message}</Alert>}
         {venues.length > 0 && (
-          <div role="radiogroup" aria-label="Venues on this account" className="mt-5 flex flex-col gap-3">
+          <div role="radiogroup" {...radioGroup} aria-label="Venues on this account" className="mt-5 flex flex-col gap-3">
             {venues.map((venue) => {
               const able = canBringBack(venue);
               const picked = able && venue.id === chosen;
@@ -332,7 +333,7 @@ export function RecoverFlow({ api, token, pair, onStep, onBegun, onNewVenue, onL
                     setProblem(null);
                   }}
                   className={cx(
-                    "flex min-h-tap flex-col items-start gap-1 rounded-card border px-4 py-3 text-left outline-offset-2 outline-attention focus-visible:outline-3",
+                    "flex min-h-tap flex-col items-start gap-1 rounded-card border px-4 py-3 text-left outline-offset-2 outline-focus focus-visible:outline-3",
                     picked ? "border-accent bg-accent-tint" : "border-line-strong bg-raised",
                     able ? "hover:border-accent" : "opacity-70",
                   )}

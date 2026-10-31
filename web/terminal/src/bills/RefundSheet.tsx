@@ -21,6 +21,7 @@ import { rateText } from "../tender/invoice-format";
 import { methodNames } from "../tender/tender-logic";
 import { fullSelection, leftOn, refundReasons, refundable, selectionOf, unitsLeft, unitsText, type RefundDraft } from "./bills-logic";
 import type { BillCommands } from "./use-bills";
+import { radioGroup } from "../../../shared/ui/radio-group";
 
 /** The most the pad types: far past any bill; the server refuses past what is left. */
 const amountCeiling = 100_000_000_000;
@@ -82,7 +83,7 @@ export function RefundSheet({ order, credit, onDone, onClose }: RefundSheetProps
       <div className="flex flex-col gap-5">
         <p className="text-base text-fg">Choose what to return. A credit note is issued and printed, and a manager&apos;s PIN is required.</p>
 
-        <div role="radiogroup" aria-label="What goes back" className="grid gap-2.5">
+        <div role="radiogroup" {...radioGroup} aria-label="What goes back" className="grid gap-2.5">
           <Choice
             on={draft.kind === "items"}
             title="Partial refund, selected items"
@@ -156,7 +157,7 @@ export function RefundSheet({ order, credit, onDone, onClose }: RefundSheetProps
         )}
 
         {payments.length > 1 && (
-          <div role="radiogroup" aria-label="Back to" className="flex flex-col gap-2">
+          <div role="radiogroup" {...radioGroup} aria-label="Back to" className="flex flex-col gap-2">
             <p className="text-lg font-semibold text-fg">Back to</p>
             {payments.map((t) => (
               <button
@@ -166,7 +167,7 @@ export function RefundSheet({ order, credit, onDone, onClose }: RefundSheetProps
                 aria-checked={paymentId === t.id}
                 onClick={() => setPaymentId(t.id)}
                 className={cx(
-                  "flex min-h-tap items-center justify-between gap-3 rounded border px-4 text-base outline-offset-2 outline-attention focus-visible:outline-3",
+                  "flex min-h-tap items-center justify-between gap-3 rounded border px-4 text-base outline-offset-2 outline-focus focus-visible:outline-3",
                   paymentId === t.id ? "border-accent bg-accent-tint font-semibold text-accent-text" : "border-line-strong bg-raised text-fg",
                 )}
               >
@@ -237,7 +238,7 @@ function Choice({ on, title, detail, amount, disabled = false, onChoose }: Choic
       disabled={disabled}
       onClick={() => !on && onChoose()}
       className={cx(
-        "flex min-h-charge items-center gap-3 rounded border px-4 py-3 text-left outline-offset-2 outline-attention focus-visible:outline-3 disabled:opacity-40",
+        "flex min-h-charge items-center gap-3 rounded border px-4 py-3 text-left outline-offset-2 outline-focus focus-visible:outline-3 disabled:opacity-40",
         on ? "border-accent bg-accent-tint" : "border-line-strong bg-raised hover:bg-raised-high",
       )}
     >

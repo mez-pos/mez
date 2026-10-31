@@ -83,9 +83,10 @@ export function TaxProfileCard({ tax, onSave, onDirty }: TaxProfileCardProps) {
 
       {registration && (
         <Field label={registration} hint={registrationHint[form.profile] ?? "Receipts print it."} error={d.on("registration_id")}>
-          {(id) => (
+          {(id, aria) => (
             <input
               id={id}
+              {...aria}
               className={`${inputClass} font-mono`}
               value={form.registrationId}
               disabled={busy}
@@ -98,9 +99,10 @@ export function TaxProfileCard({ tax, onSave, onDirty }: TaxProfileCardProps) {
       )}
       {form.profile === "gst_in" && (
         <Field label="Place of supply" hint="The two digit state code, like 29. Empty takes the first two digits of the GSTIN." error={d.on("state_code")}>
-          {(id) => (
+          {(id, aria) => (
             <input
               id={id}
+              {...aria}
               className={`${inputClass} max-w-32 font-mono`}
               value={form.stateCode}
               disabled={busy}

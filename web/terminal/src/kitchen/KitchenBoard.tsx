@@ -156,7 +156,7 @@ export function KitchenBoard({ station, onChangeStation, signedIn }: KitchenBoar
         <button
           type="button"
           onClick={chime.unblock}
-          className="shrink-0 bg-attention px-7 py-3 text-left text-xl font-semibold text-attention-fg outline-offset-[-4px] outline-line-focus focus-visible:outline-4 short:px-5 short:py-2"
+          className="shrink-0 bg-attention px-7 py-3 text-left text-xl font-semibold text-attention-fg outline-offset-[-4px] outline-current focus-visible:outline-3 short:px-5 short:py-2"
         >
           Sound is blocked by the browser. Tap here to turn it on, so new tickets chime.
         </button>
@@ -251,7 +251,7 @@ function Column({ title, icon: Icon, band, count, watchNew = false, children }: 
         <button
           type="button"
           onClick={below.show}
-          className="absolute bottom-3 left-1/2 inline-flex min-h-tap -translate-x-1/2 items-center gap-2 rounded-pill bg-attention px-5 text-lg font-bold text-attention-fg shadow-modal outline-offset-2 outline-line-focus focus-visible:outline-4"
+          className="absolute bottom-3 left-1/2 inline-flex min-h-tap -translate-x-1/2 items-center gap-2 rounded-pill bg-attention px-5 text-lg font-bold text-attention-fg shadow-modal outline-offset-2 outline-focus focus-visible:outline-3"
         >
           <ArrowDownIcon aria-hidden="true" size={20} strokeWidth={2.2} />
           {below.count === 1 ? "1 new below" : `${below.count} new below`}

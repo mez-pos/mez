@@ -67,7 +67,11 @@ On night: `--night-text` `#F5EADB`, `--night-text-2` `#E4D6C4`,
 
 Focus is green on a field (a 1.5px border and a 3px `--green-tint` halo)
 and a 3px terracotta outline on a button. On night: `--night-line`
-`#47382E`, `--night-line-strong` `#4A3A30`, focus in mustard.
+`#47382E`, `--night-line-strong` `#4A3A30`, focus in mustard. The button's
+is `--focus-ring` (`outline-focus`), terracotta on paper and mustard at
+night; in code, `focusButton` and `focusField` from `web/shared/ui/focus.ts`,
+never written out (TECH-12, ADR-403). A chosen thing is never drawn as
+focus: it is `selectedRing`, a 3px green ring inside its edge.
 
 ## Brand and action
 

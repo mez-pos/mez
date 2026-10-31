@@ -103,7 +103,7 @@ export function OrderRail(props: OrderRailProps) {
             <button
               type="button"
               onClick={onTables}
-              className="inline-flex min-h-tap items-center gap-2 rounded-pill border border-line-strong px-4 text-base font-semibold outline-offset-2 outline-line-focus hover:bg-raised-high focus-visible:outline-2"
+              className="inline-flex min-h-tap items-center gap-2 rounded-pill border border-line-strong px-4 text-base font-semibold outline-offset-2 outline-focus hover:bg-raised-high focus-visible:outline-3"
             >
               <ArmchairIcon aria-hidden="true" size={18} />
               Pick a table
@@ -167,7 +167,7 @@ export function OrderRail(props: OrderRailProps) {
               aria-selected={tab === id}
               onClick={() => setTab(id)}
               className={cx(
-                "min-h-tap border-b-3 text-base outline-offset-2 outline-line-focus focus-visible:outline-2",
+                "min-h-tap border-b-3 text-base outline-offset-2 outline-focus focus-visible:outline-3",
                 tab === id ? "border-attention font-bold text-attention-text" : "border-transparent text-fg-muted hover:text-fg",
               )}
             >

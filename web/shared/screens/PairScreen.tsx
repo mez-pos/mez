@@ -64,7 +64,7 @@ function NotSetUp({ here, onCheck }: { here: boolean; onCheck: () => void }) {
           // A plain link: the wizard is the terminal's, outside this app's own routes.
           <a
             href={setupPath}
-            className="inline-flex min-h-tap items-center justify-center rounded-pill bg-accent px-5 text-base font-semibold text-accent-fg shadow-action outline-offset-2 outline-attention hover:bg-accent-hover focus-visible:outline-3"
+            className="inline-flex min-h-tap items-center justify-center rounded-pill bg-accent px-5 text-base font-semibold text-accent-fg shadow-action outline-offset-2 outline-focus hover:bg-accent-hover focus-visible:outline-3"
           >
             Set up this venue
           </a>
