@@ -35,8 +35,8 @@
   --heading: #5b1f1f;
   --body: #3a2e2a;
   --body-2: #5f5850;
-  --muted: #7a6e66;
-  --faint: #8b7f72;
+  /* 5.3:1 on parchment and 4.5:1 or more on every light fill (ADR-388). */
+  --muted: #6e6359;
 
   /* Rules on paper */
   --hairline: #eae0d0;
@@ -164,7 +164,8 @@
   --fg-2: var(--body-2);
   --fg-3: var(--muted);
   --fg-muted: var(--muted);
-  --fg-faint: var(--faint);
+  /* Faint is muted on paper: a lighter ink failed AA on every ground (TECH-5, ADR-388). */
+  --fg-faint: var(--muted);
   --fg-heading: var(--heading);
 
   --line: var(--hairline);
@@ -183,7 +184,8 @@
   --attention: var(--terracotta);
   --attention-hover: var(--terracotta-press);
   --attention-fg: var(--on-fill);
-  --attention-text: var(--terracotta);
+  /* Terracotta as text is the pressed shade: 5.9:1 on parchment, 5.3:1 on its tint (TECH-7, ADR-388). */
+  --attention-text: var(--terracotta-press);
   --attention-tint: var(--terracotta-tint);
 
   --danger-fill: var(--brick);

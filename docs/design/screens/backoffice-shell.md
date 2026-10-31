@@ -51,7 +51,9 @@ screen each scroll on their own.
   venue is not).
 - **The sidebar, 240px, chrome** (208px under 1280px): an icon and a name
   on every entry, each 48px, with its key chord at the right, faint, in the
-  numeral face: `g m`. These two widths are the frame's own and not `w-side`
+  numeral face: `g m`, which says "Press g, then m, to open Menu" on hover;
+  where the screen is taller than 820px, a line at the sidebar's foot says
+  "Keys: press g, then the letter beside a section." (BO-14, ADR-388). These two widths are the frame's own and not `w-side`
   (TECH-17): an entry is a fixed run of icon, name and chord, "Sales reports
   g s" needs about 200px, and `w-side` is 184 to 191px from 1024 to 1366
   wide. The screens beside the sidebar take the token widths.

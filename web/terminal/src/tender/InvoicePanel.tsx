@@ -66,7 +66,7 @@ export function InvoicePanel({ order, ticket, onError }: InvoicePanelProps) {
         </p>
       )}
       {invoice.data && <InvoicePreview invoice={invoice.data} />}
-      <p className="w-88 max-w-full text-sm text-fg-faint">
+      <p className="w-88 max-w-full text-sm text-fg-muted">
         The receipt went to the print queue with the payment. Print receipt prints a copy marked DUPLICATE and keeps the number.
       </p>
     </div>

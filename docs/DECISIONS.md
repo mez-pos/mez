@@ -14888,3 +14888,43 @@ every way out passes through; danger looks the same wherever it is, and is asked
 Cost: a back office form outside Settings and the item editor (a stock count, a recipe, a
 role's permissions) holds no draft with the guard yet: each joins with one `useDraftHeld`
 line. The Undo toast sits over the foot of the screen for 8 seconds.
+
+## ADR-388 - The quiet inks and terracotta text hold AA on every light ground
+2026-10 · Status: accepted. Phase 17 Task 17 (TECH-5, TECH-6, TECH-7, TILL-7, BO-14); carries
+out ADR-381's item 13.
+Context: `--muted` (`#7A6E66`) measured 4.47:1 on parchment, not the 4.6:1 tokens.md stated,
+and 3.8 to 4.3:1 on the well, the tints and the chip fills, where the till writes its step
+labels and the back office its notes. `--faint` (`#8B7F72`) was 3.0 to 3.8:1 everywhere, and
+three sentences were written in it (the invoice note, the tip row, a timeline's who and
+where). Terracotta as text (`--attention-text`: ghost buttons, the guest's table pill, a
+chosen profile, the waiter's bill tile) was 4.40:1 on parchment and 3.96:1 on its own tint.
+The sidebar's key letters were faint, with nothing saying what they were.
+Decision:
+  - **`--muted` is `#6E6359`**: 5.3:1 on parchment, 5.8:1 on a card, and at least 4.5:1 on the
+    well, the green and terracotta tints and every chip fill (4.54:1 on the neutral one, the
+    lowest). The audit's `#6F645B` falls to 4.47:1 there.
+  - **`fg-faint` is muted on paper.** The `--faint` primitive goes; faint stays a role, for
+    uppercase metadata, so a later ink can be tried without touching every screen. The three
+    sentences written in faint are muted.
+  - **Terracotta as text is the pressed shade**: `--attention-text` points at
+    `--terracotta-press` (`#9C4325`), 5.9:1 on parchment and 5.3:1 on its tint, the shade
+    tokens.md already named for terracotta on its tint. Every ghost button, pill and link
+    takes it; terracotta fills keep `#B9522F`.
+  - **The key letters are explained**: each says "Press g, then m, to open Menu" on hover,
+    and where the screen is taller than 820px a line at the sidebar's foot says "Keys: press
+    g, then the letter beside a section."
+  - **A test reads tokens.css** (`shared/tokens.test.ts`) and holds muted, faint, fg-2 and
+    terracotta text to 4.5:1 on every light ground; a colour changed there is checked by the
+    build.
+Rejected: keeping ghost buttons off the canvas, as the plan said (a rule about where a button
+sits cannot be checked by a build, and a ghost on a card at a narrower width lands on the
+canvas at a wider one; an ink is checked once); the audit's `#6F645B` (it misses the neutral
+chip fill by a hair); a separate, darker faint (two quiet inks a step apart read as one, and
+the lighter one has no room above AA on the fills).
+Because: the quiet text is where a cashier reads what a step means and an owner what a figure
+is, often on a well or a tint, at arm's length from a till; AA is the floor tokens.md
+promised and the screens did not keep.
+Cost: muted and faint are one colour on paper, so the small-caps metadata is no lighter than
+a note. Terracotta links are a shade deeper than the terracotta fills beside them. The night
+surface is not changed: its own inks are checked when the kitchen's tokens are next touched.
+mez-cloud's account area reads tokens.css and takes the new inks when it is next built.

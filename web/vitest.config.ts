@@ -12,5 +12,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["shared/**/*.test.ts", "*/src/**/*.test.ts"],
+    // The tokens' own test reads tokens.css as text (ADR-388); every other
+    // stylesheet is left out of the tests, as by default.
+    css: { include: [/tokens\.css/] },
   },
 });

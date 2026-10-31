@@ -8,6 +8,18 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 16: no silent loss of work** (BO-2, BO-5, TECH-9, BO-6,
+ADR-387), 2026-10-31. The back office's shell has one leave guard
+(`shell/leave-guard.tsx`): a form says it holds a draft with
+`useDraftHeld`, and the sidebar, a `g` chord, Sign out, another settings
+section and, on the menu, another item, a new one or another view ask
+"Leave without saving?" first. Settings' Save buttons say what they save.
+A Sheet with `holdsForm` (the approval, a note, a line) is not closed by
+its scrim. Retire on an area, a table, a group of choices and a category
+is asked with what it takes (`retire-logic.ts`, `RetireConfirm`), in the
+danger style everywhere; an item's is one click with Undo on its toast
+(`Toast` takes one button). Seen in a browser at 1366 and 1024.
+
 **Phase 17, Task 15: tax words** (GST-2, TILL-18, GST-15, ADR-386),
 2026-10-31. The guest's venue (the table code's landing and the pickup
 code's) and the till's list of requests carry `tax_added`, from

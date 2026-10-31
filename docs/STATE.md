@@ -13,7 +13,7 @@ the UI audit (`docs/design/ui-audit-2026-10-31.md`). Tasks 1 and 4 to
 12 are done: at the human's word the device-fit pass came first, built
 and seen at 1024x768, 1366x768 and 1920x1080 on 2026-10-31 (ADR-381,
 ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s,
-Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 16 (ADR-384 to ADR-387). It runs before Phase 16, which is mostly
+Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 17 (ADR-384 to ADR-388). It runs before Phase 16, which is mostly
 `mez-cloud`'s.
 
 Before it, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
@@ -28,22 +28,21 @@ list below.
 
 ## Last completed task
 
-**Phase 17, Task 16: no silent loss of work** (BO-2, BO-5, TECH-9, BO-6,
-ADR-387), 2026-10-31. The back office's shell has one leave guard
-(`shell/leave-guard.tsx`): a form says it holds a draft with
-`useDraftHeld`, and the sidebar, a `g` chord, Sign out, another settings
-section and, on the menu, another item, a new one or another view ask
-"Leave without saving?" first. Settings' Save buttons say what they save.
-A Sheet with `holdsForm` (the approval, a note, a line) is not closed by
-its scrim. Retire on an area, a table, a group of choices and a category
-is asked with what it takes (`retire-logic.ts`, `RetireConfirm`), in the
-danger style everywhere; an item's is one click with Undo on its toast
-(`Toast` takes one button). Seen in a browser at 1366 and 1024.
+**Phase 17, Task 17: contrast tokens** (TECH-5, TECH-6, TECH-7, TILL-7,
+BO-14, ADR-388), 2026-10-31. `--muted` is `#6E6359` (5.3:1 on parchment,
+4.5:1 or more on every light fill); `fg-faint` is drawn in it on paper and
+the `--faint` primitive is gone; the three sentences in faint are muted;
+`--attention-text` is the pressed terracotta, so every ghost, pill and
+link holds AA. The sidebar's key letters say what they are on hover, and
+at the foot where the screen is tall. `web/shared/tokens.test.ts` reads
+tokens.css and holds the quiet inks to 4.5:1 (vitest lets tokens.css
+through as text). Seen in a browser at 1920x1080, 1366x768 and 1024x768.
+mez-cloud's account area takes the inks when it is next built.
 
 ## Next task
 
-**Here: Phase 17 Task 17, contrast tokens (TECH-5, TECH-6, TECH-7, TILL-7, BO-14)**,
-then Task 18 onward; Tasks 1 to 16 are done. Each screen is checked by eye at
+**Here: Phase 17 Task 18, diet marks by shape (GST-1, TILL-15)**,
+then Task 19 onward; Tasks 1 to 17 are done. Each screen is checked by eye at
 1024x768 and 1366x768 before it is ticked: the audit's walk (a demo venue
 from `mez setup -demo-menu` in a scratch data directory, a scripted
 Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel

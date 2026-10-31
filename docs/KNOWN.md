@@ -10,6 +10,17 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The quiet inks and terracotta text** (ADR-388, Phase 17 Task 17;
+  2026-10-31). Seen in a scripted Chromium: muted and faint rendering as
+  `#6E6359` on the dashboard at 1920x1080 and the till's pay screen at
+  1024x768; the key line at the sidebar's foot at 1920x1080 and not at
+  1366x768, where each letter's hover says it; the deeper terracotta on the
+  dashboard's links. **Not seen:** mez-cloud's account area with the new
+  inks (it is built from this checkout's tokens.css; build it there); the
+  night surface, which is unchanged and unchecked against AA. Left: muted
+  and faint are one colour on paper, so the small-caps metadata is no
+  lighter than a note.
+
 - **No silent loss of work** (ADR-387, Phase 17 Task 16; 2026-10-31). Seen
   in a scripted Chromium at 1366: an item's unsaved name asked about on
   another item (Keep editing kept it), on the sidebar (Escape stayed) and on

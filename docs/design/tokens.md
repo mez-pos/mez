@@ -47,8 +47,12 @@ display, where a bright screen over a hot pass is the wrong tool.
 | `--heading` | `#5B1F1F` | `fg-heading` | 12.4:1. Serif titles and display prices |
 | `--body` | `#3A2E2A` | `fg` | 11.1:1. Body |
 | `--body-2` | `#5F5850` | `fg-2` | Secondary text |
-| `--muted` | `#7A6E66` | `fg-3`, `fg-muted` | 4.6:1. The floor for sentence text, 13px minimum |
-| `--faint` | `#8B7F72` | `fg-faint` | Uppercase metadata only |
+| `--muted` | `#6E6359` | `fg-3`, `fg-muted`, `fg-faint` | 5.3:1, and 4.5:1 or more on the well, the tints and every chip fill (ADR-388). The floor for sentence text, 13px minimum |
+
+`fg-faint` is a role, not an ink: uppercase metadata only, drawn in `--muted`
+on paper. The lighter `#8B7F72` it had failed AA on every ground (ADR-388).
+`web/shared/tokens.test.ts` holds every quiet ink to 4.5:1 on every light
+ground.
 
 On night: `--night-text` `#F5EADB`, `--night-text-2` `#E4D6C4`,
 `--night-text-3` `#BCA995`, `--night-text-muted` `#A8968A`.
@@ -74,8 +78,8 @@ and a 3px terracotta outline on a button. On night: `--night-line`
 | `--green` | `#2F4A2C` | `accent` | Settle, send, save, confirm. Success |
 | `--green-press` | `#24391F` | `accent-hover` | Hover and pressed |
 | `--green-tint` | `#E8EFE3` | `accent-tint` | Selected rows, tint fills, focus halo |
-| `--terracotta` | `#B9522F` | `attention` | Active navigation, New order, Export, links |
-| `--terracotta-press` | `#9C4325` | `attention-hover` | Hover; terracotta as text on its tint |
+| `--terracotta` | `#B9522F` | `attention` | Fills: active navigation, New order, Export. Never text |
+| `--terracotta-press` | `#9C4325` | `attention-hover`, `attention-text` | Hover, and every terracotta text: links, ghost buttons, pills. 5.9:1 on parchment, 5.3:1 on its tint |
 | `--terracotta-tint` | `#F6E4DC` | `attention-tint` | Offers, soft badges, ghost hover |
 | `--mustard` | `#E7A83A` | `highlight` | Bestseller, ratings, the logo's top. Never text on a light ground |
 | `--brick` | `#A33A28` | `danger`, `danger-fill` | Void, refund, delete, errors |
@@ -249,7 +253,7 @@ blur is the most expensive thing a cheap tablet can be asked to paint.
 | `primary` | Green fill, ivory text | Settle, send, save, confirm |
 | `attention` | Terracotta fill | New order, export, generate |
 | `secondary` | Ivory, strong hairline | Reversible, beside a primary |
-| `ghost` | Terracotta text | Navigation, inline links |
+| `ghost` | Terracotta text (`attention-text`, the pressed shade) | Navigation, inline links |
 | `danger` | Brick text on brick tint | Void, refund. Always confirmed |
 
 All pills. Sizes: `charge` 56, `tap` 48, `md` 40, `sm` 32.

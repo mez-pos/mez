@@ -40,7 +40,7 @@ export function Timeline({ events, staffName, deviceName, timeZone, className }:
           <div className="min-w-0">
             <p className={cx("text-base", entry.tone === "danger" ? "text-danger" : "text-fg")}>{entry.title}</p>
             {entry.detail && <p className="text-sm text-fg-2">{entry.detail}</p>}
-            <p className="text-sm text-fg-faint">
+            <p className="text-sm text-fg-muted">
               {entry.by}
               {entry.device && ` · ${entry.device}`}
             </p>

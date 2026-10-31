@@ -122,7 +122,7 @@ function PaymentRow({ tender }: { tender: TenderResponse }) {
         <Money amount={tender.amount} />
       </div>
       {tender.tip.minor > 0 && (
-        <div className="flex justify-between text-sm text-fg-faint">
+        <div className="flex justify-between text-sm text-fg-muted">
           <span>Tip, apart from the bill</span>
           <Money amount={tender.tip} />
         </div>

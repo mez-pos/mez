@@ -89,6 +89,9 @@ export function SectionNav({ current, held, open, onClose }: SectionNavProps) {
             </ul>
           </div>
         ))}
+        {/* What the letters at the right are (BO-14). Where the screen is short the
+            entries need the height, and each letter says it on hover. */}
+        <p className="mt-auto hidden px-4 pt-4 text-sm text-fg-muted md:block short:hidden">Keys: press g, then the letter beside a section.</p>
       </nav>
     </>
   );
@@ -122,7 +125,11 @@ function NavEntry({ section: s, active, onPick }: { section: Section; active: bo
       <Icon aria-hidden="true" size={19} className="shrink-0" />
       {s.label}
       {/* The chords are a keyboard's. Under 768px it is a phone, which has none. */}
-      <kbd aria-label={`Keys: g then ${s.key}`} className={cx("ml-auto hidden font-mono text-meta md:inline", !active && "text-fg-faint")}>
+      <kbd
+        aria-label={`Keys: g then ${s.key}`}
+        title={`Press g, then ${s.key}, to open ${s.label}`}
+        className={cx("ml-auto hidden font-mono text-meta md:inline", !active && "text-fg-faint")}
+      >
         g {s.key}
       </kbd>
     </Link>
