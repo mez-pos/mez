@@ -15,7 +15,7 @@ import (
 // and is projected under the venue's taxes as they are now, as before.
 type TaxSnapshot struct {
 	// Profile is the code the venue's profile is stored under: "none",
-	// "gst_in", "vat_uk", "sales_tax_us".
+	// "gst_in", "gst_in_composition", "vat_uk", "sales_tax_us".
 	Profile       string          `json:"profile"`
 	Currency      string          `json:"currency"`
 	Pricing       tax.Pricing     `json:"pricing"`
@@ -28,9 +28,11 @@ type TaxSnapshot struct {
 
 // SnapshotTaxes is the venue's taxes as an order opening now carries them.
 // code is the profile's stored code; an untaxed venue is a snapshot all the
-// same, so that a venue taxed later does not re-price the orders before.
+// same, so that a venue taxed later does not re-price the orders before. It
+// keeps a code that charges no tax, none or the composition scheme, so a
+// bill of supply stays one (ADR-401); any other code with no regime is none.
 func SnapshotTaxes(code string, t Taxes) *TaxSnapshot {
-	if t.Profile == nil {
+	if p, known := tax.ProfileByCode(code); t.Profile == nil && (!known || p != nil) {
 		code = tax.CodeNone
 	}
 	return &TaxSnapshot{

@@ -155,6 +155,15 @@ Ship three:
 - **VAT (UK/EU)** — single rate per item, inclusive display, VAT number.
 - **US sales tax** — exclusive, added at checkout, rate by jurisdiction.
 
+And a fourth, which charges nothing (ADR-401):
+
+- **GST composition scheme (India)**, `gst_in_composition`: a venue
+  registered for GST that pays its tax on turnover and may not collect it.
+  It computes no tax, as No tax does; its documents are bills of supply,
+  with its GSTIN, the line CGST Rule 5(1)(g) asks for under the title, and
+  numbers of 16 characters at most. An order carries the code it opened
+  under, so a bill keeps its scheme when the venue changes it.
+
 Do not hardcode GST anywhere outside its profile. The first non-Indian user will
 otherwise force a rewrite.
 

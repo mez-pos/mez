@@ -186,8 +186,15 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
   warning and on the dashboard, next steps in empty cards, and Add a
   printer asks what it prints. ADR-399 also corrects ADR-398: the wizard's
   Cloud step says guests can order from their phones again.
-- [ ] **Task 28 - GST composition scheme (SET-7).** A product decision
-  and its ADR first.
+- [x] **Task 28 - GST composition scheme (SET-7).** A product decision
+  and its ADR first. Done 2026-10-31 (ADR-401): `gst_in_composition`, a
+  profile of its own (migration 00058 widens `venues.tax_profile`'s CHECK,
+  foreign keys off while the table is built again); no tax computed; a
+  bill of supply with the GSTIN and the CGST Rule 5(1)(g) line on paper,
+  on the till and on the guest's receipt; numbers held to 16 characters;
+  a bill keeps the scheme it was taxed under; the wizard and Settings offer
+  it after GST; a No tax or composition venue starts with a "No tax"
+  class.
 
 ### The shared kit
 

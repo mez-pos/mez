@@ -4,7 +4,8 @@
 
 import type { IssuedInvoiceResponse, Money as Amount, PaymentMethod } from "../../../shared/api-types";
 import { Money } from "../../../shared/ui";
-import { invoiceTitle, issuedAtText, rateText } from "./invoice-format";
+import { declarationOf } from "../../../shared/tax-words";
+import { invoiceTitle, issuedAtText, rateText, registrationText } from "./invoice-format";
 
 const methodWords: Record<PaymentMethod, string> = { cash: "Cash", card: "Card", upi: "UPI", other: "Other" };
 
@@ -27,12 +28,14 @@ export function InvoicePreview({ invoice }: { invoice: IssuedInvoiceResponse }) 
             {seller.name !== seller.legal_name && <p className="text-sm text-fg-2">{seller.name}</p>}
             {seller.registration && (
               <p className="mt-1 font-mono text-sm">
-                {seller.tax_profile === "gst_in" ? "GSTIN" : "VAT No."} {seller.registration}
+                {registrationText(seller.tax_profile)} {seller.registration}
               </p>
             )}
           </>
         )}
         <p className="mt-3 text-meta font-semibold uppercase text-fg-muted">{invoiceTitle(seller?.tax_profile ?? "")}</p>
+        {/* Under the title, in the rule's words (CGST Rule 5(1)(g), ADR-401). */}
+        {declarationOf(seller?.tax_profile ?? "") && <p className="text-sm text-fg-2">{declarationOf(seller?.tax_profile ?? "")}</p>}
         <p className="font-mono text-base">{invoice.invoice_no}</p>
         <p className="font-mono text-sm text-fg-2">{issuedAtText(invoice.issued_at, invoice.time_zone)}</p>
         {seller?.state_code && <p className="text-sm text-fg-2">Place of supply: {seller.state_code}</p>}

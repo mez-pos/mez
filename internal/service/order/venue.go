@@ -192,7 +192,7 @@ func sellerFor(row gen.Venue, settings map[string]string) order.InvoiceSeller {
 	if s.LegalName == "" {
 		s.LegalName = row.Name
 	}
-	if row.TaxProfile == "gst_in" {
+	if row.TaxProfile == tax.CodeGST {
 		s.StateCode = settings[SettingTaxStateCode]
 	}
 	return s
@@ -212,9 +212,16 @@ func taxesFor(row gen.Venue, settings map[string]string) (order.Taxes, error) {
 
 	var profile tax.TaxProfile
 	switch row.TaxProfile {
-	case "none":
+	case tax.CodeNone:
 		return order.Taxes{}, nil
-	case "gst_in":
+	case tax.CodeGSTComposition:
+		// No tax to compute, but every bill shows the GSTIN, and an order
+		// carries it with the code it opened under (ADR-401).
+		if !tax.ValidGSTIN(row.TaxRegistrationID) {
+			return order.Taxes{}, fmt.Errorf("%w: the GST composition scheme needs the venue's GSTIN", ErrVenueConfig)
+		}
+		return order.Taxes{Venue: tax.VenueContext{Currency: row.Currency, GSTIN: row.TaxRegistrationID}}, nil
+	case tax.CodeGST:
 		profile = tax.GST{}
 		ctx.GSTIN = row.TaxRegistrationID
 		ctx.StateCode = settings[SettingTaxStateCode]
@@ -256,7 +263,7 @@ func seriesFor(row gen.Venue, settings map[string]string) (invoice.Series, error
 		template = DefaultTemplate
 	}
 	maxLength := 0
-	if row.TaxProfile == "gst_in" {
+	if tax.UnderGST(row.TaxProfile) {
 		maxLength = GSTMaxInvoiceNo
 	}
 	fy := invoice.FYRule{StartMonth: time.Month(row.FinancialYearStartMonth), StartDay: 1}
@@ -287,7 +294,7 @@ func creditSeriesFor(row gen.Venue, settings map[string]string, invoices invoice
 		template = DefaultTemplate
 	}
 	maxLength := 0
-	if row.TaxProfile == "gst_in" {
+	if tax.UnderGST(row.TaxProfile) {
 		maxLength = GSTMaxInvoiceNo
 	}
 	fy := invoice.FYRule{StartMonth: time.Month(row.FinancialYearStartMonth), StartDay: 1}

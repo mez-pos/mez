@@ -9,7 +9,7 @@ import { formatWait } from "../../auth/format";
 import { unreachableMessage } from "../../auth/messages";
 import { setupHeaders } from "./setup-token";
 
-export type TaxProfile = "none" | "gst_in" | "vat_uk" | "sales_tax_us";
+export type TaxProfile = "none" | "gst_in" | "gst_in_composition" | "vat_uk" | "sales_tax_us";
 export type Pricing = "inclusive" | "exclusive";
 
 /** Everything the wizard asks, as typed. */
@@ -126,6 +126,16 @@ export const profiles: Readonly<Record<TaxProfile, ProfileFacts>> = {
     pricingChoice: true,
     registration: { label: "GSTIN", hint: "15 characters. Its first two digits are your state.", required: true },
   },
+  // The composition scheme (ADR-401): a GSTIN on every bill, and no tax on it.
+  gst_in_composition: {
+    label: "GST composition, India",
+    blurb: "No GST is added. Bills show your GSTIN and say you are on the scheme.",
+    currency: "INR",
+    fyStartMonth: 4,
+    pricing: "inclusive",
+    pricingChoice: false,
+    registration: { label: "GSTIN", hint: "15 characters. Its first two digits are your state.", required: true },
+  },
   vat_uk: {
     label: "VAT, UK",
     blurb: "VAT shown on every receipt, with your VAT number.",
@@ -146,7 +156,7 @@ export const profiles: Readonly<Record<TaxProfile, ProfileFacts>> = {
   },
 };
 
-export const profileOrder: readonly TaxProfile[] = ["none", "gst_in", "vat_uk", "sales_tax_us"];
+export const profileOrder: readonly TaxProfile[] = ["none", "gst_in", "gst_in_composition", "vat_uk", "sales_tax_us"];
 
 /** The currencies offered. The server takes any ISO code; these are the ones a first venue is likely to be in. */
 export const currencies: readonly { code: string; name: string }[] = [
@@ -238,7 +248,7 @@ export function checkStep(step: StepKey, a: Answers, timezones: readonly string[
   if (step === "taxes") {
     const facts = profiles[a.taxProfile];
     const registration = a.taxRegistration.trim();
-    if (a.taxProfile === "gst_in" && !gstin.test(registration)) {
+    if ((a.taxProfile === "gst_in" || a.taxProfile === "gst_in_composition") && !gstin.test(registration)) {
       problems.tax_registration = "Enter the venue's 15 character GSTIN. It begins with two digits.";
     } else if (facts.registration?.required && registration === "") {
       problems.tax_registration = `Enter the venue's ${facts.registration.label}.`;

@@ -21,7 +21,7 @@ var ErrInvoiceNotIssued = errors.New("no such invoice on this order")
 // out; they are on the timeline, not on the bill.
 func pricesOf(st order.State, seller order.InvoiceSeller) *order.InvoicePrices {
 	p := &order.InvoicePrices{
-		Seller: seller, Lines: []order.InvoiceLine{},
+		Seller: sellerAsTaxed(seller, st.Taxes), Lines: []order.InvoiceLine{},
 		Gross: st.Totals.Gross, LineDiscounts: st.Totals.LineDiscounts, OrderDiscounts: st.Totals.OrderDiscounts,
 		Subtotal: st.Totals.Subtotal, Taxable: st.Totals.Taxable, Tax: st.Totals.Tax, Total: st.Totals.Total,
 	}
@@ -35,6 +35,28 @@ func pricesOf(st order.State, seller order.InvoiceSeller) *order.InvoicePrices {
 		})
 	}
 	return p
+}
+
+// sellerAsTaxed is the seller under the scheme the order was taxed under
+// (ADR-401). An order carries the taxes it opened under (ADR-374), so a
+// ticket opened under the composition scheme and paid after the venue moved
+// to GST, or the other way round, is titled as it was taxed: its profile,
+// its registration and its place of supply come from the order, not from the
+// venue as it is now. An order opened before it carried taxes has none, and
+// is named as the venue is.
+func sellerAsTaxed(seller order.InvoiceSeller, taxes *order.TaxSnapshot) order.InvoiceSeller {
+	if taxes == nil || taxes.Profile == seller.TaxProfile {
+		return seller
+	}
+	seller.TaxProfile = taxes.Profile
+	seller.StateCode = taxes.StateCode
+	switch {
+	case taxes.GSTIN != "":
+		seller.Registration = taxes.GSTIN
+	case taxes.VATNumber != "":
+		seller.Registration = taxes.VATNumber
+	}
+	return seller
 }
 
 // IssuedInvoice is an invoice as it was issued, read back from its event:

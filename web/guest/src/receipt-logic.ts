@@ -6,7 +6,7 @@
 
 import { ApiError, isUnreachable } from "../../shared/api";
 import type { GuestReceiptResponse, PaymentMethod } from "../../shared/api-types";
-import { registrationLabel } from "../../shared/tax-words";
+import { compositionProfile, registrationLabel } from "../../shared/tax-words";
 import { clockText } from "../../shared/venue-text";
 import { rateText } from "../../shared/zreport/zreport-logic";
 import type { BillRow, BillState } from "./bill-logic";
@@ -58,6 +58,11 @@ export function offersReceipt(state: BillState, kept: KeptBill | null): boolean 
 /** What the seller's tax number is called on the invoice: "GSTIN", "VAT number", or "Tax registration" for a profile with no name for it (GST-15). */
 export function registrationName(seller: Pick<GuestReceiptResponse["seller"], "tax_profile">): string {
   return registrationLabel(seller.tax_profile ?? "") ?? "Tax registration";
+}
+
+/** What the venue issued: a bill of supply under the GST composition scheme (ADR-401), an invoice under any other. */
+export function documentName(seller: Pick<GuestReceiptResponse["seller"], "tax_profile">): string {
+  return seller.tax_profile === compositionProfile ? "Bill of supply" : "Invoice";
 }
 
 /** "Sat, 19 Sep 2026 · 10:24 AM", in the venue's own time and not the phone's. */

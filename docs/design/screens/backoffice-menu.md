@@ -116,7 +116,8 @@ below.
   table asks for the next." A course's number follows its place.
 - **A new venue starts with one of each** (ADR-400): a Kitchen (code
   `kitchen`) and course 1, Main, made at setup, so its first items, by hand
-  or by a file, need neither chosen.
+  or by a file, need neither chosen. Under No tax or the GST composition
+  scheme it starts with a tax class too, "No tax", exempt (ADR-401).
 - **Retire** (a modal): says what it does, and for a row with items asks
   where they go ("Move its 10 items to"). The only row in service cannot be
   retired: "Add another before retiring it." A toast says what moved: "Bar

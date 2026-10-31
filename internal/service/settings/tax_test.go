@@ -31,6 +31,11 @@ func TestCleanTax(t *testing.T) {
 		{"gst, the wrong state", TaxInput{Profile: "gst_in", RegistrationID: gstin, StateCode: "27"}, "state_code"},
 		{"gst, not a state", TaxInput{Profile: "gst_in", RegistrationID: gstin, StateCode: "99"}, "state_code"},
 		{"gst, pricing is a guess", TaxInput{Profile: "gst_in", RegistrationID: gstin, Pricing: "gross"}, "pricing"},
+		// The composition scheme keeps a GSTIN and nothing else (ADR-401).
+		{"composition", TaxInput{Profile: "gst_in_composition", RegistrationID: " 29abcde 1234f1z5 "}, ""},
+		{"composition, a pricing it ignores", TaxInput{Profile: "gst_in_composition", RegistrationID: gstin, Pricing: "gross"}, ""},
+		{"composition, no gstin", TaxInput{Profile: "gst_in_composition"}, "registration_id"},
+		{"composition, not a gstin", TaxInput{Profile: "gst_in_composition", RegistrationID: "GB123456789"}, "registration_id"},
 		{"vat", TaxInput{Profile: "vat_uk", RegistrationID: "GB123456789"}, ""},
 		{"vat, no number", TaxInput{Profile: "vat_uk"}, "registration_id"},
 		{"us", TaxInput{Profile: "sales_tax_us", Jurisdiction: ca}, ""},
@@ -74,6 +79,19 @@ func TestUpdateTaxSwitchesProfileAndClearsWhatItLeavesBehind(t *testing.T) {
 	got := read()
 	if got.Profile != "gst_in" || got.RegistrationID != gstin || got.StateCode != "29" || got.Pricing != "exclusive" || !got.NeedsHSN {
 		t.Fatalf("gst: %+v", got)
+	}
+
+	// The composition scheme: the GSTIN stays; the state code and the
+	// pricing go, since nothing is split or added (ADR-401).
+	if err := s.UpdateTax(ctx, 1, TaxInput{Profile: "gst_in_composition", RegistrationID: gstin, Pricing: "exclusive", StateCode: "29"}); err != nil {
+		t.Fatal(err)
+	}
+	got = read()
+	if got.Profile != "gst_in_composition" || got.RegistrationID != gstin || got.StateCode != "" || got.Pricing != "" || got.NeedsHSN {
+		t.Fatalf("composition: %+v", got)
+	}
+	if _, err := d.Queries().Setting(ctx, gen.SettingParams{VenueID: 1, Key: "tax.state_code"}); err == nil {
+		t.Error("the GST state code was kept under the composition scheme")
 	}
 
 	// US sales tax: the GST leftovers go, the price is always exclusive.

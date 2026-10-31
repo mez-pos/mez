@@ -15388,3 +15388,49 @@ Because: a cafe that serves everything from one counter should not have to learn
 or a course is before it can put its menu in.
 Cost: a venue with no kitchen starts with a station called Kitchen; renaming it is one click,
 though its code, `kitchen`, stays. A venue set up before this has none until its owner adds them.
+
+## ADR-401 - The GST composition scheme: a profile of its own, a bill of supply, no tax lines
+2026-10 · Status: accepted. Phase 17 Task 28 (SET-7). The proposal put to the human on
+2026-10-31 (the GSTIN and the composition line, no tax lines), agreed with "build task 28".
+Extends ADR-400's starter menu.
+Context: a cafe under section 10 of the CGST Act pays its tax as a share of its turnover. It
+may not collect tax from its guests (section 10(4)); it issues a bill of supply instead of a
+tax invoice (section 31(3)(c)); and CGST Rule 5(1)(g) has it print "composition taxable
+person, not eligible to collect tax on supplies" at the top of each one. mez offered such a
+cafe "No tax", which leaves its GSTIN and that line off the bill, or "GST, India", which
+charges CGST and SGST it may not collect.
+Decision:
+  - **A fifth profile, `gst_in_composition`, "GST composition scheme".** Its own code, not a
+    setting beside `gst_in`: an order carries the code it opened under and is projected under
+    it for life (ADR-374), so a bill keeps its title and its tax when the venue changes scheme.
+  - **It computes no tax**, as `none` does: `tax.ProfileByCode` answers nil. The price is what
+    the guest pays; no taxable value, no tax lines, no place of supply. HSN is not required,
+    as under `none`.
+  - **Its documents are GST's.** The GSTIN under the seller's name, called GSTIN; the title
+    "Bill of supply" ("BILL OF SUPPLY" on paper); under it, the rule's words, "Composition
+    taxable person, not eligible to collect tax on supplies", on the till's preview, the
+    printed bill and its duplicate, and the guest's receipt. A bill printed before payment
+    says "BILL - NOT A BILL OF SUPPLY" and "Pay at the counter to receive your bill of
+    supply." Numbers are held to 16 characters (CGST Rule 49(b)), as a tax invoice's are. A
+    credit note calls the number GSTIN, and
+    names the seller under the scheme its bill was taxed under, as the invoice does.
+  - **The GSTIN is required and checked as GST's is**; no state code is kept, since there is
+    nothing to split. No pricing question: nothing is added to a price.
+  - **It starts with a tax class that charges none.** Every item needs a class (`items` holds
+    `tax_class_id NOT NULL`), and under a profile that charges no tax, one called "No tax",
+    exempt, guesses nothing: ADR-400's starter menu adds it for a venue on No tax or on the
+    composition scheme. A venue on GST, VAT or US sales tax still sets its own rates.
+  - **Offered in the setup wizard and in Settings, Tax and numbering**, after GST: "GST
+    composition scheme", "No GST on bills. Each one shows your GSTIN and says you are under
+    the composition scheme."
+Rejected: a flag on `gst_in` (orders do not carry it, so a reprint after a change of scheme
+would change its title and tax); the composition tax as a figure on the Z-report (it is paid on
+the quarter's turnover through the return, and a daily figure would read as owed per day; the
+Z-report's sales are the turnover it is paid on); HSN required on every item (No tax does not
+ask it either, and whether a composition venue's bill to a guest must carry one is its
+accountant's call; a code an item has, given in the menu's spreadsheet, prints on its line).
+Because: a composition cafe is common among the small venues mez is for, and the two choices it
+had either broke the law on every bill or left off what the law asks the bill to say.
+Cost: moving from the composition scheme to regular GST leaves items on "No tax", which is
+exempt, so they sell without GST until moved to a rated class; Settings lists items without
+an HSN when the venue moves to GST, but not items on an exempt class (KNOWN).

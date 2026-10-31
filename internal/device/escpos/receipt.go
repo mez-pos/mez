@@ -15,7 +15,8 @@ import (
 //
 // A Receipt with no InvoiceNo is a bill printed before payment. It has no
 // number, because numbers come with the settling payment, and it says in
-// capitals that it is not a tax invoice.
+// capitals that it is not a tax invoice (under the GST composition scheme,
+// not a bill of supply).
 type Receipt struct {
 	InvoiceNo string
 	IssuedAt  time.Time // in the venue's zone; the layout prints it as given
@@ -106,14 +107,7 @@ func (r Receipt) header(b *Builder, w int) {
 		b.Line(s.Name)
 	}
 	if s.Registration != "" {
-		label := "Reg."
-		switch s.TaxProfile {
-		case "gst_in":
-			label = "GSTIN"
-		case "vat_uk":
-			label = "VAT No."
-		}
-		b.Line(label + " " + s.Registration)
+		b.Line(registrationLabel(s.TaxProfile) + " " + s.Registration)
 	}
 	for _, l := range textLines(r.Template.Header, w) {
 		b.Line(l)
@@ -123,13 +117,21 @@ func (r Receipt) header(b *Builder, w int) {
 	b.Bold(true)
 	switch {
 	case r.InvoiceNo == "":
-		b.Line("BILL - NOT A TAX INVOICE")
+		b.Line("BILL - NOT A " + notA(s.TaxProfile))
 	case r.Copy:
 		b.Line(title(s.TaxProfile) + " - DUPLICATE")
 	default:
 		b.Line(title(s.TaxProfile))
 	}
-	b.Bold(false).Align(Left)
+	b.Bold(false)
+	// At the top of every bill of supply, in the rule's words (CGST Rule
+	// 5(1)(g), ADR-401).
+	if r.InvoiceNo != "" && s.TaxProfile == tax.CodeGSTComposition {
+		for _, l := range wrap(tax.CompositionDeclaration, w) {
+			b.Line(l)
+		}
+	}
+	b.Align(Left)
 
 	if r.InvoiceNo != "" {
 		b.Line("No.   " + r.InvoiceNo)
@@ -171,7 +173,7 @@ func (r Receipt) payments(b *Builder, w int) {
 func (r Receipt) footer(b *Builder, w int) {
 	b.Feed(1).Align(Center)
 	if r.InvoiceNo == "" {
-		for _, l := range wrap("Pay at the counter to receive your tax invoice.", w) {
+		for _, l := range wrap("Pay at the counter to receive your "+strings.ToLower(notA(r.Prices.Seller.TaxProfile))+".", w) {
 			b.Line(l)
 		}
 	} else if !r.Template.HideBarcode {
@@ -189,12 +191,36 @@ func (r Receipt) footer(b *Builder, w int) {
 // same words as the on-screen preview.
 func title(profile string) string {
 	switch profile {
-	case "gst_in":
+	case tax.CodeGST:
 		return "TAX INVOICE"
-	case "vat_uk":
+	case tax.CodeGSTComposition:
+		return "BILL OF SUPPLY"
+	case tax.CodeVAT:
 		return "VAT RECEIPT"
 	}
 	return "INVOICE"
+}
+
+// notA is what a bill printed before payment says it is not: the document
+// that payment issues. Every profile but the composition scheme says a tax
+// invoice, as it always has.
+func notA(profile string) string {
+	if profile == tax.CodeGSTComposition {
+		return "BILL OF SUPPLY"
+	}
+	return "TAX INVOICE"
+}
+
+// registrationLabel is what the seller's tax number is called under its
+// profile, on a receipt and a credit note alike.
+func registrationLabel(profile string) string {
+	switch {
+	case tax.UnderGST(profile):
+		return "GSTIN"
+	case profile == tax.CodeVAT:
+		return "VAT No."
+	}
+	return "Reg."
 }
 
 func methodWord(m order.PaymentMethod) string {

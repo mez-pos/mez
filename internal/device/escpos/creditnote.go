@@ -56,14 +56,7 @@ func (c CreditNote) Layout(p Paper) ([]byte, error) {
 		b.Line(c.Seller.Name)
 	}
 	if c.Seller.Registration != "" {
-		label := "Reg."
-		switch c.Seller.TaxProfile {
-		case "gst_in":
-			label = "GSTIN"
-		case "vat_uk":
-			label = "VAT No."
-		}
-		b.Line(label + " " + c.Seller.Registration)
+		b.Line(registrationLabel(c.Seller.TaxProfile) + " " + c.Seller.Registration)
 	}
 	for _, l := range textLines(c.Header, w) {
 		b.Line(l)

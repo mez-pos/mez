@@ -23,6 +23,9 @@ const (
 	ProfileGST   = "gst_in"
 	ProfileVAT   = "vat_uk"
 	ProfileSales = "sales_tax_us"
+	// ProfileComposition is GST's composition scheme (ADR-401): a GSTIN,
+	// and no tax.
+	ProfileComposition = tax.CodeGSTComposition
 )
 
 // The two ways a price relates to its tax.
@@ -85,7 +88,7 @@ func (s *Service) Tax(ctx context.Context, venueID int64) (TaxSetup, error) {
 	out := TaxSetup{TaxInput: TaxInput{
 		Profile: v.TaxProfile, RegistrationID: v.TaxRegistrationID, Jurisdiction: []tax.Component{},
 	}}
-	if out.Profile != ProfileNone {
+	if out.Profile != ProfileNone && out.Profile != ProfileComposition {
 		out.Pricing = stored[svcorder.SettingTaxPricing]
 		if out.Pricing == "" {
 			out.Pricing = Inclusive
@@ -137,13 +140,24 @@ func cleanTax(in TaxInput, currency string) (TaxInput, map[string]string, error)
 
 	profile, ok := profileOf(in.Profile)
 	if !ok {
-		return in, nil, &Invalid{"profile", "Choose no tax, GST, VAT or US sales tax."}
+		return in, nil, &Invalid{"profile", "Choose no tax, GST, the GST composition scheme, VAT or US sales tax."}
 	}
 	keys := map[string]string{
 		svcorder.SettingTaxPricing: "", svcorder.SettingTaxStateCode: "", svcorder.SettingTaxJurisdiction: "",
 	}
-	if in.Profile == ProfileNone {
+	switch in.Profile {
+	case ProfileNone:
 		return TaxInput{Profile: ProfileNone, Jurisdiction: []tax.Component{}}, keys, nil
+	case ProfileComposition:
+		// Nothing is added to a price and nothing is split, so only the
+		// GSTIN is kept: every bill of supply shows it (ADR-401).
+		switch {
+		case in.RegistrationID == "":
+			return in, nil, &Invalid{"registration_id", "Enter the venue's GSTIN: every bill shows it."}
+		case !tax.ValidGSTIN(in.RegistrationID):
+			return in, nil, &Invalid{"registration_id", "A GSTIN is 15 letters and digits, beginning with the state's two digits."}
+		}
+		return TaxInput{Profile: ProfileComposition, RegistrationID: in.RegistrationID, Jurisdiction: []tax.Component{}}, keys, nil
 	}
 
 	pricing := tax.Pricing(in.Pricing)

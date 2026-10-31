@@ -11,11 +11,13 @@ import { problemWith, type Problem } from "./problem";
 /** Named in web/shared, where the guest's receipt reads it too (GST-15). */
 export { registrationLabel };
 
-export type ProfileId = "none" | "gst_in" | "vat_uk" | "sales_tax_us";
+export type ProfileId = "none" | "gst_in" | "gst_in_composition" | "vat_uk" | "sales_tax_us";
 
 export const PROFILES: readonly { value: ProfileId; label: string }[] = [
   { value: "none", label: "No tax" },
   { value: "gst_in", label: "GST (India)" },
+  // ADR-401: a GSTIN on every bill, and no tax on it.
+  { value: "gst_in_composition", label: "GST composition scheme (India)" },
   { value: "vat_uk", label: "VAT (UK)" },
   { value: "sales_tax_us", label: "US sales tax" },
 ];
@@ -79,6 +81,9 @@ export function taxFormFrom(t: TaxSettingsResponse): TaxForm {
   };
 }
 
+/** Whether a profile adds tax to a price, and so asks how prices are quoted. */
+export const asksPricing = (p: ProfileId): boolean => p === "gst_in" || p === "vat_uk";
+
 /** A registration number as the server keeps it: capitals, no spaces. */
 const normalRegistration = (s: string): string => s.replace(/\s+/g, "").toUpperCase();
 
@@ -89,6 +94,8 @@ function effective(f: TaxForm): unknown {
       return { profile: f.profile };
     case "gst_in":
       return { profile: f.profile, r: normalRegistration(f.registrationId), p: f.pricing, s: f.stateCode.trim() };
+    case "gst_in_composition":
+      return { profile: f.profile, r: normalRegistration(f.registrationId) };
     case "vat_uk":
       return { profile: f.profile, r: normalRegistration(f.registrationId), p: f.pricing };
     case "sales_tax_us":
@@ -107,11 +114,14 @@ export const taxProblemOf = (err: unknown): Problem<TaxField> => problemWith(err
 
 /** What can be refused without asking the server, in the order the form reads. */
 export function taxProblem(f: TaxForm): Problem<TaxField> | null {
-  if ((f.profile === "gst_in" || f.profile === "vat_uk") && normalRegistration(f.registrationId) === "") {
-    return {
-      field: "registration_id",
-      message: f.profile === "gst_in" ? "Enter the venue's GSTIN: invoices print it." : "Enter the venue's VAT number: receipts print it.",
+  const label = registrationLabel(f.profile);
+  if (label && normalRegistration(f.registrationId) === "") {
+    const where: Partial<Record<ProfileId, string>> = {
+      gst_in: "invoices print it",
+      gst_in_composition: "every bill shows it",
+      vat_uk: "receipts print it",
     };
+    return { field: "registration_id", message: `Enter the venue's ${label === "GSTIN" ? label : "VAT number"}: ${where[f.profile] ?? "receipts print it"}.` };
   }
   if (f.profile === "sales_tax_us") {
     if (f.jurisdiction.length === 0) return { field: "jurisdiction", message: "Add the rate where the venue is, like CA at 7.25%." };
@@ -127,7 +137,7 @@ export function toTaxInput(f: TaxForm): TaxSettingsRequest {
   return {
     profile: f.profile,
     registration_id: registrationLabel(f.profile) ? f.registrationId.trim() : "",
-    pricing: f.profile === "none" || f.profile === "sales_tax_us" ? "" : f.pricing,
+    pricing: asksPricing(f.profile) ? f.pricing : "",
     state_code: f.profile === "gst_in" ? f.stateCode.trim() : "",
     jurisdiction: f.profile === "sales_tax_us" ? f.jurisdiction.map((j) => ({ name: j.name.trim(), rate: parsePercent(j.rate) ?? 0 })) : [],
   };

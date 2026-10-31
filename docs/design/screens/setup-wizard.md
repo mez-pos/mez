@@ -53,9 +53,12 @@ The steps:
    Standard Time (GMT+5:30)"), listed by city, this computer's own chosen
    already, and typed only where the browser cannot list the zones (SET-8);
    what this till is called.
-2. **Taxes and invoices.** The tax profile, as four cards (No tax, GST
-   India, VAT UK, Sales tax US), each with a radio's dot, filled on the one
-   chosen (SET-9); the registration number, where the profile
+2. **Taxes and invoices.** The tax profile, as five cards (No tax, GST
+   India, GST composition India, VAT UK, Sales tax US), each with a
+   radio's dot, filled on the one chosen (SET-9); the composition card says
+   "No GST is added. Bills show your GSTIN and say you are on the scheme."
+   (SET-7, ADR-401) and asks the GSTIN, not how prices are quoted; the
+   registration number, where the profile
    has one; prices include tax or tax is added, where the profile lets that
    be chosen; the month the financial year starts; the invoice prefix.
 3. **You.** Your name; a PIN of 6 to 8 digits; the PIN again. What the PIN
@@ -338,7 +341,10 @@ PIN is in memory until the wizard is left.
 - **A new venue starts with a Kitchen and course 1, Main** (ADR-400):
   every item needs a station and a course, and with exactly one of each
   nothing asks which. `mez setup` makes the same; the demo cafe brings its
-  own. No tax class is made: a rate is the owner's to set.
+  own. Under a profile that charges tax no tax class is made: a rate is
+  the owner's to set. Under No tax and the GST composition scheme the venue
+  starts with one, "No tax", exempt, since every item needs a class and
+  there is no rate to guess (ADR-401).
 - **The mez Cloud step says guests can order from their phones**, as it
   did: a table's code prints only with the public address mez Cloud gives
   (ADR-320). SET-8's "Cloud claim guests do not need" was a false reading;

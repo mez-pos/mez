@@ -13,7 +13,7 @@ the UI audit (`docs/design/ui-audit-2026-10-31.md`). Tasks 1 and 4 to
 12 are done: at the human's word the device-fit pass came first, built
 and seen at 1024x768, 1366x768 and 1920x1080 on 2026-10-31 (ADR-381,
 ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s,
-Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 27 (ADR-384 to ADR-399). It runs before Phase 16, which is mostly
+Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 28 (ADR-384 to ADR-401; ADR-400 was out of phase). It runs before Phase 16, which is mostly
 `mez-cloud`'s.
 
 Before it, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
@@ -28,27 +28,23 @@ list below.
 
 ## Last completed task
 
-**Phase 17, Task 27: back office onboarding** (BO-8, BO-9, BO-10, BO-11,
-BO-15, ADR-399), 2026-10-31. Missing setup is said in an owner's words,
-mez Cloud first: table codes, ordering from phones and the back office
-from away all point at Connect to mez Cloud on Devices; a relay or a
-payment gateway is "whoever installed mez"'s. Inventory: no "Items view",
-"No ingredients tracked" for an empty recipe, and the empty card says why
-Stock count and Log wastage are off, with Add ingredient in it. The
-dashboard says "No ingredients tracked." where none is, and shows a band
-to `settings.edit` while nothing is backed up or it fails; Off is a
-warning chip in Settings. Z-reports and Printers' empty cards give the
-next step, and Add a printer asks what it prints. **It also corrects
-Task 26:** the wizard's mez Cloud step says guests can order from their
-phones again (a table's code needs the public address Cloud gives).
-Walked on an empty venue and a demo venue at 1366.
+**Phase 17, Task 28: the GST composition scheme** (SET-7, ADR-401),
+2026-10-31, the proposal put to the human and agreed. A fifth profile,
+`gst_in_composition`: no tax computed; its bill is a bill of supply with
+the GSTIN and, under the title, "Composition taxable person, not eligible
+to collect tax on supplies" (paper, till, guest); numbers of 16
+characters at most; an order keeps the scheme it opened under, and its
+invoice names the seller so. Migration 00058 builds `venues` again to
+widen its CHECK (foreign keys off, one transaction, every row kept: a
+test proves it). Offered in the wizard and Settings; a No tax or
+composition venue starts with a "No tax" class. Before it, out of phase
+(ADR-400): a new venue starts with a Kitchen and course 1, Main, and the
+import says once what the venue lacks. Walked at 1024 and 1366.
 
 ## Next task
 
-**Here: Phase 17 Task 28, GST composition scheme (SET-7)**, then Task 29
-onward; Tasks 1 to 27 are done. Task 28 is a product decision first, and
-its ADR: what a composition-scheme cafe's bill prints (its GSTIN and the
-composition line, no tax lines) is the human's to agree before any code. Each screen is checked by eye at
+**Here: Phase 17 Task 29, error boundaries (TECH-8)**, then Task 30
+onward; Tasks 1 to 28 are done. Each screen is checked by eye at
 1024x768 and 1366x768 before it is ticked: the audit's walk (a demo venue
 from `mez setup -demo-menu` in a scratch data directory, a scripted
 Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel

@@ -8,6 +8,21 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 27: back office onboarding** (BO-8, BO-9, BO-10, BO-11,
+BO-15, ADR-399), 2026-10-31. Missing setup is said in an owner's words,
+mez Cloud first: table codes, ordering from phones and the back office
+from away all point at Connect to mez Cloud on Devices; a relay or a
+payment gateway is "whoever installed mez"'s. Inventory: no "Items view",
+"No ingredients tracked" for an empty recipe, and the empty card says why
+Stock count and Log wastage are off, with Add ingredient in it. The
+dashboard says "No ingredients tracked." where none is, and shows a band
+to `settings.edit` while nothing is backed up or it fails; Off is a
+warning chip in Settings. Z-reports and Printers' empty cards give the
+next step, and Add a printer asks what it prints. **It also corrects
+Task 26:** the wizard's mez Cloud step says guests can order from their
+phones again (a table's code needs the public address Cloud gives).
+Walked on an empty venue and a demo venue at 1366.
+
 **Phase 17, Task 26: setup** (SET-1, SET-2, SET-5, SET-6, SET-8, SET-9,
 ADR-398), 2026-10-31. The device step offers `mez.local` first: `GET
 /api/v1/devices/addresses` answers `{named, addresses}` (Go, a test, and

@@ -74,8 +74,8 @@ describe("percentages", () => {
 });
 
 describe("the profiles", () => {
-  it("are the four the server takes", () => {
-    expect(PROFILES.map((p) => p.value)).toEqual(["none", "gst_in", "vat_uk", "sales_tax_us"]);
+  it("are the five the server takes, the composition scheme after GST", () => {
+    expect(PROFILES.map((p) => p.value)).toEqual(["none", "gst_in", "gst_in_composition", "vat_uk", "sales_tax_us"]);
   });
 });
 
@@ -112,6 +112,18 @@ describe("the tax form", () => {
       ],
     });
     expect(toTaxInput({ ...f, profile: "vat_uk", registrationId: " gb 123 " }).registration_id).toBe("gb 123");
+    // The composition scheme keeps the GSTIN and nothing else (ADR-401).
+    expect(toTaxInput({ ...f, profile: "gst_in_composition", pricing: "exclusive" })).toEqual({
+      profile: "gst_in_composition",
+      registration_id: "29ABCDE1234F1Z5",
+      pricing: "",
+      state_code: "",
+      jurisdiction: [],
+    });
+  });
+
+  it("is read back under the composition scheme", () => {
+    expect(taxFormFrom({ ...gst, profile: "gst_in_composition", pricing: "", state_code: "" }).profile).toBe("gst_in_composition");
   });
 
   it("is changed only by what its profile uses", () => {
@@ -125,6 +137,10 @@ describe("the tax form", () => {
     expect(taxChanged({ ...saved, profile: "none" }, saved)).toBe(true);
     const none = taxFormFrom({ ...gst, profile: "none", registration_id: "", state_code: "", pricing: "" });
     expect(taxChanged({ ...none, registrationId: "anything" }, none)).toBe(false);
+    const comp = { ...saved, profile: "gst_in_composition" as const };
+    expect(taxChanged({ ...comp, pricing: "exclusive", stateCode: "27" }, comp)).toBe(false); // it adds and splits nothing
+    expect(taxChanged({ ...comp, registrationId: "29ABCDE1234F1Z6" }, comp)).toBe(true);
+    expect(taxChanged(comp, saved)).toBe(true);
     const us = taxFormFrom(sales);
     expect(taxChanged({ ...us, jurisdiction: [...us.jurisdiction, { name: "LA", rate: "2.25" }] }, us)).toBe(true);
     expect(taxChanged({ ...us, jurisdiction: [{ name: " CA ", rate: "7.250" }, us.jurisdiction[1]!] }, us)).toBe(false);
@@ -141,6 +157,11 @@ describe("the tax form", () => {
     it("wants the registration number GST and VAT print", () => {
       expect(taxProblem({ ...base, registrationId: "  " })).toEqual({ field: "registration_id", message: "Enter the venue's GSTIN: invoices print it." });
       expect(taxProblem({ ...base, profile: "vat_uk", registrationId: "" })?.message).toMatch(/VAT number/);
+      expect(taxProblem({ ...base, profile: "gst_in_composition", registrationId: " " })).toEqual({
+        field: "registration_id",
+        message: "Enter the venue's GSTIN: every bill shows it.",
+      });
+      expect(taxProblem({ ...base, profile: "gst_in_composition" })).toBeNull();
     });
     it("wants a rate under US sales tax, each with a name and a real percentage", () => {
       const us = taxFormFrom(sales);

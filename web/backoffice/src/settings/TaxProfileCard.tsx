@@ -10,6 +10,7 @@ import { SectionCard } from "./SectionCard";
 import {
   PRICINGS,
   PROFILES,
+  asksPricing,
   menuItemPath,
   namedItems,
   registrationLabel,
@@ -23,6 +24,13 @@ import {
   type TaxForm,
 } from "./tax-logic";
 import { useSectionDraft } from "./use-section-draft";
+import { compositionDeclaration } from "../../../shared/tax-words";
+
+/** Where the registration number is printed, under each profile that has one. */
+const registrationHint: Partial<Record<string, string>> = {
+  gst_in: "Invoices print it. Capitals and spaces are tidied for you.",
+  gst_in_composition: "Every bill shows it. Capitals and spaces are tidied for you.",
+};
 
 export interface TaxProfileCardProps {
   tax: TaxSettingsResponse;
@@ -64,16 +72,17 @@ export function TaxProfileCard({ tax, onSave, onDirty }: TaxProfileCardProps) {
       )}
 
       {form.profile === "sales_tax_us" && <p className="text-base text-fg-2">Tax is always added on top of the price under US sales tax.</p>}
-      {(form.profile === "gst_in" || form.profile === "vat_uk") && (
+      {form.profile === "gst_in_composition" && (
+        <p className="text-base text-fg-2">
+          No GST is added to a price. Every bill is a bill of supply: it shows the GSTIN and says &ldquo;{compositionDeclaration}&rdquo;.
+        </p>
+      )}
+      {asksPricing(form.profile) && (
         <Choice label="Prices" value={form.pricing} options={PRICINGS} onChange={(pricing) => set({ pricing })} error={d.on("pricing")} />
       )}
 
       {registration && (
-        <Field
-          label={registration}
-          hint={form.profile === "gst_in" ? "Invoices print it. Capitals and spaces are tidied for you." : "Receipts print it."}
-          error={d.on("registration_id")}
-        >
+        <Field label={registration} hint={registrationHint[form.profile] ?? "Receipts print it."} error={d.on("registration_id")}>
           {(id) => (
             <input
               id={id}

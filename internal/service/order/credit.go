@@ -68,7 +68,9 @@ func (s *Service) Credit(ctx context.Context, meta Meta, orderID int64, cmd Issu
 		if err := tx.RecordCreditNote(ctx, issued, against, p.Total.Minor, at); err != nil {
 			return nil, err
 		}
-		seller := v.Seller
+		// Under the scheme the bill was taxed under, as its invoice names it
+		// (ADR-401), not the venue's now.
+		seller := sellerAsTaxed(v.Seller, tx.State.Taxes)
 		payloads := []order.Payload{order.CreditNoteIssued{
 			CreditNo: issued.InvoiceNo, Series: v.Credits.Code, AgainstInvoiceNo: against,
 			Reason: cmd.Reason, AuthorisedBy: cmd.AuthorisedBy,

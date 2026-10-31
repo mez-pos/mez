@@ -12,6 +12,8 @@ import {
   guessProfile,
   indexOfAfter,
   nextAfter,
+  profileOrder,
+  profiles,
   notStarted,
   startingAnswers,
   stepOf,
@@ -158,6 +160,9 @@ describe("checkStep", () => {
     ["GST with no GSTIN", "taxes", { taxRegistration: "" }, "tax_registration"],
     ["GST with a short GSTIN", "taxes", { taxRegistration: "29ABC" }, "tax_registration"],
     ["GST with a GSTIN that names no state", "taxes", { taxRegistration: "ABABCDE1234F1Z5" }, "tax_registration"],
+    ["the composition scheme with its GSTIN", "taxes", { taxProfile: "gst_in_composition" }, null],
+    ["the composition scheme with no GSTIN", "taxes", { taxProfile: "gst_in_composition", taxRegistration: "" }, "tax_registration"],
+    ["the composition scheme with a VAT number", "taxes", { taxProfile: "gst_in_composition", taxRegistration: "GB123456789" }, "tax_registration"],
     ["VAT with no number", "taxes", { taxProfile: "vat_uk", taxRegistration: " " }, "tax_registration"],
     ["no tax needs no number", "taxes", { taxProfile: "none", taxRegistration: "" }, null],
     ["US sales tax needs no number", "taxes", { taxProfile: "sales_tax_us", taxRegistration: "" }, null],
@@ -211,6 +216,18 @@ describe("toRequest", () => {
   it("sends no registration and no pricing where the profile has neither", () => {
     const req = toRequest({ ...filled, taxProfile: "sales_tax_us", taxRegistration: "left over from GST", pricing: "inclusive" });
     expect("tax_registration" in req || "tax_pricing" in req).toBe(false);
+  });
+
+  it("sends the composition scheme's GSTIN and no pricing: nothing is added to a price (ADR-401)", () => {
+    const req = toRequest({ ...filled, taxProfile: "gst_in_composition", pricing: "exclusive" });
+    expect(req.tax_profile).toBe("gst_in_composition");
+    expect(req.tax_registration).toBe("29ABCDE1234F1Z5");
+    expect("tax_pricing" in req).toBe(false);
+  });
+
+  it("offers the composition scheme after GST", () => {
+    expect(profileOrder.indexOf("gst_in_composition")).toBe(profileOrder.indexOf("gst_in") + 1);
+    expect(profiles.gst_in_composition).toMatchObject({ label: "GST composition, India", currency: "INR", fyStartMonth: 4, pricingChoice: false });
   });
 
   it("never sends the wizard's own fields", () => {

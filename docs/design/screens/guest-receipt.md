@@ -18,7 +18,10 @@ not a second working-out of the bill.
 - **The invoice,** a card, centred: the venue's name in the serif; its legal
   name under it, small, when it is another name; "GSTIN" ("VAT number";
   "Tax registration" under a profile with no name for it, as the invoice's
-  profile names it, GST-15) and the number in the mono. Then, under a hairline, two rows: "Invoice" and its
+  profile names it, GST-15) and the number in the mono. Under the
+  GST composition scheme, under the number, "Composition taxable person,
+  not eligible to collect tax on supplies", and the card, its first row
+  and the line at the foot call it a "Bill of supply" (ADR-401). Then, under a hairline, two rows: "Invoice" and its
   number in the mono; "Issued" and when, as "Tue, 6 Oct 2026 · 1:17 PM".
 - **The lines,** a card: each line's count and dish, its choices in small
   print, and what it comes to. Only what was charged: a dish given away or

@@ -9,7 +9,8 @@ import { Button } from "../../shared/ui/Button";
 import { cx } from "../../shared/ui/cx";
 import type { BillRow } from "./bill-logic";
 import { tableLabel } from "./Landing";
-import { issuedText, paidRows, problemWords, receiptProblem, receiptRows, registrationName } from "./receipt-logic";
+import { declarationOf } from "../../shared/tax-words";
+import { documentName, issuedText, paidRows, problemWords, receiptProblem, receiptRows, registrationName } from "./receipt-logic";
 import { useReceipt } from "./use-receipt";
 
 interface ReceiptProps {
@@ -81,9 +82,11 @@ export function Receipt({ code, table, bill, onBack }: ReceiptProps) {
 function Paper({ receipt }: { receipt: GuestReceiptResponse }) {
   const issued = issuedText(receipt);
   const { seller } = receipt;
+  const document = documentName(seller);
+  const declaration = declarationOf(seller.tax_profile ?? "");
   return (
     <>
-      <section aria-label="Invoice" className="mt-4 rounded-card border border-line bg-raised p-4 text-center shadow-rest">
+      <section aria-label={document} className="mt-4 rounded-card border border-line bg-raised p-4 text-center shadow-rest">
         <h2 className="font-serif text-xl">{seller.name}</h2>
         {seller.legal_name && seller.legal_name !== seller.name && <p className="text-sm text-fg-muted">{seller.legal_name}</p>}
         {seller.registration && (
@@ -91,9 +94,10 @@ function Paper({ receipt }: { receipt: GuestReceiptResponse }) {
             {registrationName(seller)} <span className="font-mono break-all">{seller.registration}</span>
           </p>
         )}
+        {declaration && <p className="mt-1 text-sm text-fg-muted">{declaration}</p>}
         <dl className="mt-3 border-t border-line-soft pt-3 text-left">
           <div className="flex items-baseline justify-between gap-3 py-1 text-base">
-            <dt>Invoice</dt>
+            <dt>{document}</dt>
             <dd className="font-mono break-all tabular-nums">{receipt.invoice_no}</dd>
           </div>
           {issued !== "" && (
@@ -131,7 +135,7 @@ function Paper({ receipt }: { receipt: GuestReceiptResponse }) {
       </section>
 
       <p className="mt-4 text-center text-sm text-fg-muted">
-        This is the invoice {seller.name} issued for your table. To keep it, take a screenshot: this page is here for a few weeks.
+        This is the {document.toLowerCase()} {seller.name} issued for your table. To keep it, take a screenshot: this page is here for a few weeks.
       </p>
     </>
   );

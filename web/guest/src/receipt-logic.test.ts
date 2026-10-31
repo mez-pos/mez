@@ -13,6 +13,7 @@ import {
   receiptProblem,
   receiptRows,
   registrationName,
+  documentName,
 } from "./receipt-logic";
 
 const inr = (minor: number) => ({ minor, currency: "INR" });
@@ -91,9 +92,16 @@ describe("offersReceipt", () => {
 describe("the receipt in words", () => {
   it("calls the seller's number what the invoice's profile calls it (GST-15)", () => {
     expect(registrationName({ tax_profile: "gst_in" })).toBe("GSTIN");
+    expect(registrationName({ tax_profile: "gst_in_composition" })).toBe("GSTIN");
     expect(registrationName({ tax_profile: "vat_uk" })).toBe("VAT number");
     expect(registrationName({})).toBe("Tax registration");
     expect(registrationName({ tax_profile: "sales_tax_us" })).toBe("Tax registration");
+  });
+
+  it("calls a composition venue's bill a bill of supply, and every other an invoice (ADR-401)", () => {
+    expect(documentName({ tax_profile: "gst_in_composition" })).toBe("Bill of supply");
+    expect(documentName({ tax_profile: "gst_in" })).toBe("Invoice");
+    expect(documentName({})).toBe("Invoice");
   });
 
   it("says when it was issued in the venue's time, whatever the phone's", () => {

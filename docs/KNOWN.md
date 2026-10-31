@@ -10,6 +10,20 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The GST composition scheme** (ADR-401, Phase 17 Task 28; 2026-10-31).
+  Seen in a scripted Chromium at 1024x768 and 1366x768 on a venue set up by
+  the wizard under it: the wizard's five tax cards, no "Menu prices"; the
+  tax card's line and GSTIN; its "No tax" class; a file with Tax class,
+  Station and Course blank imported whole; a cash sale whose slip reads
+  GSTIN, BILL OF SUPPLY, the rule's line, no tax lines. **Not seen:** the
+  printed bill, its duplicate and the bill before payment (tested as laid
+  out, at 80mm and 58mm); a credit note (tested); the guest's receipt
+  (tested by its words). **Left as is:** the till's own order panel shows
+  "Tax ₹0.00" under the composition scheme, as under No tax; moving from
+  the composition scheme to GST leaves items on "No tax", exempt, so they
+  sell without GST until moved, and Settings lists items without an HSN
+  then but not items on an exempt class.
+
 - **A new venue's station and course, and the import's word for their lack**
   (ADR-400; 2026-10-31, out of phase). Tested in Go: first run, the wizard's
   POST /api/v1/setup and `mez setup` each make a Kitchen and course 1, Main;

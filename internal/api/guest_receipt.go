@@ -31,7 +31,8 @@ type guestReceiptSellerResponse struct {
 	// Registration is the seller's tax number: a GSTIN, a VAT number.
 	Registration string `json:"registration,omitempty"`
 	// TaxProfile is the profile the invoice was issued under ("gst_in",
-	// "vat_uk"), so the receipt calls the number what it is (GST-15).
+	// "gst_in_composition", "vat_uk"), so the receipt calls the number what
+	// it is (GST-15) and the document what it is (ADR-401).
 	TaxProfile string `json:"tax_profile,omitempty"`
 }
 

@@ -128,10 +128,16 @@ venue's card usable. Fields one across.
 Three cards. The profile and the numbering each save on their own; the tax
 classes save at once.
 
-- **Tax profile.** **Tax**, a choice: No tax, GST (India), VAT (UK), US
-  sales tax. What it needs follows it:
+- **Tax profile.** **Tax**, a choice: No tax, GST (India), GST
+  composition scheme (India), VAT (UK), US sales tax. What it needs
+  follows it:
   - GST and VAT: **Prices**, "Prices include tax" or "Tax is added on top".
   - GST: **GSTIN** and **Place of supply**, the two digit state code.
+  - The GST composition scheme (SET-7, ADR-401): "No GST is added to a
+    price. Every bill is a bill of supply: it shows the GSTIN and says
+    "Composition taxable person, not eligible to collect tax on
+    supplies"." and **GSTIN** ("Every bill shows it."). No prices, no
+    place of supply.
   - VAT: **VAT number**.
   - US sales tax: **Rates where the venue is**, a row per authority (a name
     and a percentage), **Add a rate**.

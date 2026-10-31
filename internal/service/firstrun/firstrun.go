@@ -21,6 +21,7 @@ import (
 	"github.com/mez-pos/mez/internal/db"
 	"github.com/mez-pos/mez/internal/db/gen"
 	"github.com/mez-pos/mez/internal/domain/id"
+	"github.com/mez-pos/mez/internal/domain/tax"
 	svcorder "github.com/mez-pos/mez/internal/service/order"
 	"github.com/mez-pos/mez/internal/service/settings"
 )
@@ -55,6 +56,8 @@ const (
 	TaxGSTIndia   = settings.ProfileGST
 	TaxVATUK      = settings.ProfileVAT
 	TaxSalesTaxUS = settings.ProfileSales
+	// TaxGSTComposition is GST's composition scheme (ADR-401).
+	TaxGSTComposition = settings.ProfileComposition
 
 	PricingInclusive = settings.Inclusive
 	PricingExclusive = settings.Exclusive
@@ -124,24 +127,38 @@ type Result struct {
 // roles' IDs by name. The demo cafe is one.
 type Extra func(ctx context.Context, q *gen.Queries, venueID int64, roles map[string]int64, now time.Time) error
 
-// The station and course a new venue starts with (ADR-400).
+// The station, course and tax class a new venue starts with (ADR-400,
+// ADR-401).
 const (
 	StarterStationCode = "kitchen"
 	StarterStationName = "Kitchen"
 	StarterCourseName  = "Main"
+	StarterNoTaxName   = "No tax"
 )
 
 // StarterMenu gives a new venue the one station and one course every item
 // needs (ADR-400): a Kitchen, and course 1, Main. With exactly one of each,
 // an item added by hand or by a spreadsheet goes to them without being
-// asked. Tax classes are left to the owner: a rate is not guessed.
+// asked.
+//
+// Every item needs a tax class too. Under a profile that charges no tax, No
+// tax or the GST composition scheme, one called "No tax", exempt, guesses
+// nothing, so the venue starts with it (ADR-401). Under any other profile
+// the rates are the owner's: none is guessed.
 //
 // The wizard and `mez setup` both pass it, so their venues do not differ.
-// The demo cafe does not: its menu brings its own stations and courses.
+// The demo cafe does not: its menu brings its own.
 func StarterMenu(ctx context.Context, q *gen.Queries, venueID int64, _ map[string]int64, now time.Time) error {
+	venue, err := q.VenueByID(ctx, venueID)
+	if err != nil {
+		return fmt.Errorf("firstrun: reading the venue for its starter menu: %w", err)
+	}
 	spec := db.MenuSpec{
 		Stations: []db.StationSpec{{Code: StarterStationCode, Name: StarterStationName}},
 		Courses:  []db.CourseSpec{{Number: 1, Name: StarterCourseName}},
+	}
+	if p, known := tax.ProfileByCode(venue.TaxProfile); known && p == nil {
+		spec.TaxClasses = []db.TaxClassSpec{{Name: StarterNoTaxName, Exempt: true}}
 	}
 	if _, err := db.WriteMenu(ctx, q, venueID, spec, now); err != nil {
 		return fmt.Errorf("firstrun: the starter station and course: %w", err)
@@ -340,6 +357,14 @@ func Check(a Answers) (Answers, error) {
 		if !validGSTIN(a.TaxRegistration) {
 			return fail("tax_registration", "GST needs the venue's %d character GSTIN, which begins with the state's two digits", gstinLength)
 		}
+	case TaxGSTComposition:
+		// Every bill of supply shows it (ADR-401). Nothing is added to a
+		// price, so how prices are quoted is not kept.
+		a.TaxRegistration = strings.ToUpper(a.TaxRegistration)
+		if !validGSTIN(a.TaxRegistration) {
+			return fail("tax_registration", "the GST composition scheme needs the venue's %d character GSTIN, which begins with the state's two digits", gstinLength)
+		}
+		a.TaxPricing = ""
 	case TaxVATUK:
 		if a.TaxRegistration == "" {
 			return fail("tax_registration", "VAT needs the venue's VAT number")
@@ -348,8 +373,8 @@ func Check(a Answers) (Answers, error) {
 		// The jurisdiction rates are a list, so they are set in the back
 		// office and not asked for here.
 	default:
-		return fail("tax_profile", "tax profile %q is not one of %s, %s, %s, %s",
-			a.TaxProfile, TaxNone, TaxGSTIndia, TaxVATUK, TaxSalesTaxUS)
+		return fail("tax_profile", "tax profile %q is not one of %s, %s, %s, %s, %s",
+			a.TaxProfile, TaxNone, TaxGSTIndia, TaxGSTComposition, TaxVATUK, TaxSalesTaxUS)
 	}
 	if a.TaxPricing != "" && a.TaxPricing != PricingInclusive && a.TaxPricing != PricingExclusive {
 		return fail("tax_pricing", "tax pricing %q is not %s or %s", a.TaxPricing, PricingInclusive, PricingExclusive)

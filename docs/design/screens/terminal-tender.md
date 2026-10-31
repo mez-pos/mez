@@ -127,7 +127,9 @@ cards are under them, one across at 1024 and two at 1366.
 
 - **Middle:** the invoice as issued (`InvoicePreview`), a paper slip the
   shape of the 80mm receipt: the seller and registration, "Tax invoice" and
-  its number, when and where; each line with its choices and HSN; the taxable
+  its number ("Bill of supply" under the GST composition scheme, with the
+  rule's line, "Composition taxable person, not eligible to collect tax on
+  supplies", under it: ADR-401), when and where; each line with its choices and HSN; the taxable
   value, each tax, the total; the payments and tips; how many times it has
   been reprinted. Under it, what became of the receipt, from the print
   queue: "The receipt printed on Counter.", "...is printing on Counter.",

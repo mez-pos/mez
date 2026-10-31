@@ -207,6 +207,8 @@ func TestCheckRefusals(t *testing.T) {
 		{"no tax profile", func(a *Answers) { a.TaxProfile = "" }, "tax_profile", "tax profile"},
 		{"a tax profile that does not exist", func(a *Answers) { a.TaxProfile = "gst_uae" }, "tax_profile", "gst_uae"},
 		{"GST with no GSTIN", func(a *Answers) { a.TaxRegistration = "" }, "tax_registration", "GSTIN"},
+		{"the composition scheme with no GSTIN", func(a *Answers) { a.TaxProfile, a.TaxRegistration = TaxGSTComposition, "" }, "tax_registration", "GSTIN"},
+		{"the composition scheme with a VAT number", func(a *Answers) { a.TaxProfile, a.TaxRegistration = TaxGSTComposition, "GB123456789" }, "tax_registration", "GSTIN"},
 		{"GST with a GSTIN padded to length", func(a *Answers) { a.TaxRegistration = " 29ABCDE1234F1Z" }, "tax_registration", "GSTIN"},
 		{"a GSTIN that does not begin with a state", func(a *Answers) { a.TaxRegistration = "ABABCDE1234F1Z5" }, "tax_registration", "GSTIN"},
 		{"a GSTIN of fifteen bytes that are not fifteen characters", func(a *Answers) { a.TaxRegistration = "é29ABCDE1234F1" }, "tax_registration", "GSTIN"},
@@ -276,6 +278,13 @@ func TestCheckTidies(t *testing.T) {
 	gst.TaxRegistration = "29abcde1234f1z5"
 	if got, err := Check(gst); err != nil || got.TaxRegistration != "29ABCDE1234F1Z5" {
 		t.Errorf("GSTIN = %q, %v", got.TaxRegistration, err)
+	}
+	// The composition scheme keeps the GSTIN, in capitals, and no pricing:
+	// nothing is added to a price (ADR-401).
+	comp := answers()
+	comp.TaxProfile, comp.TaxRegistration, comp.TaxPricing = TaxGSTComposition, "29abcde1234f1z5", PricingExclusive
+	if got, err := Check(comp); err != nil || got.TaxRegistration != "29ABCDE1234F1Z5" || got.TaxPricing != "" {
+		t.Errorf("composition = %q, pricing %q, %v", got.TaxRegistration, got.TaxPricing, err)
 	}
 	// Sixty characters is sixty characters, in any script.
 	hindi := answers()
@@ -401,7 +410,48 @@ func TestStarterMenu(t *testing.T) {
 		t.Fatalf("TaxClassesForVenue: %v", err)
 	}
 	if len(classes) != 0 {
-		t.Errorf("a new venue has %d tax classes, want none", len(classes))
+		t.Errorf("a new GST venue has %d tax classes, want none: its rates are its own", len(classes))
+	}
+}
+
+// TestStarterMenuUnderNoTax (ADR-401): a venue whose profile charges no tax
+// starts with the one class every item needs, "No tax", exempt; a venue
+// that charges tax is left to set its own rates.
+func TestStarterMenuUnderNoTax(t *testing.T) {
+	tests := []struct {
+		profile, registration string
+		noTax                 bool
+	}{
+		{TaxNone, "", true},
+		{TaxGSTComposition, "29ABCDE1234F1Z5", true},
+		{TaxGSTIndia, "29ABCDE1234F1Z5", false},
+		{TaxVATUK, "GB123456789", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.profile, func(t *testing.T) {
+			d := emptyDB(t)
+			s, _ := service(t, d)
+			ctx := context.Background()
+			a := answers()
+			a.TaxProfile, a.TaxRegistration = tt.profile, tt.registration
+			if tt.profile == TaxVATUK {
+				a.Currency = "GBP"
+			}
+			res, err := s.Run(ctx, a, StarterMenu)
+			if err != nil {
+				t.Fatalf("Run: %v", err)
+			}
+			classes, err := d.Queries().TaxClassesForVenue(ctx, res.VenueID)
+			if err != nil {
+				t.Fatalf("TaxClassesForVenue: %v", err)
+			}
+			switch {
+			case !tt.noTax && len(classes) != 0:
+				t.Errorf("%d tax classes, want none", len(classes))
+			case tt.noTax && (len(classes) != 1 || classes[0].Name != "No tax" || !classes[0].Exempt || classes[0].Rate != 0 || !classes[0].Active):
+				t.Errorf("tax classes %+v, want one, No tax, exempt", classes)
+			}
+		})
 	}
 }
 
