@@ -9,3 +9,11 @@ updates:
       interval: monthly
     commit-message:
       prefix: chore
+  # The tablet app's Gradle plugin and libraries (ADR-409). Its lint does not
+  # fail on a newer version; this is what raises one.
+  - package-ecosystem: gradle
+    directory: /android-app
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: chore

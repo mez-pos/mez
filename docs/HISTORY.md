@@ -8,6 +8,18 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 18, Task 1: ADR-409 and the phase**, 2026-11-01. The human
+asked how a tablet should run: an app or a URL? Three researchers found
+that no web-only route works offline on a plain-HTTP LAN (a PWA needs a
+secure origin; public certificates need public DNS; a private CA is a
+warning on every tablet), and that self-hosted projects ship thin native
+WebView apps. ADR-409: a native Kotlin shell in `android-app/`, the
+screens the server's, the browser kept, the iPad on the browser path;
+React Native and Flutter rejected (no screens to share, a second
+runtime). The Android Studio project, made with no activity and the
+human's id `com.mezpos.meztablet`, was committed as made, with `gradlew`
+marked executable.
+
 **TBS-20, the waiter's payment**, 2026-11-01, after Phase 17. The
 waiter's bill let go of a payment by calling itself
 (`releaseUnsettled`, a find-and-replace in 2724b4ca, ADR-376): every

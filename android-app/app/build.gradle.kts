@@ -1,5 +1,17 @@
+import javax.inject.Inject
+
 plugins {
     alias(libs.plugins.android.application)
+}
+
+// The address a debug build opens, until the app pairs by scanning (Task 4).
+// The emulator reaches the computer it runs on at 10.0.2.2, and mez listens
+// on 7777 unless told otherwise. Another one:
+//   ./gradlew assembleDebug -PmezUrl=http://192.168.1.20:7777/#code=ABCD-2345
+val mezUrl: String = providers.gradleProperty("mezUrl").getOrElse("http://10.0.2.2:7777/")
+// It becomes a Java string, and `make android` passes it in single quotes.
+require(Regex("""^https?://[^\s"'\\$]+$""").matches(mezUrl)) {
+    "mezUrl \"$mezUrl\": want an http:// or https:// address, with no spaces, quotes, \\ or \$"
 }
 
 android {
@@ -15,13 +27,21 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // A release build has no address: it pairs by scanning (Task 4).
+        buildConfigField("String", "MEZ_URL", "\"\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "MEZ_URL", "\"$mezUrl\"")
+        }
         release {
             optimization {
-                enable = false
+                enable = true
             }
         }
     }
@@ -29,13 +49,84 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+    lint {
+        abortOnError = true
+        warningsAsErrors = true
+        // A newer library or SDK is Dependabot's to raise, not a reason for
+        // the build to fail on a day nothing here changed.
+        disable += setOf("GradleDependency", "AndroidGradlePluginVersion", "NewerVersionAvailable", "OldTargetApi")
+    }
+}
+
+// What the app's own pages borrow from the web app: two fonts with their
+// licences, and the mark. Copied at build time so the repository holds one
+// copy of each (tokens.md, Logo: never redrawn).
+abstract class WebShared : DefaultTask() {
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val fonts: DirectoryProperty
+
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val brand: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val output: DirectoryProperty
+
+    @get:Inject
+    abstract val files: FileSystemOperations
+
+    @TaskAction
+    fun copy() {
+        files.sync {
+            from(fonts) {
+                include(FONTS)
+                into("fonts")
+            }
+            from(brand) {
+                include(MARK)
+                into("brand")
+            }
+            into(output)
+        }
+        // An include that matches nothing copies nothing and says nothing:
+        // a font renamed in web/shared would ship a page without it.
+        val wanted = FONTS.map { "fonts/$it" } + "brand/$MARK"
+        val missing = wanted.filterNot { output.file(it).get().asFile.isFile }
+        if (missing.isNotEmpty()) {
+            throw GradleException("web/shared has no ${missing.joinToString()}: start.html needs them")
+        }
+    }
+
+    private companion object {
+        val FONTS = listOf("fraunces-600.woff2", "dm-sans-14.woff2", "OFL-fraunces.txt", "OFL-dmsans.txt")
+        const val MARK = "mez-mark.svg"
+    }
+}
+
+val webShared = tasks.register<WebShared>("webShared") {
+    val shared = layout.projectDirectory.dir("../../web/shared")
+    fonts.set(shared.dir("fonts"))
+    brand.set(shared.dir("brand"))
+    output.set(layout.buildDirectory.dir("generated/webShared"))
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.sources.assets?.addGeneratedSourceDirectory(webShared, WebShared::output)
+    }
+}
+
+// AppPagesTest reads the app's page to hold its sections to Start's pages:
+// a change to the page must run the tests again, not find them up to date.
+tasks.withType<Test>().configureEach {
+    inputs.file("src/main/assets/start.html").withPathSensitivity(PathSensitivity.RELATIVE)
 }
 
 dependencies {
-    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.activity)
     implementation(libs.androidx.core.ktx)
-    implementation(libs.material)
+    implementation(libs.androidx.webkit)
     testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
 }

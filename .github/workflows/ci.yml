@@ -50,3 +50,25 @@ jobs:
       # bundle is over 60 KB gzipped. A separate job so `make check` still
       # runs on a machine with no Node. See ADR-063.
       - run: make build-web
+
+  android:
+    name: make android
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      # The Gradle daemon asks for JDK 25
+      # (android-app/gradle/gradle-daemon-jvm.properties).
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+
+      # Checks gradle-wrapper.jar against Gradle's own checksums before
+      # anything runs it, and caches what Gradle downloads.
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      # The tablet app: a debug APK, unit tests and lint. The runner carries
+      # the Android SDK. A separate job so `make check` never needs Java or
+      # Gradle (ADR-409).
+      - run: make android

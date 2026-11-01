@@ -42,7 +42,7 @@ WEB_BUILT := $(foreach a,$(WEB_APPS),$(wildcard web/$(a)/dist/index.html))
 TAGS      := $(if $(filter 3,$(words $(WEB_BUILT))),frontend,)
 
 .DEFAULT_GOAL := check
-.PHONY: check fmt fmt-web vet test typecheck build build-web run dev generate migrate migrate-new clean dist installer help
+.PHONY: check fmt fmt-web vet test typecheck build build-web run dev generate migrate migrate-new clean dist installer android help
 
 ## check: fmt, vet, test, typecheck and build. The gate. CI runs this.
 check: fmt vet test typecheck build
@@ -218,6 +218,16 @@ installer:
 		$(if $(MEZ_SIGNTOOL),'/Ssigntool=$(MEZ_SIGNTOOL)' /DSign,) \
 		build/installer/mez.iss
 	@echo "  installer dist/$(BIN)_$(VERSION)_windows_amd64_setup.exe"
+
+## android: the tablet app in android-app/ (ADR-409): a debug APK, its unit
+##          tests and lint. Needs a JDK and the Android SDK, which `make
+##          check` never does. A debug build opens MEZ_URL, by default
+##          http://10.0.2.2:7777/, the computer an emulator runs on.
+MEZ_URL ?=
+android:
+	@cd android-app && ./gradlew --console=plain $(if $(MEZ_URL),'-PmezUrl=$(MEZ_URL)',) \
+		assembleDebug testDebugUnitTest lintDebug
+	@echo "  android ok: android-app/app/build/outputs/apk/debug/app-debug.apk"
 
 ## help: list targets
 help:

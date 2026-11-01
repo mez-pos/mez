@@ -15874,3 +15874,83 @@ Decision:
     names `nofiltr.jskin.in` and is reprinted after pairing to mez Cloud.
 Cost: no relay of the human's own is left to check the relay's guides against (KNOWN); mez
 Cloud's relay is the one there is. The docs that name `relay.jskin.in` stay as history.
+
+## ADR-412 - The tablet app's shell: one WebView, the local network asked for first, nothing backed up
+2026-11 · Status: accepted. Phase 18 Task 2. Follows ADR-409.
+Context: the project Android Studio made held no activity, AppCompat and Material, and a release
+build with R8 off. The app targets SDK 37, and Android 17 keeps an app that targets it off the
+local network until the person allows `ACCESS_LOCAL_NETWORK`, a runtime permission in the Nearby
+devices group. The WebView's traffic inherits the app's grant, and a blocked TCP connection is a
+timeout, not an error a page can read (developer.android.com, "Local network permission", read
+2026-11-02). Older Androids have no such permission: INTERNET covers the LAN.
+Decision:
+  - **One `ComponentActivity`, one WebView**, a platform light theme on the parchment ground.
+    AppCompat and Material are gone: the app draws no native widget. Its libraries are
+    `androidx.activity` (edge to edge, the permission contract), `androidx.core` and
+    `androidx.webkit`.
+  - **The local network is asked for before the PC is opened**, on Android 17 and on only. The
+    app's own page says why first (`start.html#ask`), then Android asks. Refused once: "mez can't
+    reach the PC" and **Ask again**. Refused past asking: "Allow it in Settings", with a button to
+    the app's page there. Which page is `start()` in `Start.kt`, a pure function:
+    `shouldShowRequestPermissionRationale` is false both before the first ask and once Android
+    will not ask again, and a note the app keeps (`asked-local-network`, its one preference)
+    tells the two apart. It is worked out again each time the app comes to the front, so allowing
+    it in Settings and coming back opens the till. One request at a time: a second tap on
+    Continue before Android answers is ignored (Android would refuse it with an empty answer,
+    read as "refused past asking"). A tablet with no Settings to open keeps the page. The words
+    follow Android's: its prompt speaks of "nearby devices", so the page says the PC counts as
+    one.
+  - **The app's pages are served by `WebViewAssetLoader`** at
+    `https://appassets.androidplatform.net/assets/`, an origin nothing on the network answers
+    for. They ask the app for things by `mez-app:` links, which the WebViewClient takes only from
+    that origin; there is no JavaScript bridge. One HTML page, a section per state, shown by
+    `:target`, so it runs no script. Its fonts (the guest's cuts of Fraunces and DM Sans, with
+    their licences) and the mark are copied from `web/shared` at build time, so the repository
+    holds one copy of each.
+  - **Cleartext everywhere, system CAs only**, in a network security config: the PC's address is
+    any private one, and a `domain-config` cannot name a range. Lint's
+    `InsecureBaseConfiguration` is answered in the file (ADR-257; Task 11 is the spike that may
+    end it).
+  - **Nothing backed up or transferred**: `allowBackup="false"`, `fullBackupContent="false"`, and
+    extraction rules that exclude everything from the cloud backup and the device-to-device copy.
+    The WebView's storage holds the device's token (ADR-338); a copy on a second tablet would be
+    a second device under the first one's name.
+  - **The icon is the brand files'**: the paths of `mez-mark.svg`, placed as `mez-app-icon.svg`
+    places them (its 200-unit tile is the 72dp a launcher shows of the 108dp layer), on
+    `--green`, with a monochrome layer for themed icons. minSdk 29 needs no raster mipmaps.
+  - **A debug build opens `-PmezUrl`** (`make android MEZ_URL=...`), by default
+    `http://10.0.2.2:7777/`, the computer an emulator runs on. It is checked when the build is
+    configured: http or https, no spaces or quotes. A release build has no address and shows "No
+    mez PC yet" until Task 4 pairs by scanning.
+  - **Not recreated on a rotation, a keyboard, or a change of density, language, font size or
+    bold text** (`configChanges`): a recreated activity reloads the till mid-order. Edge to edge, the screens are padded clear of
+    the system bars and the keyboard until Task 3 hides the bars.
+  - **The build.** A release has R8 on (279 KB, against 7.3 MB for debug). Lint's warnings are
+    errors, except those that only say a newer version exists: Dependabot raises versions,
+    monthly, for `android-app` too. `make android` is a debug APK, the unit tests and lint. CI
+    runs it in a job of its own with JDK 25 (the Gradle daemon's) and
+    `gradle/actions/setup-gradle` pinned to a commit, which checks the wrapper jar against
+    Gradle's checksums. The unit tests declare `start.html` an input: they read it, and a change
+    to the page must run them again. The copy from `web/shared` fails the build if a font or
+    the mark it names is gone, rather than ship the page without it.
+  - `onRenderProcessGone` is Task 3's. Until then lint's `MissingOnRenderProcessGone` is
+    suppressed, saying so, and a renderer that dies takes the app with it.
+Seen, 2026-11-02, against a demo venue at `10.0.2.2:7777`. On an Android 13 tablet emulator (Pixel
+Tablet, 2560x1600): the till opens at once (13 has no such permission), is paired with a `mez pair`
+code, the owner signs in, a shift is opened, an Espresso added and sent (the server logged pair
+201, session 201, shift 201, order 201, line 200, send 200). The keyboard pushes the till up, Back
+closes the keyboard without leaving, and the launcher shows "mez" with the mark. On an Android 17
+emulator: the page, the prompt, Don't allow to "can't reach the PC", Ask again and Don't allow to
+"Allow it in Settings" (the permission then `USER_FIXED`), Open Settings. Then, its data cleared,
+Continue and Allow: no request reached the PC before Allow, 23 after, and the till's pairing
+screen. After a review, again: Continue tapped twice made one prompt over the right page. The
+Android 17 image aborts in its graphics driver on the developer's PC
+(`hasReadColorBufferDma`) whenever the screen is read back, so those screenshots are of the
+emulator's window, taken from Windows, and Android's own Settings app crashed there the same way.
+Rejected: a JavaScript bridge for the page's buttons, which any page in the WebView could call;
+`file:///android_asset/`, which sits badly with Task 3's "no file access"; asking on every Android
+(the permission does not exist before 17, and Android 16's opt-in used another); NsdManager's
+picker, which spares the permission only for an address it hands out, not one typed or scanned.
+Cost: one preference kept beside the address. The Settings words name stock Android's
+(Permissions, Nearby devices), which a maker's skin may word differently. Android 17 was seen on an
+emulator the developer's GPU driver does not suit; a real Android 17 tablet is the better check.

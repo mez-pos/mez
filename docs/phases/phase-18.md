@@ -20,12 +20,20 @@ project was made (2026-11-01). It is the app's identity for good: Google's
 developer verification registers it, and a tablet treats another id as a
 different app (uninstall, pair again). It does not change.
 
-**The human's, before Task 2:**
+**The human's, before the app goes to the venue** (Task 2 went ahead on
+minSdk 29, as made):
 - **The tablets.** On each of the venue's tablets: the make and model,
   Settings > About tablet > Android version, and Settings > Apps > (show
   system apps) Android System WebView's version, and whether it has the Play
   Store. These set `minSdk` (29, Android 10, as made) and the oldest WebView
   the app accepts.
+
+**Walking the app on the developer's PC** (2026-11-02): the Android 17
+emulator image aborts in its graphics driver whenever the screen is read
+back (ADR-412), so `adb screencap` fails and Android's Settings app crashes
+there. The AVD `mez_tablet_33` (Pixel Tablet, Android 13) walks cleanly;
+`mez_tablet_37` shows the local network permission, photographed from
+Windows. A real tablet is the better check of both.
 
 **The human's, before Task 7:** the release signing key, made once
 (`keytool`), kept out of the repository and backed up where the venue's
@@ -68,7 +76,10 @@ Words in `docs/hardware.md`, `docs/deploy.md` and `docs/releasing.md`.
   kiosk browser as the product are rejected there, with the research that
   rejected them.
 
-- [ ] **Task 2 - The shell builds, as mez.** The project has no activity
+- [x] **Task 2 - The shell builds, as mez.** Done 2026-11-02 (ADR-412), on
+  minSdk 29 as made, before the tablets' versions were read. Seen on an
+  Android 13 tablet emulator (the order sent) and an Android 17 one (the
+  permission's every path); not yet on a real tablet. The project had no activity
   yet (made that way): the app's one activity, holding one `WebView`, in
   the package `com.mezpos.meztablet`. The label "mez" (`app_name`,
   `rootProject.name`), the mez mark as its icon (from `web/`'s, as

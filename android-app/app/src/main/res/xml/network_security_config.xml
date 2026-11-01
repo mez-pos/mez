@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The venue PC serves plain HTTP on the LAN (ADR-257), at whatever private
+     address the router gives it, so cleartext is allowed everywhere: a
+     domain-config cannot name an address range. Only the system's own CAs
+     are trusted; a user-installed CA is not (ADR-409). Lint's warning about
+     it is answered here, and by Task 11's spike on the PC's own certificate. -->
+<network-security-config xmlns:tools="http://schemas.android.com/tools">
+    <base-config
+        cleartextTrafficPermitted="true"
+        tools:ignore="InsecureBaseConfiguration">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

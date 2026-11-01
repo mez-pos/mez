@@ -11,8 +11,9 @@
 `docs/phases/phase-18.md`, opened 2026-11-01 (ADR-409): a native Kotlin
 WebView shell in `android-app/` around the screens the PC serves, so a
 tablet is full screen, awake, back in mez after a reboot, paired by
-scanning and not unpaired by a new address. Task 1 is done. `make check`
-never builds the app.
+scanning and not unpaired by a new address. Tasks 1 and 2 are done.
+`make check` never builds the app; `make android` does (a JDK and the
+Android SDK).
 
 Before it, **Phase 17 - Every screen at the venue's own size**,
 `docs/phases/phase-17.md` (ADR-381 to ADR-408), done 2026-11-01; the
@@ -29,23 +30,33 @@ list below.
 
 ## Last completed task
 
-**Phase 18, Task 1: ADR-409 and the phase**, 2026-11-01. The human
-asked how a tablet should run: an app or a URL? Three researchers found
-that no web-only route works offline on a plain-HTTP LAN (a PWA needs a
-secure origin; public certificates need public DNS; a private CA is a
-warning on every tablet), and that self-hosted projects ship thin native
-WebView apps. ADR-409: a native Kotlin shell in `android-app/`, the
-screens the server's, the browser kept, the iPad on the browser path;
-React Native and Flutter rejected (no screens to share, a second
-runtime). The Android Studio project, made with no activity and the
-human's id `com.mezpos.meztablet`, was committed as made, with `gradlew`
-marked executable.
+**Phase 18, Task 2: the shell builds, as mez**, 2026-11-02 (ADR-412).
+One `ComponentActivity` and one WebView; AppCompat and Material out; the
+label and project "mez"; the mark as an adaptive icon with a themed layer;
+R8 on for release (279 KB); cleartext by a network security config;
+nothing backed up (the WebView holds the device token). Android 17's
+`ACCESS_LOCAL_NETWORK` is asked for before the PC is opened, after the
+app's own page says why, with "can't reach the PC" and "Allow it in
+Settings" for the refusals (`Start.kt`, unit-tested with the page). A
+debug build opens `make android MEZ_URL=...`, by default
+`http://10.0.2.2:7777/`. `make android` (debug APK, unit tests, lint with
+warnings as errors) and its own CI job; Dependabot watches the Gradle
+side. Seen on an Android 13 tablet emulator: paired, signed in, an order
+sent. Seen on an Android 17 one: every path of the permission. Went ahead
+on minSdk 29 before the tablets' versions were read.
 
 ## Next task
 
-**Here: Phase 18 Task 2, the shell builds, as mez**, once the human has
-read the tablets' Android and WebView versions (Open questions). It needs a JDK and the Android SDK
-(Android Studio's), never `make check`.
+**Here: Phase 18 Task 3, a tablet that stays a till**: full screen, the
+screen kept on, Back inside the WebView, the WebView's settings chosen and
+written down, `onRenderProcessGone` (lint's check is suppressed until
+then), "Can't reach the mez PC", and the kitchen chime with no tap. It
+needs a JDK and the Android SDK, never `make check`. **On this PC the
+Android 17 emulator image aborts in its graphics driver** (ADR-412): walk on
+the AVD `mez_tablet_33` (Android 13), and photograph `mez_tablet_37` from
+Windows if Android 17 matters; the chime wants a real tablet. `adb` here
+trusts the key under `D:\AndroidSDK\Android\.android` (`ANDROID_SDK_HOME`),
+not the one in the user folder.
 
 **Out of phase, before the venue's install: the re-run's other two P1s**
 (TBS-20 is fixed), TBS-21 (the approval sheet: scrolled, the cashier
@@ -222,9 +233,11 @@ Still owed from phase 11, its human check and:
 
 ## Open questions for the human
 
-**The venue's tablets** (Phase 18, before Task 2): make, model, Android
-version, Android System WebView's version, Play Store or not. (The app's
-id is answered: `com.mezpos.meztablet`.)
+**The venue's tablets** (Phase 18; Task 2 went ahead on minSdk 29, as
+made): make, model, Android version, Android System WebView's version,
+Play Store or not. They set `minSdk` and the oldest WebView the app
+accepts, and whether Android 17's local network prompt is met at the venue.
+(The app's id is answered: `com.mezpos.meztablet`.)
 
 **Where do the re-run's findings go?** (Phase 17 Task 33, 2026-11-01.)
 3 P1, 20 P2 and 35 P3 are in `docs/design/ui-audit-2026-10-31.md`,
@@ -261,4 +274,4 @@ screen. Migration 00056 gives `menu.edit` to existing managers.
 - [ ] 14 - mez Cloud: the account, the pairing and the switch (this repo's tasks are done; 4d, 7e and 8 are `mez-cloud`'s)
 - [ ] 15 - The owner's WhatsApp (Tasks 1, 3a and 4, this repo's, done: ADR-360 to ADR-362; 3c is this repo's next; 2, 3b, 5 and 6 are `mez-cloud`'s; 7 waits on them)
 - [x] 17 - Every screen at the venue's own size (done 2026-11-01; the re-run's new findings wait, above)
-- [ ] 18 - The mez app for Android tablets (opened 2026-11-01, ADR-409; Task 1 done)
+- [ ] 18 - The mez app for Android tablets (opened 2026-11-01, ADR-409; Tasks 1 and 2 done, ADR-412)

@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Mez Tablet"
+rootProject.name = "mez"
 include(":app")

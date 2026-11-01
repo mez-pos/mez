@@ -1,0 +1,141 @@
+<!doctype html>
+<!--
+  The app's own page (ADR-409): one section per Start page in Start.kt, shown
+  by the address's fragment (start.html#ask) through :target, so it needs no
+  script. Its buttons are mez-app: links, which MainActivity turns into
+  actions. Fonts and the mark are copied from web/shared at build time.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mez</title>
+<style>
+  @font-face {
+    font-family: "Fraunces";
+    src: url("fonts/fraunces-600.woff2") format("woff2");
+    font-weight: 600;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "DM Sans";
+    src: url("fonts/dm-sans-14.woff2") format("woff2");
+    font-weight: 400 700;
+    font-display: swap;
+  }
+
+  /* docs/design/tokens.md: paper. */
+  :root {
+    --parchment: #F8F3E9;
+    --card: #FFFDF8;
+    --hairline: #EAE0D0;
+    --heading: #5B1F1F;
+    --body: #3A2E2A;
+    --body-2: #5F5850;
+    --green: #2F4A2C;
+    --green-press: #24391F;
+    --on-fill: #FFFDF8;
+    --focus-ring: #B9522F;
+    --shadow-card: 0 2px 6px rgba(91, 31, 31, .04), 0 12px 26px rgba(91, 31, 31, .06);
+    --shadow-action: 0 4px 12px rgba(47, 74, 44, .22);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; margin: 0; }
+
+  body {
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: var(--parchment);
+    color: var(--body);
+    font: 400 15px/1.55 "DM Sans", system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  section {
+    display: none;
+    width: 100%;
+    max-width: 32rem;
+    padding: 32px;
+    background: var(--card);
+    border: 1px solid var(--hairline);
+    border-radius: 20px;
+    box-shadow: var(--shadow-card);
+  }
+  section:target { display: block; }
+
+  img { display: block; width: 56px; height: 56px; margin-bottom: 20px; }
+
+  h1 {
+    margin: 0 0 12px;
+    color: var(--heading);
+    font: 600 32px/1.15 "Fraunces", Georgia, serif;
+    letter-spacing: -0.02em;
+  }
+
+  p { margin: 0 0 12px; }
+  p.aside { color: var(--body-2); }
+  strong { font-weight: 700; }
+
+  a.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    margin-top: 12px;
+    padding: 0 28px;
+    border-radius: 999px;
+    background: var(--green);
+    box-shadow: var(--shadow-action);
+    color: var(--on-fill);
+    font-weight: 700;
+    text-decoration: none;
+  }
+  a.button:active { background: var(--green-press); }
+  a.button:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+</style>
+</head>
+<body>
+
+<section id="ask">
+  <img src="brand/mez-mark.svg" alt="">
+  <h1>mez needs the venue's wifi</h1>
+  <p>The till and the kitchen display come from the mez PC, over this
+    venue's wifi. Android counts the PC as a nearby device, and asks before
+    an app may connect to one.</p>
+  <p>On the next screen, choose <strong>Allow</strong>. mez uses it to reach
+    the PC, and for nothing else.</p>
+  <a class="button" href="mez-app:ask">Continue</a>
+</section>
+
+<section id="refused">
+  <img src="brand/mez-mark.svg" alt="">
+  <h1>mez can't reach the PC</h1>
+  <p>Without this permission, Android keeps mez off the venue's wifi and
+    the till cannot open.</p>
+  <p class="aside">mez uses it to reach the mez PC, and for nothing else.</p>
+  <a class="button" href="mez-app:ask">Ask again</a>
+</section>
+
+<section id="settings">
+  <img src="brand/mez-mark.svg" alt="">
+  <h1>Allow it in Settings</h1>
+  <p>mez can't reach the PC without it, and Android won't ask again from
+    here. In Settings, open <strong>Permissions</strong>, then
+    <strong>Nearby devices</strong>, and choose <strong>Allow</strong>.
+    Then come back to mez.</p>
+  <a class="button" href="mez-app:settings">Open Settings</a>
+</section>
+
+<section id="no-address">
+  <img src="brand/mez-mark.svg" alt="">
+  <h1>No mez PC yet</h1>
+  <p>This build of the app has no address for the mez PC. Pairing by
+    scanning the code on the PC's Devices page comes in a later version.</p>
+  <p class="aside">Until then, open the till in this tablet's browser.</p>
+</section>
+
+</body>
+</html>
