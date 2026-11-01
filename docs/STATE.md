@@ -7,16 +7,17 @@
 
 ## Current phase
 
-**Phase 17 - Every screen at the venue's own size**,
-`docs/phases/phase-17.md`, opened 2026-10-31 (ADR-381): the fixes from
-the UI audit (`docs/design/ui-audit-2026-10-31.md`). Tasks 1 and 4 to
-12 are done: at the human's word the device-fit pass came first, built
-and seen at 1024x768, 1366x768 and 1920x1080 on 2026-10-31 (ADR-381,
-ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s,
-Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 33 (ADR-384 to ADR-408; ADR-400 was out of phase): the phase is done, 2026-11-01. It runs before Phase 16, which is mostly
-`mez-cloud`'s.
+**Phase 18 - The mez app for Android tablets**,
+`docs/phases/phase-18.md`, opened 2026-11-01 (ADR-409): a native Kotlin
+WebView shell in `android-app/` around the screens the PC serves, so a
+tablet is full screen, awake, back in mez after a reboot, paired by
+scanning and not unpaired by a new address. Task 1 is done. `make check`
+never builds the app.
 
-Before it, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
+Before it, **Phase 17 - Every screen at the venue's own size**,
+`docs/phases/phase-17.md` (ADR-381 to ADR-408), done 2026-11-01; the
+re-run's new findings wait (Open questions). Phase 16 is mostly
+`mez-cloud`'s. Before them, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
 2026-10-22. Seven tasks; Task 1 (the ADR) and Task 4 (the health summary
 over the relay connection) are this repo's, Task 7 is words in both, and
 Tasks 2, 3, 5 and 6 are `mez-cloud`'s. Phase 14's tasks that were this
@@ -28,22 +29,26 @@ list below.
 
 ## Last completed task
 
-**TBS-20, the waiter's payment**, 2026-11-01, after Phase 17. The
-waiter's bill let go of a payment by calling itself
-(`releaseUnsettled`, a find-and-replace in 2724b4ca, ADR-376): every
-recorded payment threw "Maximum call stack size exceeded", which is no
-refusal, so the share was then held as "may have been recorded" and its
-check threw again. One share showed the error over "Paid in full"; on a
-split the next share could not be taken. The pay screen and the waiter's
-bill now share one hold, `unsettledHold` in
-`terminal/src/tender/unsettled-store.ts`, tested there. Walked on a demo
-venue at 1024: the old build stuck on Guest 2, the fixed one took a split
-by UPI and cash to "Paid in full" and closed the table; a till card
-payment as well. The Windows installer is built again from this commit.
+**Phase 18, Task 1: ADR-409 and the phase**, 2026-11-01. The human
+asked how a tablet should run: an app or a URL? Three researchers found
+that no web-only route works offline on a plain-HTTP LAN (a PWA needs a
+secure origin; public certificates need public DNS; a private CA is a
+warning on every tablet), and that self-hosted projects ship thin native
+WebView apps. ADR-409: a native Kotlin shell in `android-app/`, the
+screens the server's, the browser kept, the iPad on the browser path;
+React Native and Flutter rejected (no screens to share, a second
+runtime). The Android Studio project, made with no activity and the
+human's id `com.mezpos.meztablet`, was committed as made, with `gradlew`
+marked executable.
 
 ## Next task
 
-**Here: the re-run's other two P1s** (TBS-20 is fixed), TBS-21 (the approval sheet: scrolled, the cashier
+**Here: Phase 18 Task 2, the shell builds, as mez**, once the human has
+read the tablets' Android and WebView versions (Open questions). It needs a JDK and the Android SDK
+(Android Studio's), never `make check`.
+
+**Out of phase, before the venue's install: the re-run's other two P1s**
+(TBS-20 is fixed), TBS-21 (the approval sheet: scrolled, the cashier
 chosen, the waiter and kitchen listed) with TILL-26, and TILL-25 (a
 percentage discount keyed from the right, the approval never restating
 it). The 20 P2s and 35 P3s wait on the human (Open questions). Phase 17 is
@@ -216,6 +221,10 @@ Still owed from phase 11, its human check and:
 
 ## Open questions for the human
 
+**The venue's tablets** (Phase 18, before Task 2): make, model, Android
+version, Android System WebView's version, Play Store or not. (The app's
+id is answered: `com.mezpos.meztablet`.)
+
 **Where do the re-run's findings go?** (Phase 17 Task 33, 2026-11-01.)
 3 P1, 20 P2 and 35 P3 are in `docs/design/ui-audit-2026-10-31.md`,
 "Re-run, 2026-11-01". The P1s are put next above. For the rest: tasks
@@ -251,3 +260,4 @@ screen. Migration 00056 gives `menu.edit` to existing managers.
 - [ ] 14 - mez Cloud: the account, the pairing and the switch (this repo's tasks are done; 4d, 7e and 8 are `mez-cloud`'s)
 - [ ] 15 - The owner's WhatsApp (Tasks 1, 3a and 4, this repo's, done: ADR-360 to ADR-362; 3c is this repo's next; 2, 3b, 5 and 6 are `mez-cloud`'s; 7 waits on them)
 - [x] 17 - Every screen at the venue's own size (done 2026-11-01; the re-run's new findings wait, above)
+- [ ] 18 - The mez app for Android tablets (opened 2026-11-01, ADR-409; Task 1 done)

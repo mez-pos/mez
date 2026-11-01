@@ -8,6 +8,19 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**TBS-20, the waiter's payment**, 2026-11-01, after Phase 17. The
+waiter's bill let go of a payment by calling itself
+(`releaseUnsettled`, a find-and-replace in 2724b4ca, ADR-376): every
+recorded payment threw "Maximum call stack size exceeded", which is no
+refusal, so the share was then held as "may have been recorded" and its
+check threw again. One share showed the error over "Paid in full"; on a
+split the next share could not be taken. The pay screen and the waiter's
+bill now share one hold, `unsettledHold` in
+`terminal/src/tender/unsettled-store.ts`, tested there. Walked on a demo
+venue at 1024: the old build stuck on Guest 2, the fixed one took a split
+by UPI and cash to "Paid in full" and closed the table; a till card
+payment as well. The Windows installer is built again from this commit.
+
 **Phase 17, Task 33: the audit again**, 2026-11-01, which ends Phase 17.
 The 2026-10-31 audit re-run by its method: seven reviewers, one demo venue
 each, about 940 screenshots at 1366, 1024 and 1920 (390 for the guest).

@@ -15713,3 +15713,98 @@ warm, is as whole as before, upgrade or not.
 Cost: the till fetches twice at boot (its own files, then the warm), about
 100 ms apart on a LAN. A screen opened before the warm has it, whose fetch then
 fails, shows the region's error; Try again within its first second shows it again.
+
+## ADR-409 - The tablets get an app: a native Android shell around the screens the PC serves
+2026-11 · Status: accepted. Phase 18 Task 1.
+Context: a tablet today is a browser tab opened on the PC's address and paired
+there (ADR-338, ADR-367). It works, and it is a tab: the address bar shows, the
+screen sleeps, the kitchen chime waits for a tap after every load
+(`kitchen/use-chime.ts`), a reboot leaves the tablet on Android's home screen,
+and staff can wander into other apps. A new address from the router is a new
+origin, so its localStorage, and with it the device's pairing, is gone
+(ADR-338). An installed web app (a PWA) would answer most of this, and it needs
+a secure origin, which mez on the LAN is not: it serves plain HTTP (ADR-257).
+The human asked, 2026-11-01: an app, or a URL opened by hand? Three researchers
+found:
+  - On Android, Chrome's "Add to Home screen" over HTTP makes a shortcut that
+    opens a normal tab, address bar and all (read in Chromium's source).
+    Installing needs a secure origin.
+  - HTTPS on a LAN needs a public certificate under a public name (Plex's
+    `*.plex.direct`, TrueNAS Connect, Odoo's IoT box) or a private CA on every
+    device. The first needs public DNS, which fails offline within a day
+    (TTLs; routers rarely serve stale), is refused by many routers' rebind
+    protection, and its certificates expire offline (200 days now, 100 from
+    2027, 47 by 2029; Plex itself falls back to plain HTTP offline). The second
+    is a CA installed by hand past a warning on every tablet (Android 11 and
+    on), and an app's WebView ignores user CAs unless the app opts in.
+  - Chrome's flag that treats an insecure origin as secure is set by hand on
+    each tablet.
+  - The screens on mez Cloud over HTTPS, reaching the PC through Chrome's Local
+    Network Access: Chrome only, a prompt on each tablet, CORS on the PC, no
+    Safari, and the screens then come from the internet.
+  - iPadOS 26 opens every Home Screen site as a web app; with Guided Access and
+    Auto-Lock at Never an iPad is a kiosk without an app (unseen over HTTP).
+  - Self-hosted projects with the same problem ship thin native apps that allow
+    plain HTTP: Home Assistant's and Jellyfin's Android apps are Kotlin WebView
+    shells, on Play and F-Droid.
+The venue's tablets are Android; their models and versions are not read yet.
+Decision:
+  - **An Android app, in Kotlin, native.** A WebView shows the screens the
+    venue PC serves, as a browser does today. The app adds what a tab cannot:
+    full screen; the screen kept on; the chime without a tap
+    (`setMediaPlaybackRequiresUserGesture(false)`); the tablet's home app, so a
+    reboot comes back to mez; lock task mode where the app is the device
+    owner; pairing by scanning the QR the Devices page already draws
+    (ADR-367); and finding the PC again when its address changes, without
+    pairing again.
+  - **The screens stay the server's.** The app draws none of mez's screens.
+    Its only pages of its own (first run, "Can't reach the mez PC") are HTML in
+    its assets, in the tokens of `docs/design/tokens.md`. A new mez on the PC
+    is a new till on every tablet the moment it reloads; the app changes
+    rarely.
+  - **In this repository, `android-app/`**, made by Android Studio on
+    2026-11-01 with no activity: the id `com.mezpos.meztablet` (the human's,
+    under the product's domain, ADR-313), AGP 9.3.3, Gradle 9.5.0, compileSdk
+    and targetSdk 37, minSdk 29, AppCompat and Material, no Compose. Kotlin is
+    a third language here, beside Go and TypeScript, in that folder only.
+  - **`make check` and the Go build never need Java, Gradle or the Android
+    SDK.** The app builds with `make android` and in its own CI job. A mez
+    built without the app boots and serves every screen.
+  - **The browser stays a way in.** A tablet or phone in a browser works
+    exactly as now, and the web app never requires the app. An iPad uses the
+    browser: Add to Home Screen, Guided Access, Auto-Lock at Never; the server
+    gains a manifest and icons for that path.
+  - **No Google account, no Play services, no internet** at install, at
+    pairing or in service. The venue PC serves the app; the Play Store may
+    come later.
+  - **The LAN stays plain HTTP for now.** The app can later trust the venue
+    PC's own certificate by its fingerprint, carried in the pairing QR, with no
+    CA and no DNS. Phase 18 ends with a spike on a tablet; the build is a later
+    phase if the spike holds.
+Rejected:
+  - React Native and Flutter. Their gain is screens written once for Android
+    and iOS, and this app has no screens to write. What is left is Android's
+    own (the home app, lock task, discovery, the camera, the certificate):
+    plugins or Kotlin either way, under a second runtime that a kitchen tablet
+    would carry all day beside the WebView's. The iPad would share nothing:
+    its path is settings, not an app.
+  - Capacitor and a Trusted Web Activity. Capacitor's remote `server.url` is
+    "not intended for production" by its own docs; a TWA needs HTTPS and
+    Digital Asset Links.
+  - A PWA over public certificates, a private CA, Chrome's flag, and Local
+    Network Access: above.
+  - A kiosk browser (Fully Kiosk, FreeKiosk) as the product: someone else's app
+    on every till, and the address change still costs a pairing. It is the
+    stopgap until the app is built, and is written up as one.
+  - An iOS app: the App Store's review (a wrapped site, guideline 4.2), $99 a
+    year, and the browser covers the iPad.
+Because: a till that sleeps, shows an address bar and forgets its pairing when
+the router restarts is not one a cafe can run on, and every web-only fix fails
+the first invariant: offline is the default.
+Cost: a third language and a toolchain (a JDK, Gradle, the Android SDK) for one
+folder. A signing key that must never be lost: an app installed from a file
+updates only under the same key, so a lost key means every tablet uninstalls
+and pairs again. Google's developer verification (enforced in four countries
+since 2026-09-30, the rest of the world from 2027; India's date not announced):
+the human registers ($25) before it arrives. An app version beside the
+server's, and tablets updated by hand or by the app.
