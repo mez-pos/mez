@@ -15,7 +15,9 @@ computer and must keep selling with no internet connection.
 4. Run `make check` (fmt, vet, test, build). It must pass.
 5. Update `docs/STATE.md`: tick the task, set the next one, note anything broken.
 6. Append to `docs/DECISIONS.md` if you made a non-obvious choice.
-7. Commit: `phase-N/task-M: short description`.
+7. Commit: `phase-N/task-M: short description`. The subject stays under
+   72 characters; everything else goes in the body. Release notes are made
+   from subjects (ADR-410).
 8. Stop. End the session.
 
 If a task turns out to be larger than one session: **do not push through.**

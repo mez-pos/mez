@@ -15808,3 +15808,42 @@ and pairs again. Google's developer verification (enforced in four countries
 since 2026-09-30, the rest of the world from 2027; India's date not announced):
 the human registers ($25) before it arrives. An app version beside the
 server's, and tablets updated by hand or by the app.
+
+## ADR-410 - Versions, tags and build numbers, and who the commits are credited to
+2026-11 · Status: accepted, at the human's word on 2026-11-01. Follows ADR-380 and `docs/releasing.md`.
+Context: before the Android app, the human asked for the repository to be put in order: GitHub
+credited every commit to the `mezpos` account and not to him, CI on `main` had failed since
+2026-10-20, and the tags were uneven. What was there: `v0.1.0-alpha.1` lost in the history
+rewrite of 2026-10-20 (it is named in ADR-380 and nowhere else); `v0.1.0-alpha.2` to `.4`
+pushed, as plain tags; `v0.2.0-beta.1` annotated and on the human's machine only; `main` 34
+commits past it. GitHub credits a commit to whichever account has its author's email verified,
+and every commit is `Joel Lobo <mezposindia@gmail.com>`, the address the `mezpos` account had.
+Commit subjects had grown to paragraphs: 105 of 502 over 100 characters, the last twenty about
+540 on average, and the release notes are the subjects since the last tag.
+Decision:
+  - **Credit without a rewrite.** On 2026-11-01 the human moved `mezposindia@gmail.com` from
+    the `mezpos` account (now `mezposindia+github@gmail.com`) to his own, `byjoellobo`, and
+    made `byjoellobo` an owner of the `mez-pos` organization. Every commit, in both repositories,
+    is credited to him with no commit id changed. The history is not rewritten again: the
+    installers name commits (`v0.2.0-beta.1-32-g5013efb4`), and so do the docs.
+  - **A version is SemVer**, `vMAJOR.MINOR.PATCH`, with `-alpha.N`, `-beta.N` or `-rc.N` before
+    a release. The stages are ADR-380's: alpha is what only the human runs, beta what a venue he
+    can stand beside runs, `v1.0.0` when ADR-380's three conditions are met.
+  - **A tag is a build that left the developer's PC**: an installer given to a venue, or a
+    release. It is annotated (`git tag -a v0.2.0-beta.2 -m "..."`), made on a commit whose CI
+    passed, and once pushed or installed never moved or deleted; a wrong one is replaced by the
+    next. Phases are not tagged: their names are in the subjects (`git log --grep phase-12`).
+    `v0.1.0-alpha.1` is not made again by guessing where it was.
+  - **The build number is the commit count of `main`**, `git rev-list --count HEAD` (502 on
+    2026-11-01). It only grows while `main` only moves forward: no force-push, no rewrite. The
+    build's full name stays `git describe`'s, as the Makefile already stamps it.
+  - **The Android app carries the PC's version**: `versionName` is `git describe` of the commit
+    it is built from and `versionCode` the commit count, so a tablet's app and the PC it pairs
+    with are named by the same tag. Wired in Phase 18 (Task 7).
+  - **A commit subject is under 72 characters**, `phase-N/task-M: what changed`, and the rest is
+    the body.
+Because: a release that cannot be traced to one commit, or an app whose number cannot be lined up
+with the server's, is the question a venue's bad day starts with; and the human, not a company
+account, is the one who built this.
+Cost: `mezposindia@gmail.com` is verified on a personal account; the company's account has an
+alias. Older subjects stay long, and a release's notes are trimmed by hand in its draft.

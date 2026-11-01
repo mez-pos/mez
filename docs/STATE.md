@@ -156,17 +156,19 @@ installer, and Task 4's walk on a real phone over mobile data.
 Still owed from before, in the order that unblocks the most:
 1. **The drawer.** `mez --test-print <ip> -drawer`, then a cash sale; no
    drawer was at the venue on 2026-10-08 (`hardware.md`, ADR-282).
-2. **A release.** `v0.2.0-beta.1` is tagged locally at ADR-380's commit
-   (2026-10-26, **not pushed**) and built: `dist/` has the four binaries
-   and the Windows installer. `v0.1.0-alpha.4` (2026-10-08) is the last
-   tag pushed.
-   **The repository is github.com/mez-pos/mez since 2026-10-20**, private,
-   its history rewritten (every commit id changed). Its tags were pushed
-   there that day, which started the release workflow three times; all
-   three were cancelled before anything was published, and **the Release
-   workflow is disabled** in that repository until a release is decided
-   (`gh workflow enable Release -R mez-pos/mez`). Pushing a tag publishes a
-   Docker image and a release (`docs/releasing.md`). `main` is pushed.
+2. **A release.** `v0.2.0-beta.1` (ADR-380's commit, 2026-10-26) is
+   pushed since 2026-11-01. **The Release workflow is disabled** in
+   mez-pos/mez, so pushing it ran nothing; enable it
+   (`gh workflow enable Release -R mez-pos/mez`) only when a release is
+   decided, as a pushed tag then publishes a Docker image and a draft
+   (`docs/releasing.md`). The next tag is `v0.2.0-beta.2`, on a green
+   `main`, the workflow's first real run (ADR-410: tags, build numbers,
+   short subjects). **The repository is github.com/mez-pos/mez**, private,
+   its history rewritten on 2026-10-20 and not to be rewritten again. Since
+   2026-11-01 its commits are credited to `byjoellobo` (the email moved, no
+   rewrite) and CI on `main` passes on Linux again: three tests that failed
+   by chance, and a race in the backup's probe that took a first copy
+   landing mid-look for a lost destination.
 3. **Phase 12's "done when"**: a clean Windows machine, the downloaded
    installer, a first printed invoice in under ten minutes.
 4. The human checks phases 09 to 11 owe, and the questions below.
@@ -220,6 +222,14 @@ Still owed from phase 11, its human check and:
   1200 a minute per venue is under what a full room's phones ask (ADR-246).
 
 ## Open questions for the human
+
+**Before the repository goes public** (2026-11-01): a scan of every commit
+found no secrets (22 hits, all test values). `build/relay/README.md` showed
+two relay keys for key id `fdbb6a9c35fc` (added 2026-10-07, after
+`relay.jskin.in` went live); they are replaced by fakes, and stay in the
+history. Either retire `relay.jskin.in` (item 5 above) or revoke that key
+id on it. The docs (prices, the venue's name, the cloud's domains) go
+public with the code.
 
 **The venue's tablets** (Phase 18, before Task 2): make, model, Android
 version, Android System WebView's version, Play Store or not. (The app's
