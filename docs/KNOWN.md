@@ -10,6 +10,15 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The audit re-run** (Phase 17 Task 33; 2026-11-01). Broken, found by it:
+  every waiter payment ends on "Maximum call stack size exceeded" though it
+  is recorded (TBS-20, WaiterBill.tsx:126-129, in v0.2.0-beta.1); a
+  refund's approval opens scrolled with the cashier chosen (TBS-21,
+  TILL-26); a percentage discount is keyed from the right and its approval
+  does not restate it (TILL-25). 55 more, and what each screen still owes
+  of the first audit, are in `docs/design/ui-audit-2026-10-31.md`,
+  "Re-run, 2026-11-01", with what the re-run did not see.
+
 - **The terminal in parts** (ADR-408, Phase 17 Task 32; 2026-11-01). Seen in
   a scripted Chromium on a demo venue at 1366 and 1024: the till's boot (its
   own files, then the warm about 100 ms later); with every script fetch

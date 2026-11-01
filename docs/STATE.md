@@ -13,7 +13,7 @@ the UI audit (`docs/design/ui-audit-2026-10-31.md`). Tasks 1 and 4 to
 12 are done: at the human's word the device-fit pass came first, built
 and seen at 1024x768, 1366x768 and 1920x1080 on 2026-10-31 (ADR-381,
 ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s,
-Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 32 (ADR-384 to ADR-408; ADR-400 was out of phase). It runs before Phase 16, which is mostly
+Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 33 (ADR-384 to ADR-408; ADR-400 was out of phase): the phase is done, 2026-11-01. It runs before Phase 16, which is mostly
 `mez-cloud`'s.
 
 Before it, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
@@ -28,19 +28,29 @@ list below.
 
 ## Last completed task
 
-**Phase 17, Task 32: the terminal in parts** (TECH-25, ADR-408), 2026-11-01.
-Boot fetches the till or the kitchen display, never both: the kitchen
-parses 92.8 KB gzipped of script before its first screen, where it parsed
-the whole till (198 KB); the till 161 KB. Pay, the shift's screens, the
-waiter's and the cook's board are fetched apart and warmed once the till is
-idle, so they draw at once and survive an upgrade under an open till.
-`terminal/src/shell/lazy-screen.ts`; a test reads the imports, and `npm run
-size` prints each device's part. Walked on a demo venue at 1366 and 1024.
+**Phase 17, Task 33: the audit again**, 2026-11-01, which ends Phase 17.
+The 2026-10-31 audit re-run by its method: seven reviewers, one demo venue
+each, about 940 screenshots at 1366, 1024 and 1920 (390 for the guest).
+Every surface is Good now: till 28/40 (was 23), tables and waiter 28 (23),
+kitchen 28 (22), back office 30 (25), guest 31 (28), setup 34 (32),
+technical 17/20 (13). Of the old 128 entries 112 are fixed, 14 in part, 2
+not seen; 58 new, 3 of them P1. All of it is in the audit file, "Re-run,
+2026-11-01"; the scores in the phase file.
 
 ## Next task
 
-**Here: Phase 17 Task 33, the audit again**, same walk and sizes, the
-scores in the phase file; Tasks 1 to 32 are done. Each screen is checked by eye at
+**Here, first: TBS-20, before the venue's install.** Every waiter payment
+ends on "Maximum call stack size exceeded": `releaseUnsettled` in
+`web/terminal/src/waiter/WaiterBill.tsx:126-129` calls itself, where it
+means to clear the unsettled state (`setUnsettled(null)`, beside
+`clearUnsettled`). The payment is recorded; the screen says it failed. It
+came with 2724b4ca (ADR-376), so it is in the v0.2.0-beta.1 installer
+waiting for the venue: fix it, then build the installer again. Then the
+re-run's other two P1s, TBS-21 (the approval sheet: scrolled, the cashier
+chosen, the waiter and kitchen listed) with TILL-26, and TILL-25 (a
+percentage discount keyed from the right, the approval never restating
+it). The 20 P2s and 35 P3s wait on the human (Open questions). Phase 17 is
+done; Phase 16 is mostly `mez-cloud`'s. Each screen is checked by eye at
 1024x768 and 1366x768 before it is ticked: the audit's walk (a demo venue
 from `mez setup -demo-menu` in a scratch data directory, a scripted
 Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel
@@ -205,7 +215,12 @@ Still owed from phase 11, its human check and:
 
 ## Open questions for the human
 
-None is open. The fourteen that stood here were answered on 2026-10-13
+**Where do the re-run's findings go?** (Phase 17 Task 33, 2026-11-01.)
+3 P1, 20 P2 and 35 P3 are in `docs/design/ui-audit-2026-10-31.md`,
+"Re-run, 2026-11-01". The P1s are put next above. For the rest: tasks
+added to Phase 17, a new phase before Phase 16, or after it.
+
+None other is open. The fourteen that stood here were answered on 2026-10-13
 (ADR-341 for where `mez-cloud` lives, ADR-342 for the rest). Two answers
 wait on the human's accountant before anything is published or built on
 them: prices shown before GST, and a restore skipping invoice numbers
@@ -234,3 +249,4 @@ screen. Migration 00056 gives `menu.edit` to existing managers.
 - [ ] 13 - The back office from anywhere (built; owes its human check)
 - [ ] 14 - mez Cloud: the account, the pairing and the switch (this repo's tasks are done; 4d, 7e and 8 are `mez-cloud`'s)
 - [ ] 15 - The owner's WhatsApp (Tasks 1, 3a and 4, this repo's, done: ADR-360 to ADR-362; 3c is this repo's next; 2, 3b, 5 and 6 are `mez-cloud`'s; 7 waits on them)
+- [x] 17 - Every screen at the venue's own size (done 2026-11-01; the re-run's new findings wait, above)

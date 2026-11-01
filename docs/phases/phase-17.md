@@ -229,5 +229,24 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
 - [x] **Task 32 - Split the terminal bundle (TECH-25).** Done 2026-11-01 (ADR-408).
   Boot fetches the till or the kitchen display, not both; the till fetches
   pay, the shift's screens, the waiter's and the cook's board while idle.
-- [ ] **Task 33 - The audit again**, same walk and sizes; the scores go in
-  this file.
+- [x] **Task 33 - The audit again**, same walk and sizes; the scores go in
+  this file. Done 2026-11-01: seven reviewers, about 940 screenshots; the
+  method, every old finding's state and the new ones are in
+  `docs/design/ui-audit-2026-10-31.md`, "Re-run, 2026-11-01".
+
+  | Surface | 2026-10-31 | 2026-11-01 |
+  |---|---|---|
+  | Till: lock, register, tender, invoice | 23/40 | 28/40 |
+  | Till: tables, history, close of day, waiter | 23/40 | 28/40 |
+  | Kitchen display | 22/40 | 28/40 |
+  | Back office | 25/40 | 30/40 |
+  | Guest app | 28/40 | 31/40 |
+  | Setup wizard | 32/40 | 34/40 |
+  | Technical | 13/20 | 17/20 |
+
+  Every surface is in the Good band now; four were Acceptable. Of the first
+  audit's 128 entries, 112 are fixed, 14 in part and 2 not seen (fixed in
+  code); none is open as it was found. New: 58 entries, 3 P1 (TBS-20, the
+  waiter's payment ending on an error, which is in v0.2.0-beta.1; TBS-21
+  and TILL-25, the approval sheet and a percentage discount), 20 P2 and
+  35 P3. The phase is done; where they go is the human's to choose.

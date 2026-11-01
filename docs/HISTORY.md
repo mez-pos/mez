@@ -8,6 +8,15 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 32: the terminal in parts** (TECH-25, ADR-408), 2026-11-01.
+Boot fetches the till or the kitchen display, never both: the kitchen
+parses 92.8 KB gzipped of script before its first screen, where it parsed
+the whole till (198 KB); the till 161 KB. Pay, the shift's screens, the
+waiter's and the cook's board are fetched apart and warmed once the till is
+idle, so they draw at once and survive an upgrade under an open till.
+`terminal/src/shell/lazy-screen.ts`; a test reads the imports, and `npm run
+size` prints each device's part. Walked on a demo venue at 1366 and 1024.
+
 **Phase 17, Task 31d: one casing** (TECH-24, ADR-407), 2026-11-01, which
 ends Task 31. Every label and heading is in sentence case ("Send to
 kitchen", "Split bill", "Floor plan", "Staff login" and about 30 more); the
