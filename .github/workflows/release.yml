@@ -174,10 +174,16 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      # Ours by name, not every artifact of the run: the Docker build saves a
+      # record of its own (a .dockerbuild file) that is not for venues.
       - uses: actions/download-artifact@v8
         with:
+          name: binaries
           path: dist
-          merge-multiple: true
+      - uses: actions/download-artifact@v8
+        with:
+          name: installer
+          path: dist
       # The files a Linux or Docker venue needs beside the binary.
       - run: cp build/mez.service build/docker-compose.yml dist/
       - run: sh build/release.sh checksums dist "${GITHUB_REF_NAME}"

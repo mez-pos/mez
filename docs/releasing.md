@@ -60,6 +60,7 @@ The rules (ADR-410):
 | `v0.1.0-alpha.1` | gone | Lost in the history rewrite of 2026-10-20; not made again |
 | `v0.1.0-alpha.2` to `.4` | GitHub | 2026-10-07 and 08, plain tags |
 | `v0.2.0-beta.1` | GitHub | 2026-10-26, the first beta (ADR-380) |
+| `v0.2.0-beta.2` | GitHub | 2026-11-02, Phase 17; the workflow's first run. A draft until the venue's walk passes on its installer |
 
 ## What the workflow does
 

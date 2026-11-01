@@ -60,11 +60,9 @@ breakpoint never shares a property with `xl:` or `short:`.
 
 **The human's, at the venue:** the walk of ADR-366 and ADR-367 on the venue PC (the first
 item in `KNOWN.md`): the installer is
-`dist/mez_v0.2.0-beta.1-32-g<commit>_windows_amd64_setup.exe`, built
-2026-11-01 from the TBS-20 fix with all of Phase 17 in it, untagged
-(`git describe` names it). Not `mez_v0.2.0-beta.1_windows_amd64_setup.exe`
-(ADR-380, the beta tag, 2026-10-26), which has TBS-20 and none of Phase 17,
-nor the untagged `-16-gc21c4389` one of 2026-10-31, which has TBS-20 too.
+`mez_v0.2.0-beta.2_windows_amd64_setup.exe`, from the draft release of
+2026-11-02 (all of Phase 17, the waiter's payment fix). Not beta.1's, which
+has none of Phase 17 and fails every waiter payment, nor any untagged one.
 Install it over the old one
 (no uninstall: `C:\ProgramData\mez` and `config.toml` are kept), take
 `relay_url`, `relay_key` and `public_url` out of
@@ -151,14 +149,19 @@ phone over mobile data, is now made through mez Cloud.
 Still owed from before, in the order that unblocks the most:
 1. **The drawer.** `mez --test-print <ip> -drawer`, then a cash sale; no
    drawer was at the venue on 2026-10-08 (`hardware.md`, ADR-282).
-2. **A release.** `v0.2.0-beta.1` (ADR-380's commit, 2026-10-26) is
-   pushed since 2026-11-01. **The Release workflow is disabled** in
-   mez-pos/mez, so pushing it ran nothing; enable it
-   (`gh workflow enable Release -R mez-pos/mez`) only when a release is
-   decided, as a pushed tag then publishes a Docker image and a draft
-   (`docs/releasing.md`). The next tag is `v0.2.0-beta.2`, on a green
-   `main`, the workflow's first real run (ADR-410: tags, build numbers,
-   short subjects). **The repository is github.com/mez-pos/mez**, private,
+2. **Publishing `v0.2.0-beta.2`.** Tagged 2026-11-02 on `1e76ca26`
+   (build 508), the Release workflow's first run: all five jobs green in
+   seven minutes, a draft pre-release with the builds, the installer,
+   `mez.service`, `docker-compose.yml` and the checksums (checked), and
+   `ghcr.io/mez-pos/mez:0.2.0-beta.2`. Its notes are cut to a summary
+   (ADR-410). The human publishes it once the venue's walk passes on its
+   installer, and first makes the image's package public under
+   **Packages** (it starts private; an anonymous pull is refused). The run
+   put the Docker build's own record (`.dockerbuild`) in the release; it
+   was taken out of the draft and its checksums by hand, and the workflow
+   now downloads its two artifacts by name. **The Release workflow is
+   enabled**: a pushed tag publishes an image and a draft. **The
+   repository is github.com/mez-pos/mez**, public since 2026-11-02,
    its history rewritten on 2026-10-20 and not to be rewritten again. Since
    2026-11-01 its commits are credited to `byjoellobo` (the email moved, no
    rewrite) and CI on `main` passes on Linux again: three tests that failed
@@ -218,14 +221,6 @@ Still owed from phase 11, its human check and:
   1200 a minute per venue is under what a full room's phones ask (ADR-246).
 
 ## Open questions for the human
-
-**Before the repository goes public** (2026-11-01): a scan of every commit
-found no secrets (22 hits, all test values). `build/relay/README.md` showed
-two relay keys for key id `fdbb6a9c35fc` (added 2026-10-07, after
-`relay.jskin.in` went live); they are replaced by fakes, and stay in the
-history, and are dead: `relay.jskin.in` is retired and its secret
-deleted (ADR-411, 2026-11-02). The docs (prices, the venue's name, the
-cloud's domains) go public with the code.
 
 **The venue's tablets** (Phase 18, before Task 2): make, model, Android
 version, Android System WebView's version, Play Store or not. (The app's
