@@ -479,7 +479,7 @@
 - **The relay's guides** (ADR-284; phase 12 Task 7d; `deploy.md`,
   "Guests ordering from their phones"; `build/relay/README.md`). Checked
   against the code, the relay's binary and two answers from
-  `relay.jskin.in`. **Not done for it**: a venue set up by following the
+  `relay.jskin.in` (retired since, ADR-411). **Not done for it**: a venue set up by following the
   new section from nothing; the three settings through the compose file
   or `/etc/mez/mez.env`. On an installed Windows venue the key sits in
   `C:\Program Files\mez\config.toml`, which every account on the PC can

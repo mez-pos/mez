@@ -68,7 +68,8 @@ nor the untagged `-16-gc21c4389` one of 2026-10-31, which has TBS-20 too.
 Install it over the old one
 (no uninstall: `C:\ProgramData\mez` and `config.toml` are kept), take
 `relay_url`, `relay_key` and `public_url` out of
-`C:\Program Files\mez\config.toml` so the venue leaves relay.jskin.in,
+`C:\Program Files\mez\config.toml` (relay.jskin.in is gone since
+2026-11-02, ADR-411; until then the PC retries it once a minute, harmless),
 restart the PC, click the shortcut, then pair the venue to mez Cloud with
 a code from app.mezpos.com (the venue `nofiltr`, so
 `nofiltr.mezpos.com`; Devices, **Connect to mez Cloud**), then the walks
@@ -138,20 +139,14 @@ ADR-324 how it is presented and what is sent after. To
 walk pairing: `RELAY_SECRET=... bin/relay`, `go run
 ./build/dev/pairstub`, and `bin/mez -cloud-url http://127.0.0.1:7802`.
 
-**The live relay** needs redeploying only if entitlements are wanted on
-it: with `RELAY_ENTITLEMENTS` unset it carries every key, as before. A
-venue must run this build or later to show where it stands.
-
-**The live relay's venues are safe to give a `--remote` key now**: the
-venue's binary must be one built from this commit or later, since the
-stricter sign-in is the venue's and not the relay's.
-
-**Before or beside it, the human's:** the live relay at relay.jskin.in was
-deployed with Phase 13 on 2026-10-08 (`v0.1.0-alpha.4`, health ok, no
-venue connected at the time). Still to do: choose the friend's cafe its
-name, `relay issue-key <name> --remote` on the box, the key and
-`remote_backoffice = true` in the cafe's `config.toml` with the new
-installer, and Task 4's walk on a real phone over mobile data.
+**The human's own relay at relay.jskin.in is retired** (ADR-411,
+2026-11-02): the containers and `/opt/mez-relay` with its secret are
+deleted, so no key it signed works again. mez Cloud's relay
+(`*.mezpos.com`) is the one venues use. Left to the human: the DNS
+records `relay` and `*` in the `jskin.in` zone (first), then the Hetzner
+server `mez` and its firewall, and the Cloudflare DNS token that was in
+the relay's `.env`. Task 4's walk of the back office from away, on a real
+phone over mobile data, is now made through mez Cloud.
 
 Still owed from before, in the order that unblocks the most:
 1. **The drawer.** `mez --test-print <ip> -drawer`, then a cash sale; no
@@ -173,9 +168,10 @@ Still owed from before, in the order that unblocks the most:
    installer, a first printed invoice in under ten minutes.
 4. The human checks phases 09 to 11 owe, and the questions below.
 5. The product's domain is `mezpos.com` (ADR-313): mez Cloud's relay
-   answers for `*.mezpos.com` since 2026-10-21. `relay.jskin.in` is the
-   human's own relay from Phase 13, kept until the venue is paired to mez
-   Cloud and its table codes reprinted (ADR-342); then it can go.
+   answers for `*.mezpos.com` since 2026-10-21. `relay.jskin.in`, the
+   human's own relay from Phase 13, is retired (ADR-411, 2026-11-02). A
+   table code printed while the venue used it names `nofiltr.jskin.in`
+   and is reprinted once the venue is paired to mez Cloud (ADR-342).
 
 **Do not move Litestream past v0.5.15 without running the tests on
 Windows.** `make check` embeds whatever `web/*/dist` holds: run `make
@@ -191,8 +187,8 @@ Still owed from phase 11, its human check and:
 ## Known broken / in progress
 
 - **The back office from away is built and unseen on a real phone**
-  (ADR-306 to ADR-311, ADR-314). The live relay runs it; no venue has a
-  `--remote` key yet.
+  (ADR-306 to ADR-311, ADR-314). mez Cloud's relay runs it; the human's
+  own is retired (ADR-411).
 - **Between phases (ADR-256 to ADR-262): the first security review and
   what the owner decided.** A till's line is priced from the menu on the
   server; a relay must be TLS; revoking a device cuts its stream; the log
@@ -227,9 +223,9 @@ Still owed from phase 11, its human check and:
 found no secrets (22 hits, all test values). `build/relay/README.md` showed
 two relay keys for key id `fdbb6a9c35fc` (added 2026-10-07, after
 `relay.jskin.in` went live); they are replaced by fakes, and stay in the
-history. Either retire `relay.jskin.in` (item 5 above) or revoke that key
-id on it. The docs (prices, the venue's name, the cloud's domains) go
-public with the code.
+history, and are dead: `relay.jskin.in` is retired and its secret
+deleted (ADR-411, 2026-11-02). The docs (prices, the venue's name, the
+cloud's domains) go public with the code.
 
 **The venue's tablets** (Phase 18, before Task 2): make, model, Android
 version, Android System WebView's version, Play Store or not. (The app's

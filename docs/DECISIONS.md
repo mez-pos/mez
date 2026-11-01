@@ -15847,3 +15847,30 @@ with the server's, is the question a venue's bad day starts with; and the human,
 account, is the one who built this.
 Cost: `mezposindia@gmail.com` is verified on a personal account; the company's account has an
 alias. Older subjects stay long, and a release's notes are trimmed by hand in its draft.
+
+## ADR-411 - relay.jskin.in is retired, its secret deleted
+2026-11 · Status: done, at the human's word on 2026-11-02. Ends ADR-204. Follows ADR-313, ADR-342 (7) and ADR-410.
+Context: the relay at `relay.jskin.in` (ADR-204) was the human's own, kept until the venue moved
+to mez Cloud. Before the repository goes public, the two relay keys for key id `fdbb6a9c35fc`
+in the history of `build/relay/README.md` had to stop working: by revoking that key id, or by
+retiring the relay. The human chose the second: the cafe no longer uses it. Its log, kept since
+2026-10-08, had the venue `nofiltr` connecting on and off until 2026-10-31 15:35 UTC (the PC's
+`config.toml` still names the relay), four guest menu loads, a few back office pages, and
+otherwise only scanners asking for names like `db` and `staging`. Nothing else ran on the server.
+Decision:
+  - On the server (Hetzner `mez`, 178.104.85.185): `docker compose down --rmi all --volumes`,
+    and `/opt/mez-relay` deleted, its `.env` with it. `RELAY_SECRET` was kept nowhere else
+    (ADR-204), so every key it signed, `fdbb6a9c35fc` and the cafe's `0a1a51e878fb` among them,
+    is dead for good. A relay brought back from `build/relay` needs a new secret and new keys.
+  - `relay.jskin.in` and `nofiltr.jskin.in` answer 521 from Cloudflare. The rest of `jskin.in`
+    (the apex, `www`, `n8n`, the mail records) was never the relay's and is untouched.
+  - Left to the human, in this order: the DNS records `relay` and `*` in the `jskin.in` zone;
+    then the server and its firewall `mez` in Hetzner; and the Cloudflare DNS token that was in
+    the relay's `.env`, for certificates. The records go first: a proxied wildcard that points
+    at an address Hetzner may give to someone else serves their pages on `*.jskin.in`.
+  - The venue sells as ever. Its tunnel client retries a relay that does not answer at most once
+    a minute (`internal/tunnel`); `relay_url`, `relay_key` and `public_url` come out of its
+    `config.toml` at the walk already owed (STATE). A table code printed while it used the relay
+    names `nofiltr.jskin.in` and is reprinted after pairing to mez Cloud.
+Cost: no relay of the human's own is left to check the relay's guides against (KNOWN); mez
+Cloud's relay is the one there is. The docs that name `relay.jskin.in` stay as history.

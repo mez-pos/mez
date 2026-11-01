@@ -5,8 +5,9 @@ a key wants [`docs/deploy.md`](../../docs/deploy.md#guests-ordering-from-their-p
 "Guests ordering from their phones".
 
 The optional relay on one small server, behind Cloudflare, with a hostname per
-venue (`<venue>.<domain>`, ADR-203). These are the files that put the relay at
-`relay.jskin.in` (ADR-204), and they will put it anywhere else.
+venue (`<venue>.<domain>`, ADR-203). These are the files that ran the relay at
+`relay.jskin.in` from 2026-10-05 to 2026-11-02 (ADR-204, retired by ADR-411),
+and they will put it anywhere else.
 
 ```
 guest phone ──https──> Cloudflare ──https──> Caddy ──> relay
