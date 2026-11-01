@@ -16,6 +16,13 @@ The same components run in all three apps. Anything React-only (a library
 that reaches into React internals) will not work in guest; `make build-web`
 fails if React's runtime appears in the guest bundle.
 
+The terminal is fetched in parts (ADR-408): boot loads the till or the
+kitchen display, never both, and the till fetches its pay, shift, waiter and
+cook's-board screens once it is idle. A new route the till can do without at
+boot is a `lazyScreen` in `terminal/src/App.tsx`, added to its warm list;
+`terminal/src/bundle-split.test.ts` fails if a plain import pulls one back
+into the boot, and `npm run size` prints what each device parses.
+
 Never let a shared component library drag shadcn into the guest bundle. If a
 component is needed on all three, it is written twice or written dependency
 free.

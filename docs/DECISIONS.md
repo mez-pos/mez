@@ -15654,3 +15654,62 @@ Because: one rule for words is easier to keep than thirty-five decisions, and it
 mez was already mostly keeping.
 Cost: the reference designs and the screens now differ in casing on those labels; a reader
 comparing them should expect it.
+
+## ADR-408 - The terminal in parts: each device parses its own, the till warms the rest
+2026-11 · Status: accepted. Phase 17 Task 32 (TECH-25).
+Context: the terminal was one file, 685 KB (198 KB gzipped) by this task, and the
+audit's 637 KB before it. Every device parsed all of it before its first screen:
+the kitchen display parsed the whole till, its pay screen, its shift close and
+its waiter's screens, none of which it can show. The till parsed its day's
+close at every boot. The split has a cost a website does not have: mez is
+upgraded on the venue's own PC, the old build's hashed files are gone from the
+server when it restarts, and a till left open all day would then ask for a file
+that is not there, at the moment someone opens the pay screen.
+Decision:
+  - **Boot picks one app.** `main.tsx` fetches either the till (`App.tsx`) or the
+    kitchen display (`kitchen/KitchenApp.tsx`), by path, behind the splash the
+    Gate shows next, so the boot reads as one screen. The kitchen display parses
+    92.8 KB gzipped of script before its first screen; the till 161 KB.
+  - **The till boots with the screens of service**: the order screen, the floor
+    and the day's orders. Paying, the shift's open, close and Z-report, the
+    waiter's screens and the cook's board are fetched apart (47 KB), each a
+    route behind a Suspense inside the shell, so a screen still being fetched
+    leaves the header and the way out standing.
+  - **The till warms them.** Once it has drawn and the browser is idle (at most
+    2 s; 300 ms where there is no idle callback), it fetches every one. A screen
+    opened during service is then in memory: it draws at once, and an upgrade
+    under an open till cannot take it away. On the walk, with every script
+    fetch blocked after the warm, the pay screen, the close and the Z-report
+    drew and no fetch was even tried. The kitchen display warms nothing.
+  - **`lazyScreen`** (`terminal/src/shell/lazy-screen.ts`) draws a screen whose
+    code is here directly, so a warmed screen never flashes a fallback; only a
+    screen not yet fetched goes through `React.lazy`. A warm that fails is
+    forgotten: the screen's first draw fetches afresh. A fetch that fails as the
+    screen is drawn is held as failed for a second (`retryAfterMs`), long enough
+    for React's own redraw to show the route's error, then let go, so Try again,
+    or coming back to the route, is a new fetch. After an upgrade only Reload
+    helps: only a reload knows the new names.
+  - **Held twice.** `terminal/src/bundle-split.test.ts` reads the imports: boot
+    must not import what it fetches apart, the till must not import a route it
+    fetches apart (read from its own `import()`s, so a new one is held too), and
+    the kitchen display may share the till's rules (`.ts`: a ticket's title, a
+    line's key) but none of its screens (`.tsx`). `npm run size` prints what
+    each device parses and fails if the two apps are one file again or the
+    till boots with every screen. A test also fails on an import it cannot read.
+Rejected: a fresh `React.lazy` at once after a failed fetch. It looped: React
+draws again as soon as the fetch fails, the fresh lazy fetched again, and the
+error was never shown, only an empty screen (seen on the walk; a test now holds
+it). A render cannot tell React's own redraw from a person's Try again, so the
+fresh lazy waits a second, set from the failure and not from a render. Keeping
+the failed lazy for ever (React.lazy's way) was the first fix; the review
+rejected it, as the boundary's Try again was then a button that did nothing, and
+the pay screen's words promise it. Rejected too: a budget for the
+terminal (it has none, by the README; the printed sizes show a jump), and
+splitting the back office (it is 652 KB as one file; not this finding, and not
+on a device in service).
+Because: a kitchen screen is often the cheapest tablet in the building, and it
+now parses less than half of what it did; the till boots on less and, once
+warm, is as whole as before, upgrade or not.
+Cost: the till fetches twice at boot (its own files, then the warm), about
+100 ms apart on a LAN. A screen opened before the warm has it, whose fetch then
+fails, shows the region's error; Try again within its first second shows it again.

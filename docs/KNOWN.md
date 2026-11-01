@@ -10,6 +10,23 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The terminal in parts** (ADR-408, Phase 17 Task 32; 2026-11-01). Seen in
+  a scripted Chromium on a demo venue at 1366 and 1024: the till's boot (its
+  own files, then the warm about 100 ms later); with every script fetch
+  blocked after the warm, opening the shift, the pay screen, the day's close
+  and the Z-report route, with no fetch tried; the kitchen display, its
+  station picker and its board, fetching only its four files across a
+  reload; a waiter's home whose file was blocked before the warm and on
+  opening, showing the region's error inside the shell, no loop, and both
+  Try again (a second on, a fresh fetch) and Reload bringing it back, the
+  session kept. **Not seen:** a waiter's table and
+  shift summary, and the cook's board on a till, drawn (their files were
+  fetched by the warm); the 300 ms fallback where a browser has no idle
+  callback (older Safari); a real upgrade under an open till (the blocked
+  fetches stand in for it); Try again in a browser that keeps a failed
+  module fetch (Chromium does not). **Left as is:** the back office is still
+  one 652 KB file.
+
 - **One casing** (ADR-407, Phase 17 Task 31d; 2026-11-01). Seen in a
   scripted Chromium on a demo venue at 1366 and 1024: the sign-in screen's
   "Staff login", the register's "All items" and "Send to kitchen", the pay

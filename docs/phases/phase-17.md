@@ -226,6 +226,8 @@ were ticked (ADR-381, ADR-382). What the walk did not reach is in
     The copies outside `shared/ui` use the kit's.
   - [x] **31d - One casing (TECH-24).** Done 2026-11-01 (ADR-407). Its case in DECISIONS.md first, as
     it overturns screen specs (ui-audit "Decided items"); then the words.
-- [ ] **Task 32 - Split the terminal bundle (TECH-25).**
+- [x] **Task 32 - Split the terminal bundle (TECH-25).** Done 2026-11-01 (ADR-408).
+  Boot fetches the till or the kitchen display, not both; the till fetches
+  pay, the shift's screens, the waiter's and the cook's board while idle.
 - [ ] **Task 33 - The audit again**, same walk and sizes; the scores go in
   this file.

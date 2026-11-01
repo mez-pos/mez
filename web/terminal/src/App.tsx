@@ -6,6 +6,7 @@
 // role, and every other screen is inside the shell, with the ticket, the floor
 // and the shift above it, and behind the shift gate: no shift, no screens.
 
+import { Suspense, useEffect } from "react";
 import { Redirect, Route, Switch } from "wouter";
 import { Gate } from "../../shared/auth/Gate";
 import { RouteBoundary } from "../../shared/RouteBoundary";
@@ -16,18 +17,30 @@ import { setupPath } from "../../shared/screens/setup/setup-path";
 import { SetupWizard } from "../../shared/screens/setup/SetupWizard";
 import { Splash } from "../../shared/screens/Splash";
 import { TablesScreen } from "./floor/TablesScreen";
-import { CookBoard } from "./kitchen/CookBoard";
 import { OrderScreen } from "./register/OrderScreen";
-import { OrdersPage, Landing, PayPage, ShiftClosePage, ShiftPage, ZReportPage } from "./shell/pages";
+import { lazyScreen, warm } from "./shell/lazy-screen";
+import { OrdersPage, Landing } from "./shell/pages";
 import { route } from "./shell/routes";
 import { ShiftGate } from "./shell/ShiftGate";
 import { TerminalProvider } from "./shell/terminal-context";
 import { TerminalShell } from "./shell/TerminalShell";
-import { ShiftSummary } from "./waiter/ShiftSummary";
-import { TableDetail } from "./waiter/TableDetail";
-import { WaiterHome } from "./waiter/WaiterHome";
+
+// What the till boots with is the order screen, the floor and the day's
+// orders, the screens of service. The rest is fetched while the till is idle,
+// once it has drawn (TECH-25, ADR-408): paying, the shift's open and close,
+// the waiter's screens and the cook's board.
+const PayPage = lazyScreen("PayPage", () => import("./shell/PayPage").then((m) => m.PayPage));
+const ShiftPage = lazyScreen("ShiftPage", () => import("./shell/ShiftPages").then((m) => m.ShiftPage));
+const ShiftClosePage = lazyScreen("ShiftClosePage", () => import("./shell/ShiftPages").then((m) => m.ShiftClosePage));
+const ZReportPage = lazyScreen("ZReportPage", () => import("./shell/ShiftPages").then((m) => m.ZReportPage));
+const WaiterHome = lazyScreen("WaiterHome", () => import("./waiter/WaiterHome").then((m) => m.WaiterHome));
+const ShiftSummary = lazyScreen("ShiftSummary", () => import("./waiter/ShiftSummary").then((m) => m.ShiftSummary));
+const TableDetail = lazyScreen("TableDetail", () => import("./waiter/TableDetail").then((m) => m.TableDetail));
+const CookBoard = lazyScreen("CookBoard", () => import("./kitchen/CookBoard").then((m) => m.CookBoard));
+const later = [PayPage, ShiftPage, ShiftClosePage, ZReportPage, WaiterHome, ShiftSummary, TableDetail, CookBoard];
 
 export function App() {
+  useEffect(() => warm(later), []);
   return (
     <Switch>
       <Route path={setupPath}>
@@ -46,32 +59,38 @@ function Gated() {
     <Gate splash={<Splash />}>
       {/* A screen with no shell around it fails as a page; one inside the shell, below, as a region (TECH-8). */}
       <RouteBoundary size="page">
-        <Switch>
-          <Route path="/pair">
-            <PairScreen app="terminal" />
-          </Route>
-          <Route path="/lock">
-            <LockScreen />
-          </Route>
-          {/* The kitchen's board has its own header and foot (D10): no shell, and no shift to wait for. */}
-          <Route path={route.pass}>
-            <CookBoard />
-          </Route>
-          <Route path="/">
-            <Landing />
-          </Route>
-          <Route>
-            <TerminalProvider>
-              <TerminalShell>
-                <ShiftGate>
-                  <RouteBoundary>
-                    <Screens />
-                  </RouteBoundary>
-                </ShiftGate>
-              </TerminalShell>
-            </TerminalProvider>
-          </Route>
-        </Switch>
+        {/* Only the cook's board is fetched at this level; a blink on a LAN, and it has no shell to keep. */}
+        <Suspense fallback={null}>
+          <Switch>
+            <Route path="/pair">
+              <PairScreen app="terminal" />
+            </Route>
+            <Route path="/lock">
+              <LockScreen />
+            </Route>
+            {/* The kitchen's board has its own header and foot (D10): no shell, and no shift to wait for. */}
+            <Route path={route.pass}>
+              <CookBoard />
+            </Route>
+            <Route path="/">
+              <Landing />
+            </Route>
+            <Route>
+              <TerminalProvider>
+                <TerminalShell>
+                  <ShiftGate>
+                    <RouteBoundary>
+                      {/* A screen still being fetched leaves the shell's header and way out standing. */}
+                      <Suspense fallback={null}>
+                        <Screens />
+                      </Suspense>
+                    </RouteBoundary>
+                  </ShiftGate>
+                </TerminalShell>
+              </TerminalProvider>
+            </Route>
+          </Switch>
+        </Suspense>
       </RouteBoundary>
     </Gate>
   );

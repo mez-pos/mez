@@ -8,6 +8,14 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 31d: one casing** (TECH-24, ADR-407), 2026-11-01, which
+ends Task 31. Every label and heading is in sentence case ("Send to
+kitchen", "Split bill", "Floor plan", "Staff login" and about 30 more); the
+brand's script lines keep the designs' words, as display art. The specs say
+what mez shows (106 mentions), but for lines quoting a reference design.
+A test fails on a Title Case label in what a component draws. Seen on a
+demo venue at 1366 and 1024.
+
 **Phase 17, Task 31c: one keypad, one input, one switch, one pill**
 (TECH-23, ADR-406), 2026-11-01. The sign-in screen's keypad is the kit's
 `NumPad` (size `signin`, Login as its `action`); every field is the kit's

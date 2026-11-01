@@ -9,10 +9,10 @@ import { setErrorReporter } from "../../shared/error-report";
 import { createQueryClient } from "../../shared/query";
 import { ErrorBoundary, ToastProvider } from "../../shared/ui";
 import { RealtimeProvider } from "../../shared/use-realtime";
-import { App } from "./App";
-import { KitchenApp } from "./kitchen/KitchenApp";
+import { Splash } from "../../shared/screens/Splash";
 import { readPrefs, surfaceOf } from "./kitchen/board-prefs";
 import { readStation, stationKey } from "./kitchen/kitchen-logic";
+import { lazyScreen } from "./shell/lazy-screen";
 import "./index.css";
 import { stroke } from "../../shared/ui/stroke";
 
@@ -24,6 +24,12 @@ if (!root) {
 // The component gallery, in development only. import.meta.env.DEV is false in
 // a production build, so this branch and the lazy import both disappear.
 const Gallery = import.meta.env.DEV && window.location.pathname === "/gallery" ? lazy(() => import("./gallery/Gallery")) : null;
+
+// The till and the kitchen display are fetched apart (TECH-25, ADR-408): a
+// device parses only the one it is, and the kitchen's screen never parses the
+// till's.
+const App = lazyScreen("App", () => import("./App").then((m) => m.App));
+const KitchenApp = lazyScreen("KitchenApp", () => import("./kitchen/KitchenApp").then((m) => m.KitchenApp));
 
 const queryClient = createQueryClient();
 
@@ -77,7 +83,10 @@ createRoot(root).render(
             {/* The design's line icons: 1.75px strokes (tokens.md, Icons). */}
             <LucideProvider strokeWidth={stroke.base}>
               <ToastProvider placement="top">
-                <Screen />
+                {/* While the device's own app is fetched: the splash the Gate shows next, so the boot reads as one screen. */}
+                <Suspense fallback={<Splash />}>
+                  <Screen />
+                </Suspense>
               </ToastProvider>
             </LucideProvider>
           </AuthProvider>

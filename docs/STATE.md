@@ -13,7 +13,7 @@ the UI audit (`docs/design/ui-audit-2026-10-31.md`). Tasks 1 and 4 to
 12 are done: at the human's word the device-fit pass came first, built
 and seen at 1024x768, 1366x768 and 1920x1080 on 2026-10-31 (ADR-381,
 ADR-382; what was not seen is the top of `KNOWN.md`). The two P0s,
-Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 31 (ADR-384 to ADR-407; ADR-400 was out of phase). It runs before Phase 16, which is mostly
+Tasks 2 and 3, are done too (ADR-383), and Tasks 13 to 32 (ADR-384 to ADR-408; ADR-400 was out of phase). It runs before Phase 16, which is mostly
 `mez-cloud`'s.
 
 Before it, **Phase 15 - The owner's WhatsApp**, `docs/phases/phase-15.md`, opened
@@ -28,18 +28,19 @@ list below.
 
 ## Last completed task
 
-**Phase 17, Task 31d: one casing** (TECH-24, ADR-407), 2026-11-01, which
-ends Task 31. Every label and heading is in sentence case ("Send to
-kitchen", "Split bill", "Floor plan", "Staff login" and about 30 more); the
-brand's script lines keep the designs' words, as display art. The specs say
-what mez shows (106 mentions), but for lines quoting a reference design.
-A test fails on a Title Case label in what a component draws. Seen on a
-demo venue at 1366 and 1024.
+**Phase 17, Task 32: the terminal in parts** (TECH-25, ADR-408), 2026-11-01.
+Boot fetches the till or the kitchen display, never both: the kitchen
+parses 92.8 KB gzipped of script before its first screen, where it parsed
+the whole till (198 KB); the till 161 KB. Pay, the shift's screens, the
+waiter's and the cook's board are fetched apart and warmed once the till is
+idle, so they draw at once and survive an upgrade under an open till.
+`terminal/src/shell/lazy-screen.ts`; a test reads the imports, and `npm run
+size` prints each device's part. Walked on a demo venue at 1366 and 1024.
 
 ## Next task
 
-**Here: Phase 17 Task 32, split the terminal bundle (TECH-25)**, then
-Task 33, the audit again; Tasks 1 to 31 are done. Each screen is checked by eye at
+**Here: Phase 17 Task 33, the audit again**, same walk and sizes, the
+scores in the phase file; Tasks 1 to 32 are done. Each screen is checked by eye at
 1024x768 and 1366x768 before it is ticked: the audit's walk (a demo venue
 from `mez setup -demo-menu` in a scratch data directory, a scripted
 Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel

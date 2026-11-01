@@ -16,10 +16,14 @@
 // would put 40 KB back without anyone noticing until the budget broke.
 //
 // The terminal and back office have no budget; their sizes are printed so a
-// jump is visible in the build log.
+// jump is visible in the build log. The terminal is fetched in parts (TECH-25,
+// ADR-408), so it is printed by device: what the kitchen display and the till
+// each parse before their first screen, and what the till fetches once idle.
+// It fails if the parts are gone, or if the kitchen display's reach the till's.
+// Which source file imports which is held by terminal/src/bundle-split.test.ts.
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { basename, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 
@@ -66,11 +70,65 @@ function measure(app) {
 
 const kb = (bytes) => `${(bytes / 1024).toFixed(1)} KB`;
 
+// A built file's own imports, parsed with it: `from"./x.js"` and
+// `import"./x.js"`. Not `import("./x.js")`, which is fetched apart.
+const STATIC_IMPORT = /(?:from|import)\s*"\.\/([^"]+\.js)"/g;
+
+/** What the terminal's devices parse, by the built files' own imports. Returns the failures. */
+function terminalParts(counted) {
+  const assets = join(root, "terminal", "dist", "assets");
+  // By file name: `relative` writes assets\x.js on Windows and assets/x.js elsewhere.
+  const gz = new Map(counted.map((f) => [basename(f.file), f.gz]));
+  const html = readFileSync(join(root, "terminal", "dist", "index.html"), "utf8");
+  const entry = html.match(/src="\/assets\/([^"]+\.js)"/)?.[1];
+  // A part is named for the file it starts from, then its hash: App-BD1cYF7F.js.
+  const chunk = (name) => [...gz.keys()].find((f) => f.startsWith(`${name}-`) && /^[\w-]+\.js$/.test(f));
+  const till = chunk("App");
+  const kitchen = chunk("KitchenApp");
+  if (!entry || !till || !kitchen) {
+    return [
+      "the terminal's parts are not where they were: no entry in index.html, or no App or KitchenApp file; the till and the kitchen display must each be fetched apart",
+    ];
+  }
+  const parsed = (...starts) => {
+    const seen = new Set(starts);
+    const queue = [...starts];
+    for (let file = queue.shift(); file; file = queue.shift()) {
+      for (const [, dep] of readFileSync(join(assets, file), "utf8").matchAll(STATIC_IMPORT)) {
+        if (!seen.has(dep)) {
+          seen.add(dep);
+          queue.push(dep);
+        }
+      }
+    }
+    return seen;
+  };
+  const sum = (files) => [...files].reduce((total, f) => total + (gz.get(f) ?? 0), 0);
+  const kitchenFiles = parsed(entry, kitchen);
+  const tillFiles = parsed(entry, till);
+  // Everything the till does not boot with, the kitchen's own file among it: the cook's board on a till is drawn by it.
+  const later = [...gz.keys()].filter((f) => f.endsWith(".js") && !tillFiles.has(f));
+  // Script only: the stylesheet and the page are the same for both, and in the total.
+  console.log(`          ${kb(sum(kitchenFiles)).padStart(9)}  script the kitchen display parses before its first screen`);
+  console.log(`          ${kb(sum(tillFiles)).padStart(9)}  script the till parses before its first screen`);
+  console.log(`          ${kb(sum(later)).padStart(9)}  script the till fetches once it is idle`);
+  const failures = [];
+  if (kitchenFiles.has(till)) failures.push(`the kitchen display parses the till: ${kitchen} reaches ${till}`);
+  if (later.length === 0) failures.push("the till boots with every screen again: pay, the shift's and the waiter's must be fetched once it is idle");
+  return failures;
+}
+
 let failed = false;
 for (const app of ["terminal", "backoffice", "guest"]) {
   const { counted, fonts, other, total, fontTotal } = measure(app);
   if (app !== "guest") {
     console.log(`  size  ${app.padEnd(10)} ${kb(total)} gzipped (no budget)`);
+    if (app === "terminal") {
+      for (const failure of terminalParts(counted)) {
+        console.error(`  size  FAIL: ${failure}`);
+        failed = true;
+      }
+    }
     continue;
   }
   const headroom = GUEST_BUDGET_BYTES - total;
