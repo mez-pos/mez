@@ -18,15 +18,15 @@ concurrency:
 jobs:
   check:
     name: make check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           # `make check` stamps the version from `git describe`, which needs
           # tags and history. Without this it is a shallow clone with neither.
           fetch-depth: 0
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           # Read the version from go.mod so CI and the module can never drift.
           go-version-file: go.mod
@@ -36,9 +36,9 @@ jobs:
 
   web:
     name: make build-web
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v5
         with:
