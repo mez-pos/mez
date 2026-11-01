@@ -376,6 +376,11 @@ func (e *Engine) probe(ctx context.Context) {
 	if e.errors.lost.Load() {
 		e.sayLost()
 	}
+	// Read before looking. Only a copy that was there before the look began
+	// can be lost by it: the first copy, landing while the destination is
+	// listed, is noted sent by "back up now" a moment after the listing
+	// missed it, and is not a loss.
+	sentBefore := e.sent.Load()
 	whole, err := e.dest.reach(ctx)
 	if err != nil {
 		// Being stopped mid-question is not the destination's fault.
@@ -408,7 +413,7 @@ func (e *Engine) probe(ctx context.Context) {
 	switch {
 	case whole && !e.sent.Load():
 		e.seenWhole()
-	case !whole && e.sent.Load():
+	case !whole && sentBefore:
 		e.errors.lost.Store(true)
 		e.sayLost()
 		return
