@@ -72,7 +72,7 @@ itself are refused (`relay`, `www`, `api`, `mail`, `order` and others). The
 command prints the key and nothing else:
 
 ```
-mzr_my-cafe.fdbb6a9c35fc.BfVAbIS-M7BVligd79sIBiEBKHPq6EzqkYj_aW9cpvQ
+mzr_my-cafe.0123456789ab.EXAMPLE-not-a-real-signature-EXAMPLE-xxxxx
 ```
 
 The middle part is the key's id. It is not secret, and it is what the log
@@ -88,7 +88,7 @@ docker compose exec -T relay /relay issue-key my-cafe --remote
 ```
 
 ```
-mzr_my-cafe.fdbb6a9c35fc.remote.Qm4t8p0XJ3n_c1Vb2s8dWq5kEo1yTz7Lx9RhA6uNf0M
+mzr_my-cafe.0123456789ab.remote.EXAMPLE-not-a-real-signature-EXAMPLE-x
 ```
 
 The scope is signed into the key: a venue cannot add `remote` to a key it
