@@ -165,7 +165,9 @@ func TestAVenueIsBroughtBackOverHTTP(t *testing.T) {
 	if fmt.Sprint(r.asked) != fmt.Sprint(want) {
 		t.Errorf("the service was asked %q, want %q", r.asked, want)
 	}
-	if strings.Contains(logs.String(), recoverClaim) || strings.Contains(logs.String(), "482") {
+	// The code whole, as sent and without its space: three of its digits
+	// turn up by chance in a timestamp or a request id.
+	if strings.Contains(logs.String(), recoverClaim) || strings.Contains(logs.String(), "482 913") || strings.Contains(logs.String(), "482913") {
 		t.Errorf("the claim or the one-time code is in the log:\n%s", logs.String())
 	}
 }

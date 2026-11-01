@@ -24,6 +24,8 @@ type liveVenue struct {
 	db     *db.DB
 	engine *backup.Engine
 	to     backup.Config
+	// opts starts the backup again after stop.
+	opts backup.Options
 }
 
 func newLiveVenue(t *testing.T) *liveVenue {
@@ -44,17 +46,39 @@ func newLiveVenue(t *testing.T) *liveVenue {
 	if err := os.MkdirAll(photos, 0o750); err != nil {
 		t.Fatal(err)
 	}
-	engine, err := backup.Start(ctx, backup.Options{DBPath: path, Config: to, PhotosDir: photos})
+	opts := backup.Options{DBPath: path, Config: to, PhotosDir: photos}
+	engine, err := backup.Start(ctx, opts)
 	if err != nil {
 		t.Fatal(err)
 	}
-	v := &liveVenue{db: d, engine: engine, to: to}
+	v := &liveVenue{db: d, engine: engine, to: to, opts: opts}
 	v.backUp(t)
 	t.Cleanup(func() {
 		_ = d.Close(context.Background())
-		_ = engine.Close(context.Background())
+		_ = v.engine.Close(context.Background())
 	})
 	return v
+}
+
+// stop stops the venue's backup, as its server stopping does, so that
+// nothing more lands at the destination until start. A running backup is
+// not quiet: Litestream writes its first snapshot to one side a moment
+// after the first copy, and a replica opened in that moment sees it land.
+func (v *liveVenue) stop(t *testing.T) {
+	t.Helper()
+	if err := v.engine.Close(context.Background()); err != nil {
+		t.Fatalf("stopping the backup: %v", err)
+	}
+}
+
+// start starts the backup again, carrying on in the same generation.
+func (v *liveVenue) start(t *testing.T) {
+	t.Helper()
+	engine, err := backup.Start(context.Background(), v.opts)
+	if err != nil {
+		t.Fatalf("starting the backup again: %v", err)
+	}
+	v.engine = engine
 }
 
 func (v *liveVenue) backUp(t *testing.T) {
@@ -124,6 +148,8 @@ func TestAReplicaFollowsItsBackupAndIsPutAway(t *testing.T) {
 	v := newLiveVenue(t)
 	copies := t.TempDir()
 	ctx := context.Background()
+	// Stopped, so that "nothing new" below is nothing new.
+	v.stop(t)
 
 	r, err := OpenReplica(ctx, ReplicaOptions{From: v.to, Venue: "ven_MIRROR01", CopyDir: copies, Log: quiet()})
 	if err != nil {
@@ -152,7 +178,9 @@ func TestAReplicaFollowsItsBackupAndIsPutAway(t *testing.T) {
 		t.Errorf("the copy has photos beside it: %v", err)
 	}
 
-	// The venue trades, closes, and backs up; the replica catches up.
+	// The venue opens again, trades, closes, and backs up; the replica
+	// catches up.
+	v.start(t)
 	v.closeADay(t, 1)
 	v.backUp(t)
 	refreshed(t, r)
