@@ -8,6 +8,15 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 17, Task 33: the audit again**, 2026-11-01, which ends Phase 17.
+The 2026-10-31 audit re-run by its method: seven reviewers, one demo venue
+each, about 940 screenshots at 1366, 1024 and 1920 (390 for the guest).
+Every surface is Good now: till 28/40 (was 23), tables and waiter 28 (23),
+kitchen 28 (22), back office 30 (25), guest 31 (28), setup 34 (32),
+technical 17/20 (13). Of the old 128 entries 112 are fixed, 14 in part, 2
+not seen; 58 new, 3 of them P1. All of it is in the audit file, "Re-run,
+2026-11-01"; the scores in the phase file.
+
 **Phase 17, Task 32: the terminal in parts** (TECH-25, ADR-408), 2026-11-01.
 Boot fetches the till or the kitchen display, never both: the kitchen
 parses 92.8 KB gzipped of script before its first screen, where it parsed

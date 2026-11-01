@@ -21,7 +21,7 @@ import type { Money as Amount, OrderResponse, Override, PaymentMethod, SplitResp
 import { Button, Money, NumPad, applyAmountKey, type NumKey } from "../../../shared/ui";
 import { ArrowRightIcon } from "lucide-react";
 import { useVenue } from "../../../shared/use-venue";
-import { clearUnsettled, loadUnsettled, saveUnsettled } from "./unsettled-store";
+import { loadUnsettled, unsettledHold, type Kept } from "./unsettled-store";
 import { TicketPanels, type Panel } from "../register/TicketPanels";
 import { newKey } from "../register/ticket-key";
 import type { Ticket } from "../register/use-ticket";
@@ -88,10 +88,7 @@ interface Unsettled {
 }
 
 /** What is kept across a reload while a payment's answer is lost (ADR-368): the payment, and the key that replays rather than repeats it. */
-interface Held {
-  attempt: Attempt | null;
-  unsettled: Unsettled;
-}
+type Held = Kept<Unsettled, Attempt>;
 
 function isHeld(value: unknown): value is Held {
   if (typeof value !== "object" || value === null) return false;
@@ -125,14 +122,7 @@ export function PayScreen({ order, ticket, title, onBack }: PayScreenProps) {
   const [held] = useState(() => loadUnsettled(order.id, isHeld));
   const [attempt, setAttempt] = useState<Attempt | null>(held?.attempt ?? null);
   const [unsettled, setUnsettled] = useState<Unsettled | null>(held?.unsettled ?? null);
-  const holdUnsettled = (u: Unsettled, kept: Attempt | null) => {
-    setUnsettled(u);
-    saveUnsettled<Held>(order.id, { attempt: kept, unsettled: u });
-  };
-  const releaseUnsettled = () => {
-    setUnsettled(null);
-    clearUnsettled(order.id);
-  };
+  const { hold: holdUnsettled, release: releaseUnsettled } = unsettledHold<Unsettled, Attempt>(order.id, setUnsettled);
   const [checking, setChecking] = useState(false);
   const [lastChange, setLastChange] = useState<number | null>(null);
   const [splitting, setSplitting] = useState(false);

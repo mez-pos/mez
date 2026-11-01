@@ -28,25 +28,22 @@ list below.
 
 ## Last completed task
 
-**Phase 17, Task 33: the audit again**, 2026-11-01, which ends Phase 17.
-The 2026-10-31 audit re-run by its method: seven reviewers, one demo venue
-each, about 940 screenshots at 1366, 1024 and 1920 (390 for the guest).
-Every surface is Good now: till 28/40 (was 23), tables and waiter 28 (23),
-kitchen 28 (22), back office 30 (25), guest 31 (28), setup 34 (32),
-technical 17/20 (13). Of the old 128 entries 112 are fixed, 14 in part, 2
-not seen; 58 new, 3 of them P1. All of it is in the audit file, "Re-run,
-2026-11-01"; the scores in the phase file.
+**TBS-20, the waiter's payment**, 2026-11-01, after Phase 17. The
+waiter's bill let go of a payment by calling itself
+(`releaseUnsettled`, a find-and-replace in 2724b4ca, ADR-376): every
+recorded payment threw "Maximum call stack size exceeded", which is no
+refusal, so the share was then held as "may have been recorded" and its
+check threw again. One share showed the error over "Paid in full"; on a
+split the next share could not be taken. The pay screen and the waiter's
+bill now share one hold, `unsettledHold` in
+`terminal/src/tender/unsettled-store.ts`, tested there. Walked on a demo
+venue at 1024: the old build stuck on Guest 2, the fixed one took a split
+by UPI and cash to "Paid in full" and closed the table; a till card
+payment as well. The Windows installer is built again from this commit.
 
 ## Next task
 
-**Here, first: TBS-20, before the venue's install.** Every waiter payment
-ends on "Maximum call stack size exceeded": `releaseUnsettled` in
-`web/terminal/src/waiter/WaiterBill.tsx:126-129` calls itself, where it
-means to clear the unsettled state (`setUnsettled(null)`, beside
-`clearUnsettled`). The payment is recorded; the screen says it failed. It
-came with 2724b4ca (ADR-376), so it is in the v0.2.0-beta.1 installer
-waiting for the venue: fix it, then build the installer again. Then the
-re-run's other two P1s, TBS-21 (the approval sheet: scrolled, the cashier
+**Here: the re-run's other two P1s** (TBS-20 is fixed), TBS-21 (the approval sheet: scrolled, the cashier
 chosen, the waiter and kitchen listed) with TILL-26, and TILL-25 (a
 percentage discount keyed from the right, the approval never restating
 it). The 20 P2s and 35 P3s wait on the human (Open questions). Phase 17 is
@@ -57,9 +54,13 @@ Chromium) is how. Tailwind's variant order bites (ADR-382): a pixel
 breakpoint never shares a property with `xl:` or `short:`.
 
 **The human's, at the venue:** the walk of ADR-366 and ADR-367 on the venue PC (the first
-item in `KNOWN.md`): the installer
-`dist/mez_v0.2.0-beta.1_windows_amd64_setup.exe` is built (ADR-380, the
-beta tag, 2026-10-26, local and not pushed). Install it over the old one
+item in `KNOWN.md`): the installer is
+`dist/mez_v0.2.0-beta.1-32-g<commit>_windows_amd64_setup.exe`, built
+2026-11-01 from the TBS-20 fix with all of Phase 17 in it, untagged
+(`git describe` names it). Not `mez_v0.2.0-beta.1_windows_amd64_setup.exe`
+(ADR-380, the beta tag, 2026-10-26), which has TBS-20 and none of Phase 17,
+nor the untagged `-16-gc21c4389` one of 2026-10-31, which has TBS-20 too.
+Install it over the old one
 (no uninstall: `C:\ProgramData\mez` and `config.toml` are kept), take
 `relay_url`, `relay_key` and `public_url` out of
 `C:\Program Files\mez\config.toml` so the venue leaves relay.jskin.in,

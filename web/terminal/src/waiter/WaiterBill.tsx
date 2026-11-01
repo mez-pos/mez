@@ -45,7 +45,7 @@ import {
   type Attempt,
 } from "../tender/tender-logic";
 import { TipApprovalSheet } from "../tender/TipApprovalSheet";
-import { clearUnsettled, loadUnsettled, saveUnsettled } from "../tender/unsettled-store";
+import { loadUnsettled, unsettledHold, type Kept } from "../tender/unsettled-store";
 import { closeBlock, eachShare, shareName, shareRows, tablePays, type PaidShares } from "./bill-logic";
 import { BillCollect } from "./BillCollect";
 import { BillShares } from "./BillShares";
@@ -80,10 +80,7 @@ interface Unsettled {
 }
 
 /** What is kept across a reload while a payment's answer is lost (ADR-368, ADR-376): the payment and the key that replays it. */
-interface Held {
-  attempt: Attempt | null;
-  unsettled: Unsettled;
-}
+type Held = Kept<Unsettled, Attempt>;
 
 function isHeld(value: unknown): value is Held {
   if (typeof value !== "object" || value === null) return false;
@@ -119,14 +116,7 @@ export function WaiterBill({ order, ticket, title, onClosed }: WaiterBillProps) 
   const [held] = useState(() => loadUnsettled(order.id, isHeld));
   const [attempt, setAttempt] = useState<Attempt | null>(held?.attempt ?? null);
   const [unsettled, setUnsettled] = useState<Unsettled | null>(held?.unsettled ?? null);
-  const holdUnsettled = (u: Unsettled, kept: Attempt | null) => {
-    setUnsettled(u);
-    saveUnsettled<Held>(order.id, { attempt: kept, unsettled: u });
-  };
-  const releaseUnsettled = () => {
-    releaseUnsettled();
-    clearUnsettled(order.id);
-  };
+  const { hold: holdUnsettled, release: releaseUnsettled } = unsettledHold<Unsettled, Attempt>(order.id, setUnsettled);
   const [checking, setChecking] = useState(false);
   const [change, setChange] = useState<number | null>(null);
   const [reprinting, setReprinting] = useState(false);
