@@ -37,6 +37,10 @@
     --body-2: #5F5850;
     --green: #2F4A2C;
     --green-press: #24391F;
+    --green-tint: #E8EFE3;
+    --hairline-strong: #DCCDB4;
+    --muted: #6E6359;
+    --danger: #A8321C;
     --on-fill: #FFFDF8;
     --focus-ring: #B9522F;
     --shadow-card: 0 2px 6px rgba(91, 31, 31, .04), 0 12px 26px rgba(91, 31, 31, .06);
@@ -45,7 +49,8 @@
 
   * { box-sizing: border-box; }
 
-  html, body { height: 100%; margin: 0; }
+  html { height: 100%; }
+  body { min-height: 100%; margin: 0; }
 
   body {
     display: grid;
@@ -82,7 +87,7 @@
   p.aside { color: var(--body-2); }
   strong { font-weight: 700; }
 
-  a.button {
+  a.button, button.button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -93,12 +98,59 @@
     background: var(--green);
     box-shadow: var(--shadow-action);
     color: var(--on-fill);
+    border: 0;
+    font: inherit;
     font-weight: 700;
     text-decoration: none;
   }
-  a.button:active { background: var(--green-press); }
-  a.button:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
-  a.button[aria-disabled="true"] { opacity: .72; pointer-events: none; }
+  .button:active { background: var(--green-press); }
+  .button:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+  .button[aria-disabled="true"] { opacity: .72; pointer-events: none; }
+
+  /* Secondary: ivory, the strong hairline, beside a primary. */
+  .button.secondary {
+    margin-left: 8px;
+    background: var(--card);
+    border: 1px solid var(--hairline-strong);
+    box-shadow: none;
+    color: var(--body);
+  }
+  .button.secondary:active { background: var(--parchment); }
+
+  /* A field: the well's strong hairline, green with its halo when focused. */
+  label { display: block; margin: 20px 0 8px; font-weight: 700; }
+  input {
+    width: 100%;
+    min-height: 48px;
+    padding: 0 16px;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 14px;
+    background: var(--card);
+    color: var(--body);
+    font: inherit;
+    font-size: 17px;
+  }
+  input::placeholder { color: var(--muted); }
+  input:focus { outline: none; border: 1.5px solid var(--green); box-shadow: 0 0 0 3px var(--green-tint); }
+  input[aria-invalid="true"] { border-color: var(--danger); }
+  p.refusal { margin: 10px 0 0; color: var(--danger); }
+  form + p.aside { margin-top: 16px; }
+
+  /* A link that does something on this page: the body's ink, underlined. */
+  button.link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  button.link:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+  .confirm { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--hairline); }
+  .confirm .button.secondary { margin-left: 0; }
+  .confirm button.link { margin-left: 16px; }
 </style>
 </head>
 <body>
@@ -140,8 +192,23 @@
     and nothing answers. Check that the PC is on, that mez is running on it,
     and that this tablet is on the venue's wifi.</p>
   <p class="aside">mez tries again every few seconds, and comes back by
-    itself once the PC answers.</p>
+    itself once the PC answers. If the PC has a new address,
+    <button type="button" class="link" data-ask="pair-again">pair this
+    tablet again</button>.</p>
   <a class="button retry" href="mez-app:retry">Try again</a>
+  <div class="confirm" id="pair-again" hidden>
+    <p>Forget this address, and pair the tablet again from the PC's
+      <strong>Devices</strong> page?</p>
+    <a class="button secondary" href="mez-app:pair-again">Forget it and pair again</a>
+    <button type="button" class="link" data-keep="pair-again">Keep it</button>
+  </div>
+</section>
+
+<section id="checking">
+  <img src="brand/mez-mark.svg" alt="">
+  <h1>Looking for mez</h1>
+  <p aria-live="polite">Asking <strong data-pc></strong> whether mez is
+    there. It takes a moment.</p>
 </section>
 
 <section id="stopped">
@@ -153,12 +220,38 @@
   <a class="button retry" href="mez-app:retry">Try again</a>
 </section>
 
-<section id="no-address">
+<section id="pair">
   <img src="brand/mez-mark.svg" alt="">
-  <h1>No mez PC yet</h1>
-  <p>This build of the app has no address for the mez PC. Pairing by
-    scanning the code on the PC's Devices page comes in a later version.</p>
-  <p class="aside">Until then, open the till in this tablet's browser.</p>
+  <h1>Pair this tablet</h1>
+  <p>On the mez PC, open <strong>Devices</strong> and choose <strong>Pair a
+    device</strong>, for a till or a kitchen display. It shows an address
+    to open and a code.</p>
+  <form id="address-form" novalidate>
+    <label for="address">The address the PC shows</label>
+    <input id="address" type="text" inputmode="url" autocomplete="off"
+      autocapitalize="off" autocorrect="off" spellcheck="false"
+      maxlength="200" placeholder="192.168.1.20:7777" aria-describedby="why">
+    <div id="why" aria-live="polite">
+      <p class="refusal" data-why="not-an-address" hidden>That isn't an address
+        mez can open. Type it as the PC shows it, such as 192.168.1.20:7777.</p>
+      <p class="refusal" data-why="not-on-the-network" hidden>That address isn't
+        on the venue's network. The PC's address starts with 192.168, 10 or
+        172.16 to 172.31, or is mez.local.</p>
+      <p class="refusal" data-why="back-office" hidden>That is the back office's
+        address. On a tablet, mez opens the till or the kitchen display: pair
+        one of those from the PC.</p>
+      <p class="refusal" data-why="not-an-app" hidden>That address isn't the
+        till's or the kitchen display's. Type it as the PC shows it for the
+        device you are pairing.</p>
+      <p class="refusal" data-why="not-a-code" hidden>What follows the # isn't a
+        pairing code. Leave it off, and type the code on the next screen.</p>
+      <p class="refusal" data-why="no-mez" hidden>Nothing at that address
+        answers as mez. Check it against the PC's Devices page, that mez is
+        running on the PC, and that this tablet is on the venue's wifi.</p>
+    </div>
+    <button class="button" type="submit">Open</button>
+  </form>
+  <p class="aside">Then type the code on the next screen.</p>
 </section>
 
 <script>
@@ -167,6 +260,29 @@
   const pc = new URLSearchParams(location.search).get("pc");
   for (const el of document.querySelectorAll("[data-pc]")) el.textContent = pc ?? "";
   for (const el of document.querySelectorAll(".pc")) el.hidden = !pc;
+
+  // "Pair this tablet": the typed address goes to the app, which checks it
+  // (Link.kt) and keeps it, or opens this page again with ?why= and what was
+  // typed, to be mended.
+  const params = new URLSearchParams(location.search);
+  const why = params.get("why");
+  const field = document.getElementById("address");
+  field.value = params.get("typed") ?? "";
+  for (const el of document.querySelectorAll("[data-why]")) el.hidden = el.dataset.why !== why;
+  if (why) field.setAttribute("aria-invalid", "true");
+  document.getElementById("address-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    location.href = "mez-app:address?typed=" + encodeURIComponent(field.value);
+  });
+
+  // "Pair again" asks first: the page shows each time the PC restarts, and
+  // a slipped tap must not cost the tablet its address.
+  for (const ask of document.querySelectorAll("[data-ask]")) {
+    ask.addEventListener("click", () => { document.getElementById(ask.dataset.ask).hidden = false; });
+  }
+  for (const keep of document.querySelectorAll("[data-keep]")) {
+    keep.addEventListener("click", () => { document.getElementById(keep.dataset.keep).hidden = true; });
+  }
 
   // Try again asks the PC, which takes up to a few seconds: the button says
   // so meanwhile. If the PC answers, mez opens over this page.

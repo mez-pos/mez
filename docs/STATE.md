@@ -11,7 +11,7 @@
 `docs/phases/phase-18.md`, opened 2026-11-01 (ADR-409): a native Kotlin
 WebView shell in `android-app/` around the screens the PC serves, so a
 tablet is full screen, awake, back in mez after a reboot, paired by
-scanning and not unpaired by a new address. Tasks 1 to 3 are done.
+scanning and not unpaired by a new address. Tasks 1 to 3 and 4a are done.
 `make check` never builds the app; `make android` does (a JDK and the
 Android SDK).
 
@@ -30,36 +30,34 @@ list below.
 
 ## Last completed task
 
-**Phase 18, Task 3: a tablet that stays a till**, 2026-11-02 (ADR-413).
-Full screen (the bars back for a moment by a swipe), the screen kept on,
-Back between the PC's pages only (never out of the app, never onto the
-app's own pages: the history is cleared when the app opens the PC's
-page). The WebView kept to the PC's origin and the app's pages. Its
-settings chosen in `MezWebView.kt`, each with its reason; `confirm()`
-shown as Android's dialog; WebView's metrics off. "Can't reach the mez PC", the app's page,
-when the PC does not answer: it asks `/api/v1/health` every 5 seconds and
-opens the page again when the PC answers, the pairing code kept. A
-renderer gone brings a new WebView where the old one was; twice in a
-minute, "The screen stopped" and Try again. The chime: in WebView an
-`AudioContext` runs with no tap whatever the media setting, so the
-kitchen board chimes after a reload with nobody touching it. Seen on an
-Android 13 tablet emulator, every part; not on a real tablet.
+**Phase 18, Task 4a: the address, checked, kept and typed**, 2026-11-02
+(ADR-414). Task 4 split in two, the camera apart (4b). First run is the
+app's page "Pair this tablet": the address typed as the PC shows it,
+checked by `readLink()` (http or https, a private IPv4 address or
+`mez.local`, the till or `/kitchen`, an optional `#code=`), then asked
+once whether mez answers there before it is kept (a router or a printer
+answers too, and a kept address holds the WebView). The app keeps the
+address and path, never the code, which it opens once. On Android 17 the
+local network page comes after the address. "Pair again" on "Can't reach
+the mez PC" asks, then forgets the address. A debug build starts from no
+address unless `-PmezUrl` seeds one, once. Seen on Android 13 (a till and
+a kitchen display paired, every refusal) and Android 17 (the code across
+the prompt).
 
 ## Next task
 
-**Here: Phase 18 Task 4, paired by scanning**: the app's own "Scan the
-pairing code" page on first run, a ZXing scanner with no Play services,
-only the Devices page's link shape accepted (http or https, a private
-address or `mez.local`, a path `appPaths` names), the address typed by
-hand as the second way in, unit tests on the link's checks. It needs a
-JDK and the Android SDK, never `make check`. **On this PC the Android 17
-emulator image aborts in its graphics driver** (ADR-412): walk on the
-AVD `mez_tablet_33` (Android 13); the emulator's camera can show a QR
-through its virtual scene, a real tablet is the better check. `adb` here
-trusts the key under `D:\AndroidSDK\Android\.android`
-(`ANDROID_SDK_HOME`). The WebView takes the DevTools protocol through
-`adb forward tcp:9222 localabstract:webview_devtools_remote_<pid>` in a
-debug build: how ADR-413's walk read the page and crashed the renderer.
+**Here: Phase 18 Task 4b, scanned**: the camera on "Pair this tablet"
+(CameraX and ZXing's core, no Play services), the camera permission with
+words, the app's page over the preview, a scanned link through 4a's
+`readLink()` and its health check. It needs a JDK and the Android SDK,
+never `make check`. The emulator's camera can be fed the QR as a picture:
+`emulator -avd mez_tablet_33 -camera-back imagefile:<png>` (a PNG of the
+Devices page's QR, from `POST /api/v1/devices/codes`'s `svg`). **On this
+PC the Android 17 image aborts in its graphics driver** (ADR-412) and its
+keyboard did not take the emulator's typing: walk on `mez_tablet_33`.
+`adb` trusts the key under `D:\AndroidSDK\Android\.android`. The
+WebView takes the DevTools protocol through `adb forward tcp:9222
+localabstract:webview_devtools_remote_<pid>` in a debug build.
 
 **Out of phase, before the venue's install: the re-run's other two P1s**
 (TBS-20 is fixed), TBS-21 (the approval sheet: scrolled, the cashier

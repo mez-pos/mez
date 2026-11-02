@@ -10,6 +10,21 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The tablet app's address** (ADR-414, Phase 18 Task 4a; 2026-11-02).
+  Seen on an Android 13 tablet emulator: "Pair this tablet" on first run,
+  every refusal's words, an address refused while mez was stopped and at a
+  port where something else answered, a till paired by typing its address
+  then the code, a kitchen display by typing its address with the code,
+  the kept address opened on the next start, "Pair again" asking first.
+  Seen on Android 17 before the health check was added: the address first,
+  then the local network page, the code held across Android's prompt.
+  **Not seen:** Android 17 since the health check; `mez.local` (the
+  emulator cannot resolve it); a real tablet; a debug build seeded with
+  `-PmezUrl` after "Pair again". **Left as is:** typing is the only way in
+  until 4b brings the camera; a code is lost if the app is closed while
+  Android 17's prompt is up (typed again on mez's pairing screen); an
+  address is refused while the PC is off.
+
 - **The tablet that stays a till** (ADR-413, Phase 18 Task 3; 2026-11-02).
   Seen on an Android 13 tablet emulator: full screen, the bars back by a
   swipe and gone again, `KEEP_SCREEN_ON`, Back between the PC's pages and

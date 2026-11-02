@@ -109,17 +109,43 @@ Words in `docs/hardware.md`, `docs/deploy.md` and `docs/releasing.md`.
   (`kitchen/use-chime.ts`); if `AudioContext` still starts suspended, the
   fix is found and written in an ADR.
 
-- [ ] **Task 4 - Paired by scanning.** First run is the app's page "Scan
-  the pairing code". The camera reads the QR the Devices page draws
-  (ADR-367: `http://<address>:<port>/<path>#code=XXXX-XXXX`) with a
-  scanner that needs no Play services (ZXing). The app accepts only that
-  shape: http or https, a private address or `mez.local`, a path the
-  server's `appPaths` names (the till, `/kitchen`); anything else is
-  refused with words. It keeps the address and path and opens the link; the
-  web app pairs itself from the fragment, as in a browser. Typing the
-  address by hand is the second way in. Unit tests on the link's checks.
-  **Seen:** a till and a kitchen display paired on a tablet from a demo
-  venue's Devices page.
+- **Task 4 - Paired by scanning.** First run is the app's page "Scan the
+  pairing code". The camera reads the QR the Devices page draws (ADR-367:
+  `http://<address>:<port>/<path>#code=XXXX-XXXX`) with a scanner that needs
+  no Play services (ZXing). The app accepts only that shape: http or https,
+  a private address or `mez.local`, a path the server's `appPaths` names
+  (the till, `/kitchen`); anything else is refused with words. It keeps the
+  address and path and opens the link; the web app pairs itself from the
+  fragment, as in a browser. Typing the address by hand is the second way
+  in. Unit tests on the link's checks. **Seen:** a till and a kitchen
+  display paired on a tablet from a demo venue's Devices page. Split in two
+  on 2026-11-02, the camera apart:
+
+  - [x] **Task 4a - The address, checked, kept and typed.** Done 2026-11-02
+    (ADR-414), seen on Android 13 and 17 emulators; an address is kept only
+    once mez answers there (a review's find). The link's
+    checks, a pure function with unit tests: http or https, a private IPv4
+    address or `mez.local`, the till or `/kitchen` (the back office refused
+    with its own words), an optional `#code=XXXX-XXXX` and nothing else.
+    The app keeps the PC's address and path, never the code, and opens the
+    link once. First run is the app's page "Pair this tablet", which until
+    4b takes the address typed as the PC shows it; a refusal says why on
+    the same page. Android 17's local network page comes after the address,
+    before the PC is opened, the code kept in memory across it. "Can't
+    reach the mez PC" gets "Pair again". A debug build no longer opens an
+    address by itself (`-PmezUrl` still seeds one). **Seen:** on an
+    emulator, a till and a kitchen display paired by typing their
+    addresses, the refusals' words, and the kept address opened on the
+    next start.
+
+  - [ ] **Task 4b - Scanned.** The camera on the "Pair this tablet" page:
+    CameraX and ZXing's core, no Play services; the camera permission asked
+    with words, a refusal leaving typing; the app's page over the preview
+    (its words and Cancel in HTML, the preview native); a scanned link
+    through 4a's checks. **Seen:** a till and a kitchen display paired by
+    scanning a demo venue's Devices page, on an emulator whose camera is
+    fed the QR as an image (`-camera-back imagefile:`), and on a real
+    tablet when one is to hand.
 
 - [ ] **Task 5 - The PC found again.** ADR first. When the kept address
   stops answering, the app looks for the PC (`mez.local` by a one-shot

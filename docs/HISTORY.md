@@ -8,6 +8,21 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 18, Task 3: a tablet that stays a till**, 2026-11-02 (ADR-413).
+Full screen (the bars back for a moment by a swipe), the screen kept on,
+Back between the PC's pages only (never out of the app, never onto the
+app's own pages: the history is cleared when the app opens the PC's
+page). The WebView kept to the PC's origin and the app's pages. Its
+settings chosen in `MezWebView.kt`, each with its reason; `confirm()`
+shown as Android's dialog; WebView's metrics off. "Can't reach the mez PC", the app's page,
+when the PC does not answer: it asks `/api/v1/health` every 5 seconds and
+opens the page again when the PC answers, the pairing code kept. A
+renderer gone brings a new WebView where the old one was; twice in a
+minute, "The screen stopped" and Try again. The chime: in WebView an
+`AudioContext` runs with no tap whatever the media setting, so the
+kitchen board chimes after a reload with nobody touching it. Seen on an
+Android 13 tablet emulator, every part; not on a real tablet.
+
 **Phase 18, Task 2: the shell builds, as mez**, 2026-11-02 (ADR-412).
 One `ComponentActivity` and one WebView; AppCompat and Material out; the
 label and project "mez"; the mark as an adaptive icon with a themed layer;

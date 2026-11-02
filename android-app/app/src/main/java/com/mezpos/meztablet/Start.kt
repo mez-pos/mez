@@ -24,13 +24,14 @@ enum class Start(val page: String?) {
     /** Refused past asking: only Android's Settings can allow it now. */
     SETTINGS("settings"),
 
-    /** No address for the PC: a release build, until it pairs by scanning. */
-    NO_ADDRESS("no-address"),
+    /** No PC yet: first run, or after "Pair again". The address comes first. */
+    PAIR("pair"),
 }
 
 /**
  * Where the app starts, and where it goes on coming back to the front (from
- * Android's permission prompt, or from its Settings).
+ * Android's permission prompt, or from its Settings). The PC's [address]
+ * comes first, then Android 17's local network, then the PC.
  *
  * [androidWillAsk] is `shouldShowRequestPermissionRationale`: true after a
  * refusal Android will still ask past, and false both before the first ask
@@ -44,7 +45,7 @@ fun start(
     askedBefore: Boolean,
     androidWillAsk: Boolean,
 ): Start = when {
-    address.isEmpty() -> Start.NO_ADDRESS
+    address.isEmpty() -> Start.PAIR
     sdk < ANDROID_17 || granted -> Start.MEZ
     androidWillAsk -> Start.REFUSED
     !askedBefore -> Start.ASK

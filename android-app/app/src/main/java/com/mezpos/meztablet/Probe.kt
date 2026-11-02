@@ -36,6 +36,18 @@ class Probe(
         generation.incrementAndGet()
     }
 
+    /**
+     * Asks [health] once, now, and tells [then] whether mez answered, on the
+     * probe's thread: an address is kept only once mez has (ADR-414).
+     */
+    fun once(health: String, then: (Boolean) -> Unit) {
+        try {
+            thread.execute { then(answers(health)) }
+        } catch (e: RejectedExecutionException) {
+            // Closed: the activity is gone, and nobody is waiting.
+        }
+    }
+
     /** Stops for good: the activity is gone. */
     fun close() {
         stop()

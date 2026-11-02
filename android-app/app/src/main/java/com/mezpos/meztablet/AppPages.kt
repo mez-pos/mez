@@ -1,5 +1,6 @@
 package com.mezpos.meztablet
 
+import java.net.URLDecoder
 import java.net.URLEncoder
 
 /**
@@ -16,6 +17,9 @@ object AppPages {
     /** Android took the screen away twice in a short while ([revival]). */
     const val STOPPED = "stopped"
 
+    /** Asking an address whether mez answers there, before keeping it. */
+    const val CHECKING = "checking"
+
     /** The address [start] opens: the PC's own, [mez], or the app's page for it. */
     fun address(start: Start, mez: String): String =
         start.page?.let(::page) ?: mez
@@ -25,10 +29,22 @@ object AppPages {
      * answer. The page shows the PC's host and port, never the rest: a
      * pairing link carries its code in the fragment.
      */
-    fun unreachable(failed: String): String {
-        val pc = place(failed) ?: return page(UNREACHABLE)
-        return "${ASSETS}start.html?pc=${URLEncoder.encode(pc, "UTF-8")}#$UNREACHABLE"
+    fun unreachable(failed: String): String = at(UNREACHABLE, failed)
+
+    /** "Looking for mez" at [address]'s host and port, while the app asks it. */
+    fun checking(address: String): String = at(CHECKING, address)
+
+    private fun at(id: String, address: String): String {
+        val pc = place(address) ?: return page(id)
+        return "${ASSETS}start.html?pc=${URLEncoder.encode(pc, "UTF-8")}#$id"
     }
+
+    /**
+     * "Pair this tablet" again, saying [why] the link was refused, with
+     * [typed] back in the box to be mended.
+     */
+    fun pairRefused(why: Why, typed: String): String =
+        "${ASSETS}start.html?why=${why.id}&typed=${URLEncoder.encode(typed, "UTF-8")}#${Start.PAIR.page}"
 
     /** The app's page [id], one `<section id>` of `start.html`. */
     fun page(id: String): String = "${ASSETS}start.html#$id"
@@ -37,13 +53,22 @@ object AppPages {
     fun isOwn(url: String?): Boolean = url != null && url.startsWith(ASSETS)
 }
 
-/** What the app's own pages ask the app for, each by a link `mez-app:<name>`. */
-enum class Action(val link: String) {
+/**
+ * What the app's own pages ask the app for, each by a link `mez-app:<name>`;
+ * one that [takesQuery] carries what was typed after a `?`.
+ */
+enum class Action(val link: String, val takesQuery: Boolean = false) {
     ASK_LOCAL_NETWORK("mez-app:ask"),
     OPEN_SETTINGS("mez-app:settings"),
 
     /** Try the PC again now, from "Can't reach the mez PC" or "stopped". */
     RETRY("mez-app:retry"),
+
+    /** The PC's address typed on "Pair this tablet": `mez-app:address?typed=...`. */
+    ADDRESS("mez-app:address", takesQuery = true),
+
+    /** Forget the PC's address and pair again, from "Can't reach the mez PC". */
+    PAIR_AGAIN("mez-app:pair-again"),
     ;
 
     companion object {
@@ -53,7 +78,20 @@ enum class Action(val link: String) {
          * The action [url] asks for, or null. Only the app's own pages ask:
          * a page from the network, [from] anywhere else, asks for nothing.
          */
-        fun of(url: String, from: String?): Action? =
-            if (AppPages.isOwn(from)) entries.firstOrNull { it.link == url } else null
+        fun of(url: String, from: String?): Action? {
+            if (!AppPages.isOwn(from)) return null
+            return entries.firstOrNull { it.link == url || (it.takesQuery && url.startsWith("${it.link}?")) }
+        }
+    }
+}
+
+/** What was typed in [url], `mez-app:address?typed=...`, decoded; null if nothing was. */
+fun typedOf(url: String): String? {
+    val value = url.substringAfter('?', "").split('&')
+        .firstOrNull { it.startsWith("typed=") }?.removePrefix("typed=") ?: return null
+    return try {
+        URLDecoder.decode(value, "UTF-8")
+    } catch (e: IllegalArgumentException) {
+        null
     }
 }

@@ -52,6 +52,17 @@ class MainActivity : ComponentActivity() {
             show(where())
         }
 
+    // The PC's address and the app's path, kept once mez has answered there
+    // (ADR-414); empty until then.
+    private val pc: String
+        get() = prefs.getString(PC, null).orEmpty()
+
+    // A link read well ("Pair this tablet", readLink()) and not yet asked:
+    // held, with its pairing code, until mez answers at it, then kept without
+    // the code and opened with it once. What was typed, for a refusal.
+    private var candidate: Pairing.Link? = null
+    private var candidateText = ""
+
     /** The PC's page an app's page stands in for, and which page: what Try again opens. */
     private class Away(val url: String, val page: String)
 
@@ -80,8 +91,8 @@ class MainActivity : ComponentActivity() {
     private val probe = Probe { runOnUiThread(::answered) }
 
     private val shell = object : Shell {
-        override val pc: String get() = BuildConfig.MEZ_URL
-        override fun act(action: Action) = this@MainActivity.act(action)
+        override val pc: String get() = this@MainActivity.pc
+        override fun act(action: Action, link: String) = this@MainActivity.act(action, link)
         override fun unreachable(view: WebView, url: String) {
             if (view === web) this@MainActivity.unreachable(url)
         }
@@ -109,6 +120,18 @@ class MainActivity : ComponentActivity() {
         setContentView(frame)
         keepClearOfCutoutAndKeyboard(frame)
         onBackPressedDispatcher.addCallback(this) { back() }
+        seedOnce()
+    }
+
+    // A debug build given an address (-PmezUrl) starts from it once, as if it
+    // had been typed: after "Pair again" it does not come back.
+    private fun seedOnce() {
+        if (BuildConfig.MEZ_URL.isEmpty() || prefs.getBoolean(SEEDED, false)) return
+        prefs.edit { putBoolean(SEEDED, true) }
+        if (pc.isNotEmpty()) return
+        val link = readLink(BuildConfig.MEZ_URL) as? Pairing.Link ?: return
+        candidate = link
+        candidateText = BuildConfig.MEZ_URL
     }
 
     override fun onStart() {
@@ -151,7 +174,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun where(): Start = start(
-        address = BuildConfig.MEZ_URL,
+        address = pc.ifEmpty { candidate?.pc.orEmpty() },
         sdk = Build.VERSION.SDK_INT,
         granted = ContextCompat.checkSelfPermission(this, LOCAL_NETWORK) ==
             PackageManager.PERMISSION_GRANTED,
@@ -162,7 +185,33 @@ class MainActivity : ComponentActivity() {
     private fun show(next: Start) {
         if (next == showing) return
         showing = next
-        open(AppPages.address(next, mez = BuildConfig.MEZ_URL))
+        val link = candidate
+        if (next == Start.MEZ && link != null) check(link) else open(AppPages.address(next, mez = pc))
+    }
+
+    // Asks the address whether mez answers there before keeping it: a router
+    // or a printer at a private address answers too, and once kept, the
+    // WebView would be held to it (ADR-413) with no way back.
+    private fun check(link: Pairing.Link) {
+        val health = healthOf(link.pc)
+        if (health == null) {
+            checked(link, isMez = false)
+            return
+        }
+        web.loadUrl(AppPages.checking(link.pc))
+        probe.once(health) { isMez -> runOnUiThread { checked(link, isMez) } }
+    }
+
+    private fun checked(link: Pairing.Link, isMez: Boolean) {
+        if (isDestroyed || candidate !== link) return
+        candidate = null
+        if (isMez) {
+            prefs.edit { putString(PC, link.pc) }
+            open(link.open)
+        } else {
+            showing = Start.PAIR
+            web.loadUrl(AppPages.pairRefused(Why.NO_MEZ, candidateText))
+        }
     }
 
     // The app's own way to a page; a stand-in it replaces stops asking.
@@ -176,7 +225,7 @@ class MainActivity : ComponentActivity() {
         web.loadUrl(url)
     }
 
-    private fun act(action: Action) {
+    private fun act(action: Action, link: String) {
         when (action) {
             Action.ASK_LOCAL_NETWORK -> {
                 if (asking) return
@@ -186,7 +235,36 @@ class MainActivity : ComponentActivity() {
             }
             Action.OPEN_SETTINGS -> openSettings()
             Action.RETRY -> retry()
+            Action.ADDRESS -> typed(typedOf(link).orEmpty())
+            Action.PAIR_AGAIN -> pairAgain()
         }
+    }
+
+    // The address typed on "Pair this tablet": kept, and opened with its code
+    // once Android lets the app reach it; or the page again, saying why not.
+    private fun typed(text: String) {
+        if (candidate != null) return // One address asked at a time.
+        when (val link = readLink(text)) {
+            is Pairing.Link -> {
+                candidate = link
+                candidateText = text
+                showing = null
+                show(where())
+            }
+            is Pairing.Refused -> web.loadUrl(AppPages.pairRefused(link.why, text))
+        }
+    }
+
+    // "Pair again", from "Can't reach the mez PC": the address is forgotten.
+    // The pairing stays in the WebView's storage for that address, so the
+    // same PC paired again opens as it was.
+    private fun pairAgain() {
+        prefs.edit { remove(PC) }
+        candidate = null
+        opened = null
+        lastMez = null
+        showing = null
+        show(where())
     }
 
     // A tablet locked down by its owner may have no Settings to open; the
@@ -269,18 +347,19 @@ class MainActivity : ComponentActivity() {
     private fun reopen(next: Revival) {
         val standing = away
         when {
-            // The app's own pages are a few kilobytes: they come back as they were.
-            showing != Start.MEZ -> {
+            // The app's own pages are a few kilobytes: they come back as they
+            // were, and an address being asked is asked again.
+            showing != Start.MEZ || candidate != null -> {
                 showing = null
                 show(where())
             }
             next == Revival.STOP -> {
                 probe.stop()
                 probing = null
-                standIn(Away(standing?.url ?: lastMez ?: opened ?: BuildConfig.MEZ_URL, AppPages.STOPPED))
+                standIn(Away(standing?.url ?: lastMez ?: opened ?: pc, AppPages.STOPPED))
             }
             standing != null -> standIn(standing)
-            else -> open(lastMez ?: opened ?: BuildConfig.MEZ_URL)
+            else -> open(lastMez ?: opened ?: pc)
         }
     }
 
@@ -319,5 +398,7 @@ class MainActivity : ComponentActivity() {
         const val TAG = "mez"
         const val PREFS = "mez"
         const val ASKED = "asked-local-network"
+        const val PC = "pc"
+        const val SEEDED = "seeded"
     }
 }

@@ -16064,3 +16064,84 @@ internet, or to the PC by another name, does nothing in the app; the back office
 open nothing. While "Can't reach the mez PC" shows, one request every 5 seconds. Any error but the
 four keeps WebView's own page. Safe Browsing off, with the WebView kept to the PC. All of it seen
 on an emulator: a real tablet's speaker, and a maker's Android that may keep its bars, are not.
+
+## ADR-414 - The tablet app's address: checked, kept without its code, typed until it is scanned
+2026-11 · Status: accepted. Phase 18 Task 4a. Follows ADR-412 and ADR-413.
+Context: Task 4 pairs the app by scanning the Devices page's QR (ADR-367), which carries
+`http://<address>:<port>/<path>#code=XXXX-XXXX`, and asks for typing as a second way in. It was
+split on 2026-11-02: the address (its checks, keeping it, typing it) is 4a, the camera 4b. Until
+4a a debug build opened an address it was built with, and a release build opened nothing.
+Decision:
+  - **The link's checks are one pure function**, `readLink()` in `Link.kt`, for a scanned link
+    and a typed address alike. It takes http or https; a private IPv4 address (10/8, 172.16/12,
+    192.168/16, the ranges the server offers, `internal/device/discover`'s `privateV4`) or
+    `mez.local` (ADR-379); any port; the till (`/`) or the kitchen display (`/kitchen`); and an
+    optional `#code=` of four and four letters or digits, uppercased as the web app writes it.
+    Nothing else: no user or password, no query, no other fragment, no address over 200
+    characters. An address typed without a scheme is taken as `http://`. No name is looked up,
+    so the answer is the same offline. A part with a leading zero (`192.168.1.020`) is refused:
+    Chromium reads it as octal, another address. The host and path are written as the app will
+    compare them (`mez.local:7777/Kitchen/` keeps as `http://mez.local:7777/kitchen`). Each
+    refusal has its reason and its words on the page: not an address, not on the venue's
+    network, the back office's (a PC's work, not a tablet's), not the till's or the kitchen
+    display's, not a pairing code, and one found by asking (below): nothing there answers as
+    mez.
+  - **An address is kept only once mez has answered there.** A link read well is held in
+    memory, with its code, until the app asks its `GET /api/v1/health` once (`Probe.once`,
+    off the main thread, the "Looking for mez" page meanwhile) and hears mez's own answer
+    (ADR-413). A router or a printer at a private address answers too, and an address once
+    kept holds the WebView to it (ADR-413) with no way back; an `https://` address, where mez
+    serves http, would end on WebView's own certificate error. Either is refused on "Pair this
+    tablet" instead, with what was typed back in the box. One address is asked at a time.
+  - **The app keeps the PC's address and the app's path, never the code.** The address is the
+    app's one other preference (`pc`); the link with its code is opened once, after the
+    answer, and the web app pairs itself from the fragment as in a browser. A code is good once
+    for ten minutes, so it is never written down; a tablet whose app is closed while Android
+    17's prompt is up opens the address bare, and the code is typed on mez's pairing screen.
+  - **First run is the app's page "Pair this tablet"** (`start.html#pair`). Until 4b brings the
+    camera it takes the address typed as the PC shows it; the code is then typed on mez's own
+    pairing screen, or carried on the address. The page sends what was typed as
+    `mez-app:address?typed=...`, the one action with a value, honoured only from the app's own
+    pages (ADR-412); a refusal opens the page again saying why, with what was typed back in the
+    box (set as its value, never as markup).
+  - **The address comes first, then Android 17's local network, then the PC** (`start()`): the
+    person at a new tablet has the PC's Devices page in front of them, and the permission's words
+    ("to reach the PC") read once there is a PC. The code is held across the prompt.
+  - **"Pair again"** on "Can't reach the mez PC" forgets the address and opens "Pair this tablet":
+    the way back from an address the PC no longer has (Task 5 is to find it by itself). It is
+    a link in the page's words, not a button beside Try again, and asks before it forgets: the
+    page shows each time the PC restarts, and a slipped tap must not cost the tablet its
+    address. The pairing stays in the WebView's storage for that address, so the same address
+    typed again opens paired. The way out behind a manager's PIN is Task 6's.
+  - **A debug build starts from no address**, as a release does. `-PmezUrl`
+    (`make android MEZ_URL=...`) gives it one to start from, once, as if it had been typed and
+    asked like one: for walking against a PC without pairing each time. After "Pair again" it
+    does not come back.
+Seen, 2026-11-02, against a demo venue at `10.0.2.2:7777`. On an Android 13 tablet emulator, from
+its data cleared: "Pair this tablet". Typed with the keyboard, `8.8.8.8:7777` refused as off the
+network, the address kept in the box; by script through the same form, the back office's
+address, `hello there`, a short code and `/reports` each refused with their own words. With mez
+stopped, `10.0.2.2:7777` refused as nothing answering; at a port where another web server
+answered 404 to the health check, refused the same, nothing kept either time. mez started,
+`10.0.2.2:7777` typed: one health request, the address kept as `http://10.0.2.2:7777/`, the till's
+pairing screen, a `mez pair` code typed there, paired. The app stopped and started: the till at
+once, one page in its history. The PC stopped: "Can't reach the mez PC", its "pair this tablet
+again" asking first, Keep it closing the question, Forget it and pair again opening "Pair this
+tablet" with the address gone; then `10.0.2.2:7777/kitchen#code=...` typed whole: the kitchen
+display paired from the code, the address kept as `http://10.0.2.2:7777/kitchen` without it, the
+board at once on the next start, the till's pairing still in the WebView's storage beside it.
+On an Android 17 emulator, its data cleared: "Pair this tablet" first, the kitchen's address and
+code (put in the box by script: that image's keyboard did not take the emulator's typing), then
+"mez needs the venue's wifi" with nothing yet sent to the PC, Continue, Android's prompt, Allow:
+the kitchen display paired with the code held across the prompt (`POST /api/v1/devices/pair`
+201). The kitchen's and Android 17's walks came before a review found the trap the health
+check closes; the two refusals found by asking, the till kept after one health request, and Pair
+again's question were walked after it, on Android 13. Android 17 has not been walked since.
+Rejected: keeping an address before asking it (the trap above); looking a name up to judge an
+address (the answer would change offline); accepting the back office (a PC's work, and its
+pairing is another kind of device); IPv6 (the server offers none); keeping the code; asking for
+the local network before the address; a button for "Pair again" beside Try again.
+Cost: an address is refused while the PC is off, and typed again once it is on. `mez.local` was
+not walked: the emulator cannot resolve it, and Android before 12 does not (ADR-379). Typing
+an address is the only way in until 4b; the camera is next.
+

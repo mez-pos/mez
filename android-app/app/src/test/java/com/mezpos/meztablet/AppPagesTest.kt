@@ -19,7 +19,7 @@ class AppPagesTest {
             Start.ASK to "start.html#ask",
             Start.REFUSED to "start.html#refused",
             Start.SETTINGS to "start.html#settings",
-            Start.NO_ADDRESS to "start.html#no-address",
+            Start.PAIR to "start.html#pair",
         )
         for ((start, page) in pages) {
             assertEquals(start.name, AppPages.ASSETS + page, AppPages.address(start, mez))
@@ -30,7 +30,7 @@ class AppPagesTest {
     fun `every page but mez has its section in start html`() {
         // Gradle runs unit tests in the module's directory.
         val html = File("src/main/assets/start.html").readText()
-        val pages = Start.entries.mapNotNull { it.page } + AppPages.UNREACHABLE + AppPages.STOPPED
+        val pages = Start.entries.mapNotNull { it.page } + AppPages.UNREACHABLE + AppPages.STOPPED + AppPages.CHECKING
         for (page in pages) {
             assertTrue("start.html has no <section id=\"$page\">", html.contains("<section id=\"$page\">"))
         }
@@ -50,6 +50,10 @@ class AppPagesTest {
         // An address with no PC in it still gets the page, without a place.
         assertEquals(AppPages.ASSETS + "start.html#unreachable", AppPages.unreachable("about:blank"))
         assertEquals(AppPages.ASSETS + "start.html#stopped", AppPages.page(AppPages.STOPPED))
+        assertEquals(
+            AppPages.ASSETS + "start.html?pc=10.0.2.2%3A7777#checking",
+            AppPages.checking("http://10.0.2.2:7777/kitchen"),
+        )
     }
 
     @Test
@@ -94,6 +98,33 @@ class AppPagesTest {
         assertNull(Action.of("mez-app:uninstall", from = own))
         assertNull(Action.of("mez-app:ask?x=1", from = own))
         assertNull(Action.of("https://example.com/", from = own))
+    }
+
+    @Test
+    fun `the address typed on the pair page`() {
+        val from = AppPages.page("pair")
+        val link = "mez-app:address?typed=192.168.1.20%3A7777%2Fkitchen"
+        assertEquals(Action.ADDRESS, Action.of(link, from))
+        assertEquals("192.168.1.20:7777/kitchen", typedOf(link))
+        assertEquals("", typedOf("mez-app:address?typed="))
+        assertEquals("a b", typedOf("mez-app:address?typed=a%20b"))
+        assertNull("nothing typed", typedOf("mez-app:address"))
+        assertNull("not what was typed", typedOf("mez-app:address?other=1"))
+        assertNull("broken escapes", typedOf("mez-app:address?typed=%zz"))
+        assertNull("from the network", Action.of(link, from = mez))
+        assertNull("a query on an action that takes none", Action.of("mez-app:pair-again?x=1", from))
+        assertEquals(Action.PAIR_AGAIN, Action.of("mez-app:pair-again", from = AppPages.unreachable(mez)))
+    }
+
+    @Test
+    fun `a refusal opens the pair page again, saying why, with what was typed`() {
+        val page = AppPages.pairRefused(Why.BACK_OFFICE, "192.168.1.20:7777/backoffice")
+        assertEquals(AppPages.ASSETS + "start.html?why=back-office&typed=192.168.1.20%3A7777%2Fbackoffice#pair", page)
+        assertTrue(AppPages.isOwn(page))
+        assertEquals(
+            AppPages.ASSETS + "start.html?why=not-an-address&typed=a%26b%23c#pair",
+            AppPages.pairRefused(Why.NOT_AN_ADDRESS, "a&b#c"),
+        )
     }
 
     @Test

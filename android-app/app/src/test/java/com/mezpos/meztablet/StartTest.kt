@@ -18,8 +18,10 @@ class StartTest {
     @Test
     fun `where the app starts`() {
         val cases = listOf(
-            Case("no address, even with the permission", Start.NO_ADDRESS, address = "", granted = true),
-            Case("no address on an older Android", Start.NO_ADDRESS, address = "", sdk = 33),
+            Case("no address, even with the permission", Start.PAIR, address = "", granted = true),
+            Case("no address on an older Android", Start.PAIR, address = "", sdk = 33),
+            Case("no address, before Android 17 asks", Start.PAIR, address = ""),
+            Case("no address, refused past asking", Start.PAIR, address = "", askedBefore = true),
             Case("Android 16 has no such permission", Start.MEZ, sdk = 36),
             Case("Android 10, the oldest the app runs on", Start.MEZ, sdk = 29),
             Case("Android 16, though asked once on another", Start.MEZ, sdk = 36, askedBefore = true),

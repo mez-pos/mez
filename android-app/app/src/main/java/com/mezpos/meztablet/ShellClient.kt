@@ -14,8 +14,8 @@ interface Shell {
     /** The PC's address: its pages, and no others, are the WebView's to open. */
     val pc: String
 
-    /** One of the app's own pages asked for [action]. */
-    fun act(action: Action)
+    /** One of the app's own pages asked for [action], by [link]. */
+    fun act(action: Action, link: String)
 
     /** [url], one of the PC's pages, did not load in [view]: the PC did not answer. */
     fun unreachable(view: WebView, url: String)
@@ -55,7 +55,7 @@ class ShellClient(
             // code. The link is cut short: a page on the network wrote it.
             Log.w(TAG, "refused ${url.take(LOGGED_LINK)}: not asked by one of the app's own pages")
         } else {
-            shell.act(action)
+            shell.act(action, url)
         }
         return true
     }

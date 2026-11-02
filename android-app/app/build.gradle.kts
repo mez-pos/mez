@@ -5,19 +5,22 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
-// The address a debug build opens, until the app pairs by scanning (Task 4).
-// The emulator reaches the computer it runs on at 10.0.2.2, and mez listens
-// on 7777 unless told otherwise. Another one:
-//   ./gradlew assembleDebug -PmezUrl=http://192.168.1.20:7777/#code=ABCD-2345
-val mezUrl: String = providers.gradleProperty("mezUrl").getOrElse("http://10.0.2.2:7777/")
-// It becomes a Java string, and `make android` passes it in single quotes.
-require(Regex("""^https?://[^\s"'\\$]+$""").matches(mezUrl)) {
-    "mezUrl \"$mezUrl\": want an http:// or https:// address, with no spaces, quotes, \\ or \$"
+// An address a debug build starts from, as if "Pair this tablet" had been
+// given it (ADR-414): for walking the app against a PC without pairing it
+// each time. The emulator reaches the computer it runs on at 10.0.2.2:
+//   ./gradlew assembleDebug -PmezUrl=http://10.0.2.2:7777/
+// Without one, a debug build starts on "Pair this tablet", as a release does.
+val mezUrl: String = providers.gradleProperty("mezUrl").getOrElse("")
+if (mezUrl.isNotEmpty()) {
+    // It becomes a Java string, and `make android` passes it in single quotes.
+    require(Regex("""^https?://[^\s"'\\$]+$""").matches(mezUrl)) {
+        "mezUrl \"$mezUrl\": want an http:// or https:// address, with no spaces, quotes, \\ or \$"
+    }
+    // The app knows the PC's pages by host and port, read as java.net.URI
+    // reads them (Reach.kt): a host it cannot read, as a name with an
+    // underscore, would be no PC's, and every page refused.
+    require(!URI(mezUrl).host.isNullOrEmpty()) { "mezUrl \"$mezUrl\": no host in it that the app can read" }
 }
-// The app knows the PC's pages by host and port, read as java.net.URI reads
-// them (Reach.kt): a host it cannot read, as a name with an underscore, would
-// be no PC's, and every page refused.
-require(!URI(mezUrl).host.isNullOrEmpty()) { "mezUrl \"$mezUrl\": no host in it that the app can read" }
 
 android {
     namespace = "com.mezpos.meztablet"
@@ -32,7 +35,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        // A release build has no address: it pairs by scanning (Task 4).
+        // A release build starts from no address: "Pair this tablet".
         buildConfigField("String", "MEZ_URL", "\"\"")
     }
 

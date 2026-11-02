@@ -221,8 +221,9 @@ installer:
 
 ## android: the tablet app in android-app/ (ADR-409): a debug APK, its unit
 ##          tests and lint. Needs a JDK and the Android SDK, which `make
-##          check` never does. A debug build opens MEZ_URL, by default
-##          http://10.0.2.2:7777/, the computer an emulator runs on.
+##          check` never does. A debug build starts on "Pair this
+##          tablet", or at MEZ_URL if given one (http://10.0.2.2:7777/ is
+##          the computer an emulator runs on).
 MEZ_URL ?=
 android:
 	@cd android-app && ./gradlew --console=plain $(if $(MEZ_URL),'-PmezUrl=$(MEZ_URL)',) \
