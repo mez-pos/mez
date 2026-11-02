@@ -1,5 +1,5 @@
 [versions]
-agp = "9.3.3"
+agp = "9.5.0"
 activity = "1.13.0"
 camerax = "1.6.2"
 coreKtx = "1.19.0"
