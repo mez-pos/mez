@@ -8,6 +8,21 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 18, Task 2: the shell builds, as mez**, 2026-11-02 (ADR-412).
+One `ComponentActivity` and one WebView; AppCompat and Material out; the
+label and project "mez"; the mark as an adaptive icon with a themed layer;
+R8 on for release (279 KB); cleartext by a network security config;
+nothing backed up (the WebView holds the device token). Android 17's
+`ACCESS_LOCAL_NETWORK` is asked for before the PC is opened, after the
+app's own page says why, with "can't reach the PC" and "Allow it in
+Settings" for the refusals (`Start.kt`, unit-tested with the page). A
+debug build opens `make android MEZ_URL=...`, by default
+`http://10.0.2.2:7777/`. `make android` (debug APK, unit tests, lint with
+warnings as errors) and its own CI job; Dependabot watches the Gradle
+side. Seen on an Android 13 tablet emulator: paired, signed in, an order
+sent. Seen on an Android 17 one: every path of the permission. Went ahead
+on minSdk 29 before the tablets' versions were read.
+
 **Phase 18, Task 1: ADR-409 and the phase**, 2026-11-01. The human
 asked how a tablet should run: an app or a URL? Three researchers found
 that no web-only route works offline on a plain-HTTP LAN (a PWA needs a

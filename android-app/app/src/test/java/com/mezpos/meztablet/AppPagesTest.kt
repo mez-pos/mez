@@ -30,11 +30,26 @@ class AppPagesTest {
     fun `every page but mez has its section in start html`() {
         // Gradle runs unit tests in the module's directory.
         val html = File("src/main/assets/start.html").readText()
-        for (start in Start.entries) {
-            val page = start.page ?: continue
+        val pages = Start.entries.mapNotNull { it.page } + AppPages.UNREACHABLE + AppPages.STOPPED
+        for (page in pages) {
             assertTrue("start.html has no <section id=\"$page\">", html.contains("<section id=\"$page\">"))
         }
         assertNull(Start.MEZ.page)
+    }
+
+    @Test
+    fun `can't reach the PC shows its host and port, and nothing else of the address`() {
+        val page = AppPages.unreachable(mez)
+        assertEquals(AppPages.ASSETS + "start.html?pc=192.168.1.20%3A7777#unreachable", page)
+        assertFalse("the pairing code leaked into $page", page.contains("ABCD"))
+        assertTrue(AppPages.isOwn(page))
+        assertEquals(
+            AppPages.ASSETS + "start.html?pc=mez.local#unreachable",
+            AppPages.unreachable("http://mez.local/kitchen"),
+        )
+        // An address with no PC in it still gets the page, without a place.
+        assertEquals(AppPages.ASSETS + "start.html#unreachable", AppPages.unreachable("about:blank"))
+        assertEquals(AppPages.ASSETS + "start.html#stopped", AppPages.page(AppPages.STOPPED))
     }
 
     @Test
@@ -68,11 +83,13 @@ class AppPagesTest {
     fun `an action asked by the app's own page`() {
         assertEquals(Action.ASK_LOCAL_NETWORK, Action.of("mez-app:ask", from = own))
         assertEquals(Action.OPEN_SETTINGS, Action.of("mez-app:settings", from = own))
+        assertEquals(Action.RETRY, Action.of("mez-app:retry", from = AppPages.unreachable(mez)))
     }
 
     @Test
     fun `no action for a page from the network, or for a link the app does not know`() {
         assertNull(Action.of("mez-app:ask", from = mez))
+        assertNull(Action.of("mez-app:retry", from = mez))
         assertNull(Action.of("mez-app:settings", from = null))
         assertNull(Action.of("mez-app:uninstall", from = own))
         assertNull(Action.of("mez-app:ask?x=1", from = own))

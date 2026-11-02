@@ -15954,3 +15954,113 @@ picker, which spares the permission only for an address it hands out, not one ty
 Cost: one preference kept beside the address. The Settings words name stock Android's
 (Permissions, Nearby devices), which a maker's skin may word differently. Android 17 was seen on an
 emulator the developer's GPU driver does not suit; a real Android 17 tablet is the better check.
+
+## ADR-413 - A tablet that stays a till: full screen, awake, kept to the PC, the screen brought back
+2026-11 · Status: accepted. Phase 18 Task 3. Follows ADR-412.
+Context: ADR-412's shell showed the system bars, let the screen sleep, and left the app on Back
+from the first screen. A renderer that died (a crash, or Android taking it for memory) took the
+app with it. A PC that did not answer left WebView's own "Webpage not available". A page could
+take the WebView anywhere. And the kitchen chime was held back after every reload until a cook
+tapped the board (ADR-391): a browser lets a page sound only after a touch.
+Decision:
+  - **Full screen, awake.** The system bars are hidden (`WindowInsetsControllerCompat`, transient
+    by a swipe from the edge, over the screen, gone again by themselves), and hidden again each
+    time the app comes to the front or gets the focus back from a prompt. `FLAG_KEEP_SCREEN_ON`
+    while mez is in front. The insets padding stays for a cutout, the keyboard, and a tablet
+    that will not hide its bars.
+  - **Back stays in mez.** It goes back in the WebView between the PC's pages, as Back does in a
+    browser (`goesBack()` in `Back.kt`): only when WebView can (`canGoBack`, which skips the
+    entries a page added without a tap, as Chrome does) and none of the app's own pages is
+    anywhere behind, since a skip can land further back than the entry before. On the first
+    screen and on the app's pages it does nothing. The history is cleared when the app opens the
+    PC's page, once the page is there, so the app's pages ("Can't reach the mez PC", the local
+    network's) are never behind the till.
+  - **The WebView stays on the PC.** A page may take it only to the PC's own pages (the same
+    scheme, host and port as the address the app has: another origin is another localStorage,
+    without the pairing), and to the app's pages only from the app's pages (`mayOpen()` in
+    `Reach.kt`). A link to the internet or to another device does nothing, logged by its host
+    alone. Other schemes are WebView's to refuse. The app's page carries a Content Security
+    Policy of its own files and its inline style and script.
+  - **The WebView's settings** (`MezWebView.kt`, each with its reason): JavaScript and DOM
+    storage on; media without a gesture; text zoom fixed at 100, no zoom and no zoom controls;
+    no file access, no content access, no geolocation; Safe Browsing off (the WebView opens only
+    the venue's PC and the app's pages, and its lists are Google's); no overscroll stretch of the
+    whole screen. A plain `WebChromeClient`, for WebView's own `alert()` and `confirm()`
+    dialogs: with none, WebView answers them unseen, `confirm()` as Cancel, and the till's
+    "Leave anyway?" over items still being added refused without asking. No file chooser (the
+    back office's CSV import and item photo stay the PC's), no camera or microphone for a page.
+    Left at WebView's defaults, chosen: one window (a new tab opens in this one), no downloads,
+    the HTTP cache as the server's headers say, no mixed content, third-party cookies off, no
+    forced dark, WebView's own user agent. The manifest opts out of WebView's usage metrics.
+  - **"Can't reach the mez PC"** is the app's page (`start.html#unreachable`), over a main-frame
+    load of the PC's that fails for want of an answer: `ERROR_HOST_LOOKUP`, `ERROR_CONNECT`,
+    `ERROR_TIMEOUT`, `ERROR_IO` (`noAnswer()`). Any other error keeps WebView's own page: a bad
+    address or a redirect loop is not mended by trying again. The page names the PC's host and
+    port (from `?pc=`, set as text), never the rest of the address: a pairing link carries its
+    code. It tries again by itself every 5 seconds, and Try again tries at once, saying
+    "Trying..." meanwhile. A try is the app asking the PC's `GET /api/v1/health` (`Probe.kt`, on
+    a thread of its own, a 3-second timeout) for a 200 that starts `{"status":"ok"`, which a Go
+    test now holds the server to; not the WebView loading the page again, so WebView's error page
+    never shows between tries. When the PC answers, the page that failed opens again, with the
+    pairing code the app opened it with (WebView reports the address without its fragment;
+    `retryOf()`). An answer opens only the stand-in it was asked for, so one that crosses a
+    renderer's death or the app opening another page opens nothing. Asking stops while the app
+    is not in front.
+  - **A renderer gone brings the WebView back** (`onRenderProcessGone` returns true): the dead
+    WebView is removed and destroyed, a new one made, and it opens where the old one was: the
+    last of the PC's pages it was at, or the app's own page that showed. Twice inside a minute
+    in front (`revival()` in `Revival.kt`) it opens "The screen stopped" instead, whose Try
+    again opens the page at once (a PC that does not answer then gets "Can't reach the mez
+    PC"): a page that takes its renderer down each time it loads would otherwise load over and
+    over as fast as the tablet can. Behind another app, where Android takes renderers for memory
+    as a matter of course, the new WebView waits for the app to come back, and that death does
+    not count. Lint's `MissingOnRenderProcessGone` is no longer suppressed.
+  - **The chime needs no tap in the app, setting or none.** In WebView a new `AudioContext`
+    starts `running` on a page no one has touched, with `mediaPlaybackRequiresUserGesture` true
+    (WebView's default) as with it false; what the setting holds back is an `<audio>` or
+    `<video>` element (`NotAllowedError` with it true, playing with it false). So the kitchen
+    board chimes after a reload, and its "Sound is blocked" band (ADR-391) does not show, in the
+    app. The browser path keeps the band. The setting stays false, for a sound the screens may
+    one day play from a media element. No fix was owed, so no ADR beyond this one.
+  - **The debug address must have a host `java.net.URI` reads**, checked when the build is
+    configured: the app knows the PC's pages by it, and an address it cannot read (a name with an
+    underscore) would have every page refused.
+Seen, 2026-11-02, on an Android 13 tablet emulator (`mez_tablet_33`, 2560x1600) against a demo
+venue at `10.0.2.2:7777`. The till full screen at 1280x800 CSS pixels, no bars; a swipe from the
+top edge brings the status bar and the gesture handle over it, the page still 1280x800, and they
+are gone again within 5 seconds; the window carries `KEEP_SCREEN_ON`. Back three times on the
+till's first screen: still mez. Tables opened by a tap, Back to the till, Back again stays there.
+The tablet's font size at 130%: the till's text and layout as at 100%, before and after a reload.
+The PC stopped and the till reloaded: the app's page, naming `10.0.2.2:7777`, within 3 seconds;
+Back stays on it; Try again says "Trying..." for 3 seconds; the PC started: the till back at
+`/pos`, still signed in, with nobody touching it, and the history cleared to that one page. An
+address with nothing at it (`10.0.2.99`): the same page in 2 seconds. The renderer crashed (the
+DevTools protocol's `Page.crash`): the app lived (the same process), a new WebView opened the till
+(at its PIN screen: the staff session was the dead page's) with the pairing kept; crashed again 11
+seconds later: "The screen stopped"; Try again: the till. The kitchen display paired by its
+`#code=` link, a station chosen, the board reloaded: with no user activation on the page, no
+"Sound is blocked" band and a new `AudioContext` `running`. A ticket sent from the till's side
+(its own pairing, over the API): one chime, 660 and 880 Hz twice, and Android's audio service
+showing the app's AAudio stream started. Then a build with `mediaPlaybackRequiresUserGesture`
+true: the `AudioContext` still `running`, an `<audio>` refused. A script's click is no tap: the
+first try at Back found nothing to go back to, because WebView skips the entry a page added
+without one, which is how `canGoBack` came into the rule. After a review, again: `confirm()`
+showed WebView's dialog and OK answered true (before, false in 10 ms, unseen); the till sent to
+`https://mezpos.com/` and to the app's own page stayed put, the log naming the host alone; the
+PC stopped, two crashes in front, "The screen stopped", Try again to "Can't reach the mez PC",
+the PC started, the till back by itself with the history cleared to one page; a crash with the
+app behind the launcher loaded nothing until the app came back, at the till, and a crash in front
+straight after reloaded rather than stopped.
+Rejected: loading the page again to retry, which shows WebView's error page between tries and
+fills the history; WebView's own error page as the answer (Chromium's words, no retry, the
+address in full); reloading after every renderer death, unbounded; keeping the staff session
+across one (the app keeps no staff session, Phase 18's "What stays true"); `ERROR_UNKNOWN` as "no
+answer" (it is also what a cancelled load may report); a JavaScript bridge for the page to ask
+whether the PC answers; handing a link out of the PC to the tablet's browser, which leaves the
+till (Task 6 keeps staff in mez).
+Cost: a renderer death signs the person out (the PIN screen, the pairing kept). Back cannot go
+back past the app opening a page (the history is cleared). A link from the PC's screens to the
+internet, or to the PC by another name, does nothing in the app; the back office's file inputs
+open nothing. While "Can't reach the mez PC" shows, one request every 5 seconds. Any error but the
+four keeps WebView's own page. Safe Browsing off, with the WebView kept to the PC. All of it seen
+on an emulator: a real tablet's speaker, and a maker's Android that may keep its bars, are not.

@@ -10,15 +10,33 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The tablet that stays a till** (ADR-413, Phase 18 Task 3; 2026-11-02).
+  Seen on an Android 13 tablet emulator: full screen, the bars back by a
+  swipe and gone again, `KEEP_SCREEN_ON`, Back between the PC's pages and
+  never out of the app, the till's layout unmoved at 130% font size, "Can't
+  reach the mez PC" and the till back by itself, a renderer crashed once
+  (back at the till's PIN screen) and twice ("The screen stopped", Try
+  again), the kitchen chime after a reload with no tap (one ring, the app's
+  audio stream started), `confirm()` as Android's dialog, a link to the
+  internet refused. **Not seen:** any real tablet, its speaker, and a
+  maker's Android that may keep its bars or word Back otherwise; Android 17
+  since these changes (the permission's pages are as Task 2 left them);
+  Android taking the renderer for memory rather than a crash (the same
+  path, `didCrash` false); a pinch (zoom is off in the settings, not
+  tried). **Left as is:** a renderer death signs the person out, as a
+  reload of a browser tab does not; any WebView error but the four "no
+  answer" ones keeps WebView's own error page; the back office in the app
+  opens no file chooser (CSV import, an item's photo) and follows no link
+  off the PC.
+
 - **The tablet app's shell** (ADR-412, Phase 18 Task 2; 2026-11-02). Seen on
   an Android 13 tablet emulator: paired, signed in, a shift opened, an order
   sent. Seen on an Android 17 emulator: the local network page, Android's
   prompt, both refusals, Open Settings, and Allow opening the till. Not seen:
   any real tablet; Android 10 to 12 and 14 to 16; Settings walked to Allow
   (Android's Settings app crashes on that emulator, ADR-412); a maker's
-  Settings, which may not say "Permissions" and "Nearby devices". Left for
-  Task 3: a renderer that dies takes the app with it, Back on the first
-  screen leaves the app, the system bars show. A release build shows "No mez
+  Settings, which may not say "Permissions" and "Nearby devices". What it left
+  for Task 3 is done (ADR-413). A release build shows "No mez
   PC yet" until Task 4. Seen in passing on the till, not the app's: with
   the keyboard up (about 420 tall), Open the shift's action bar sits over
   its denominations, as in any tablet browser.

@@ -21,6 +21,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Mez">
 
+        <!-- The WebView sends Google no usage metrics: what a venue's tablet
+             does stays at the venue (ADR-413). -->
+        <meta-data
+            android:name="android.webkit.WebView.MetricsOptOut"
+            android:value="true" />
+
         <!-- configChanges: a rotation, a keyboard plugged in, or the tablet's
              language, font size or bold text changed mid-service must not
              recreate the activity, which would reload the till mid-order. -->

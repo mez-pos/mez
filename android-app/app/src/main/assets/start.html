@@ -1,14 +1,17 @@
 <!doctype html>
 <!--
-  The app's own page (ADR-409): one section per Start page in Start.kt, shown
-  by the address's fragment (start.html#ask) through :target, so it needs no
-  script. Its buttons are mez-app: links, which MainActivity turns into
-  actions. Fonts and the mark are copied from web/shared at build time.
+  The app's own page (ADR-409, ADR-413): one section per page, Start's in
+  Start.kt and AppPages' own, shown by the address's fragment
+  (start.html#ask) through :target. Its buttons are mez-app: links, which
+  MainActivity turns into actions; the script only fills in the PC's address
+  and says when Try again is trying. Fonts and the mark are copied from
+  web/shared at build time.
 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
 <title>mez</title>
 <style>
   @font-face {
@@ -95,6 +98,7 @@
   }
   a.button:active { background: var(--green-press); }
   a.button:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+  a.button[aria-disabled="true"] { opacity: .72; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -129,6 +133,26 @@
   <a class="button" href="mez-app:settings">Open Settings</a>
 </section>
 
+<section id="unreachable">
+  <img src="brand/mez-mark.svg" alt="">
+  <h1>Can't reach the mez PC</h1>
+  <p>This tablet is looking for mez<span class="pc"> at <strong data-pc></strong></span>,
+    and nothing answers. Check that the PC is on, that mez is running on it,
+    and that this tablet is on the venue's wifi.</p>
+  <p class="aside">mez tries again every few seconds, and comes back by
+    itself once the PC answers.</p>
+  <a class="button retry" href="mez-app:retry">Try again</a>
+</section>
+
+<section id="stopped">
+  <img src="brand/mez-mark.svg" alt="">
+  <h1>The screen stopped</h1>
+  <p>Android closed mez's screen on this tablet twice in a minute. Orders
+    already sent are kept on the PC.</p>
+  <p class="aside">If it keeps stopping, restart the tablet.</p>
+  <a class="button retry" href="mez-app:retry">Try again</a>
+</section>
+
 <section id="no-address">
   <img src="brand/mez-mark.svg" alt="">
   <h1>No mez PC yet</h1>
@@ -136,6 +160,27 @@
     scanning the code on the PC's Devices page comes in a later version.</p>
   <p class="aside">Until then, open the till in this tablet's browser.</p>
 </section>
+
+<script>
+  // Where the app is looking for the PC, from ?pc=: set as text, never as
+  // markup, though the app wrote it.
+  const pc = new URLSearchParams(location.search).get("pc");
+  for (const el of document.querySelectorAll("[data-pc]")) el.textContent = pc ?? "";
+  for (const el of document.querySelectorAll(".pc")) el.hidden = !pc;
+
+  // Try again asks the PC, which takes up to a few seconds: the button says
+  // so meanwhile. If the PC answers, mez opens over this page.
+  for (const button of document.querySelectorAll(".retry")) {
+    button.addEventListener("click", () => {
+      button.textContent = "Trying…";
+      button.setAttribute("aria-disabled", "true");
+      setTimeout(() => {
+        button.textContent = "Try again";
+        button.removeAttribute("aria-disabled");
+      }, 3000);
+    });
+  }
+</script>
 
 </body>
 </html>

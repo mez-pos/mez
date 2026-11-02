@@ -1,3 +1,4 @@
+import java.net.URI
 import javax.inject.Inject
 
 plugins {
@@ -13,6 +14,10 @@ val mezUrl: String = providers.gradleProperty("mezUrl").getOrElse("http://10.0.2
 require(Regex("""^https?://[^\s"'\\$]+$""").matches(mezUrl)) {
     "mezUrl \"$mezUrl\": want an http:// or https:// address, with no spaces, quotes, \\ or \$"
 }
+// The app knows the PC's pages by host and port, read as java.net.URI reads
+// them (Reach.kt): a host it cannot read, as a name with an underscore, would
+// be no PC's, and every page refused.
+require(!URI(mezUrl).host.isNullOrEmpty()) { "mezUrl \"$mezUrl\": no host in it that the app can read" }
 
 android {
     namespace = "com.mezpos.meztablet"

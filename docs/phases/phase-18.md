@@ -93,7 +93,10 @@ Words in `docs/hardware.md`, `docs/deploy.md` and `docs/releasing.md`.
   one. **Seen:** the debug APK on an emulator showing a demo venue's till
   at `10.0.2.2:<port>`, signed in, an order sent.
 
-- [ ] **Task 3 - A tablet that stays a till.** Full screen (system bars
+- [x] **Task 3 - A tablet that stays a till.** Done 2026-11-02 (ADR-413).
+  Seen on an Android 13 tablet emulator, the chime included (no tap, after a
+  reload: in WebView the `AudioContext` runs whatever the media setting, so
+  no fix was owed); not yet on a real tablet. Full screen (system bars
   hidden, back by a swipe); `FLAG_KEEP_SCREEN_ON`; back goes back in the
   WebView and never leaves the app from the first screen. WebView settings
   chosen and written down: JavaScript and DOM storage on, media without a

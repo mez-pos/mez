@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -113,6 +114,17 @@ func TestHealthFieldsAreSnakeCase(t *testing.T) {
 		if _, ok := raw[key]; !ok {
 			t.Errorf("response has no %q: keys are %v", key, keysOf(raw))
 		}
+	}
+}
+
+// TestHealthStartsWithStatusOK holds the first bytes of the answer: the
+// tablet app knows the PC is mez again by a 200 that starts with them
+// (android-app's Probe.MEZ_HEALTH, ADR-413), whatever follows.
+func TestHealthStartsWithStatusOK(t *testing.T) {
+	resp := get(t, newTestServer(t, testConfig()), "/api/v1/health")
+
+	if body := resp.Body.String(); !strings.HasPrefix(body, `{"status":"ok"`) {
+		t.Errorf("health answers %q, want it to start with {\"status\":\"ok\"", body)
 	}
 }
 

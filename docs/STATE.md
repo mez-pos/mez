@@ -11,7 +11,7 @@
 `docs/phases/phase-18.md`, opened 2026-11-01 (ADR-409): a native Kotlin
 WebView shell in `android-app/` around the screens the PC serves, so a
 tablet is full screen, awake, back in mez after a reboot, paired by
-scanning and not unpaired by a new address. Tasks 1 and 2 are done.
+scanning and not unpaired by a new address. Tasks 1 to 3 are done.
 `make check` never builds the app; `make android` does (a JDK and the
 Android SDK).
 
@@ -30,33 +30,36 @@ list below.
 
 ## Last completed task
 
-**Phase 18, Task 2: the shell builds, as mez**, 2026-11-02 (ADR-412).
-One `ComponentActivity` and one WebView; AppCompat and Material out; the
-label and project "mez"; the mark as an adaptive icon with a themed layer;
-R8 on for release (279 KB); cleartext by a network security config;
-nothing backed up (the WebView holds the device token). Android 17's
-`ACCESS_LOCAL_NETWORK` is asked for before the PC is opened, after the
-app's own page says why, with "can't reach the PC" and "Allow it in
-Settings" for the refusals (`Start.kt`, unit-tested with the page). A
-debug build opens `make android MEZ_URL=...`, by default
-`http://10.0.2.2:7777/`. `make android` (debug APK, unit tests, lint with
-warnings as errors) and its own CI job; Dependabot watches the Gradle
-side. Seen on an Android 13 tablet emulator: paired, signed in, an order
-sent. Seen on an Android 17 one: every path of the permission. Went ahead
-on minSdk 29 before the tablets' versions were read.
+**Phase 18, Task 3: a tablet that stays a till**, 2026-11-02 (ADR-413).
+Full screen (the bars back for a moment by a swipe), the screen kept on,
+Back between the PC's pages only (never out of the app, never onto the
+app's own pages: the history is cleared when the app opens the PC's
+page). The WebView kept to the PC's origin and the app's pages. Its
+settings chosen in `MezWebView.kt`, each with its reason; `confirm()`
+shown as Android's dialog; WebView's metrics off. "Can't reach the mez PC", the app's page,
+when the PC does not answer: it asks `/api/v1/health` every 5 seconds and
+opens the page again when the PC answers, the pairing code kept. A
+renderer gone brings a new WebView where the old one was; twice in a
+minute, "The screen stopped" and Try again. The chime: in WebView an
+`AudioContext` runs with no tap whatever the media setting, so the
+kitchen board chimes after a reload with nobody touching it. Seen on an
+Android 13 tablet emulator, every part; not on a real tablet.
 
 ## Next task
 
-**Here: Phase 18 Task 3, a tablet that stays a till**: full screen, the
-screen kept on, Back inside the WebView, the WebView's settings chosen and
-written down, `onRenderProcessGone` (lint's check is suppressed until
-then), "Can't reach the mez PC", and the kitchen chime with no tap. It
-needs a JDK and the Android SDK, never `make check`. **On this PC the
-Android 17 emulator image aborts in its graphics driver** (ADR-412): walk on
-the AVD `mez_tablet_33` (Android 13), and photograph `mez_tablet_37` from
-Windows if Android 17 matters; the chime wants a real tablet. `adb` here
-trusts the key under `D:\AndroidSDK\Android\.android` (`ANDROID_SDK_HOME`),
-not the one in the user folder.
+**Here: Phase 18 Task 4, paired by scanning**: the app's own "Scan the
+pairing code" page on first run, a ZXing scanner with no Play services,
+only the Devices page's link shape accepted (http or https, a private
+address or `mez.local`, a path `appPaths` names), the address typed by
+hand as the second way in, unit tests on the link's checks. It needs a
+JDK and the Android SDK, never `make check`. **On this PC the Android 17
+emulator image aborts in its graphics driver** (ADR-412): walk on the
+AVD `mez_tablet_33` (Android 13); the emulator's camera can show a QR
+through its virtual scene, a real tablet is the better check. `adb` here
+trusts the key under `D:\AndroidSDK\Android\.android`
+(`ANDROID_SDK_HOME`). The WebView takes the DevTools protocol through
+`adb forward tcp:9222 localabstract:webview_devtools_remote_<pid>` in a
+debug build: how ADR-413's walk read the page and crashed the renderer.
 
 **Out of phase, before the venue's install: the re-run's other two P1s**
 (TBS-20 is fixed), TBS-21 (the approval sheet: scrolled, the cashier
