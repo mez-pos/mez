@@ -223,10 +223,14 @@ installer:
 ##          tests and lint. Needs a JDK and the Android SDK, which `make
 ##          check` never does. A debug build starts on "Pair this
 ##          tablet", or at MEZ_URL if given one (http://10.0.2.2:7777/ is
-##          the computer an emulator runs on).
+##          the computer an emulator runs on). MEZ_MDNS (10.0.2.2:5354)
+##          sends its question for mez.local to a responder there, for an
+##          emulator, whose network carries no multicast.
 MEZ_URL ?=
+MEZ_MDNS ?=
 android:
 	@cd android-app && ./gradlew --console=plain $(if $(MEZ_URL),'-PmezUrl=$(MEZ_URL)',) \
+		$(if $(MEZ_MDNS),'-PmezMdns=$(MEZ_MDNS)',) \
 		assembleDebug testDebugUnitTest lintDebug
 	@echo "  android ok: android-app/app/build/outputs/apk/debug/app-debug.apk"
 

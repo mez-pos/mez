@@ -150,7 +150,9 @@ Words in `docs/hardware.md`, `docs/deploy.md` and `docs/releasing.md`.
     fed the QR as an image (`-camera-back imagefile:`), and on a real
     tablet when one is to hand.
 
-- [ ] **Task 5 - The PC found again.** ADR first. When the kept address
+- [x] **Task 5 - The PC found again.** Done 2026-11-02 in three parts
+  (ADR-416, ADR-417, ADR-418), seen on an emulator; a real tablet on a
+  venue's wifi is owed. ADR first. When the kept address
   stops answering, the app looks for the PC (`mez.local` by a one-shot
   multicast DNS query, which the announcer answers, with a
   `WifiManager.MulticastLock`; or a DNS-SD service the server would add to
@@ -197,7 +199,10 @@ Words in `docs/hardware.md`, `docs/deploy.md` and `docs/releasing.md`.
     proof refused for another address; a mez that answers health with the
     venue's id but cannot prove given nothing.
 
-  - [ ] **Task 5c - The PC found by itself.** ADR-416 and ADR-417. While
+  - [x] **Task 5c - The PC found by itself.** Done 2026-11-02 (ADR-418),
+    seen on an Android 13 emulator through a relay to the real announcer,
+    and the query run on the PC against it; not yet on a real tablet.
+    ADR-416 and ADR-417. While
     the PC's page shows, a health check now and then; when the kept address
     does not answer (that, or "Can't reach the mez PC"), one legacy mDNS
     query for `mez.local` from an ordinary port, the kept port, each address

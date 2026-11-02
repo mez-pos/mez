@@ -103,8 +103,8 @@ fun atOf(pc: String): String? {
     return "$host:$port"
 }
 
-// Four parts of 0 to 255 with no leading zero: as the PC's parser reads one.
-private fun isIpv4(host: String): Boolean {
+/** Whether [host] is four parts of 0 to 255 with no leading zero: as the PC's parser reads one. */
+fun isIpv4(host: String): Boolean {
     val parts = host.split('.')
     return parts.size == 4 && parts.all { part ->
         part.length in 1..3 && part.all { it in '0'..'9' } && !(part.length > 1 && part.startsWith('0')) &&

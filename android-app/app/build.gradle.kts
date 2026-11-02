@@ -22,6 +22,15 @@ if (mezUrl.isNotEmpty()) {
     require(!URI(mezUrl).host.isNullOrEmpty()) { "mezUrl \"$mezUrl\": no host in it that the app can read" }
 }
 
+// Where a debug build sends its question for mez.local (ADR-416, Task 5c):
+// a responder's IPv4 address and port, for walking the app on an emulator,
+// whose network carries no multicast. Without one, the group, as a release.
+//   ./gradlew assembleDebug -PmezMdns=10.0.2.2:5354
+val mezMdns: String = providers.gradleProperty("mezMdns").getOrElse("")
+require(mezMdns.isEmpty() || Regex("""^\d{1,3}(\.\d{1,3}){3}:\d{1,5}$""").matches(mezMdns)) {
+    "mezMdns \"$mezMdns\": want an IPv4 address and a port, as 10.0.2.2:5354"
+}
+
 android {
     namespace = "com.mezpos.meztablet"
     compileSdk {
@@ -37,6 +46,8 @@ android {
 
         // A release build starts from no address: "Pair this tablet".
         buildConfigField("String", "MEZ_URL", "\"\"")
+        // And asks the group for mez.local.
+        buildConfigField("String", "MEZ_MDNS", "\"\"")
     }
 
     buildFeatures {
@@ -46,6 +57,7 @@ android {
     buildTypes {
         debug {
             buildConfigField("String", "MEZ_URL", "\"$mezUrl\"")
+            buildConfigField("String", "MEZ_MDNS", "\"$mezMdns\"")
         }
         release {
             optimization {

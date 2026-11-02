@@ -77,6 +77,23 @@ const val READ_KEYS = """(function () {
 })()"""
 
 /**
+ * Whether the page's own address holds a pairing (a `mez.<app>.device`):
+ * true or false, never the pairing itself. Run on the PC's page, so that the
+ * app knows where the pairing in use is held once one is made there.
+ */
+const val HAS_PAIRING = """(function () {
+  try {
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k !== null && /^mez\.[a-z]+\.device${'$'}/.test(k)) return true;
+    }
+  } catch (e) {
+    // Storage refused: nothing held here.
+  }
+  return false;
+})()"""
+
+/**
  * The script that writes, at the new address, what [READ_KEYS] answered:
  * [read] is that answer as evaluateJavascript hands it back, a JSON string.
  * The new address's `mez.` keys give way to the old one's: the address the

@@ -16398,3 +16398,97 @@ with another app's (a manager's tablet paired as the back office too). The quest
 device by its public id, which is no secret: an impostor asked learns it. A refused carry leaves
 the app's note of where the pairing is held as it was, so the next move can still carry it. An
 address typed as `mez.local` is not carried to: the proof is bound to an IP.
+
+
+## ADR-418 - The tablet finds its PC by itself: watched, asked by name on every network, followed only on proof
+2026-11 · Status: accepted. Phase 18 Task 5c. Builds ADR-416's "by itself" on ADR-417's proof.
+Context: 5a carries a pairing to the PC's new address when a person types or scans it; 5b makes
+the new address prove it holds the pairing first. ADR-416 decided how the app finds the PC by
+itself: a legacy mDNS question for `mez.local`, which the announcer (pion/mdns 2.2) answers by
+unicast. Building it settled the rest.
+Decision:
+  - **A watch while the PC's screens show.** Every 15 seconds (3 after the app comes to the
+    front, nothing while it is behind another or on one of its own pages but "Can't reach the
+    mez PC"), the kept address's health is asked. One that answers as the kept venue's mez,
+    or as a mez that names no venue, is the PC, and nothing more happens: a PC restarting at
+    its own address is left to the web app's own reconnecting. One that misses two ticks in a
+    row (half a minute without an answer, so a busy PC or a moment of bad wifi does not move
+    the till) is looked for at each tick up to a minute of misses, then once a minute; and
+    asked once more just before the tablet moves. A tablet with no kept venue (its PC never named one) does not look: it has nothing
+    to know the PC by. One health request every 15 seconds is the whole cost in service.
+  - **Asked by name, on every network the tablet is on.** One question (`mdnsQuery()`), from
+    an ordinary port, sent to the group on each interface that is up, not loopback, able to
+    multicast and with an IPv4 address; the answers heard for 1.5 seconds (`mdnsAddresses()`,
+    which reads compression and mDNS's cache-flush bit, and never past the packet or round a
+    pointer loop). The PC answers with its address on the network the question came in by,
+    so asking on the default network alone can miss it: on the developer's PC the JVM asked by
+    the WSL adapter and heard `172.25.224.1`. No `MulticastLock`: the answers are unicast.
+  - **The PC is the first address answered whose mez names the kept venue** (`lookFor()`),
+    the kept address and any off the venue's network never asked, and at most four asked,
+    those on one of the tablet's own networks first: a device flooding answers cannot hold the
+    watch. Then 5b's proof, on a thread of its own (not behind the probe's asking of an
+    address that does not answer), then 5a's carry, then the till.
+  - **Never followed without the proof.** A found address that cannot prove the pairing, or
+    a tablet with no pairing to prove, leaves the tablet where it is: an address that has
+    proved nothing does not get the screen, where it could draw a PIN pad of its own. An
+    address whose proof failed is left alone for two minutes, so a device on the wifi
+    answering `mez.local` can neither keep a tablet busy nor its screen flickering; a carry
+    that failed on the tablet's side (a read, the time) is tried again at the next tick.
+  - **Read in place when the PC's page is showing.** When the watch finds the PC with the
+    till on screen (at the address where the pairing is held), the pairing is read by script
+    on that page, not on the app's empty page, so a carry not made leaves the screen exactly
+    as it was, a half-keyed order included. From "Can't reach the mez PC" it is read on the
+    empty page, and that page comes back if the carry is not made, as it does once a carry
+    read in place has left the till for the new address. A renderer lost during an in-place
+    read goes on from the empty page. Nothing is followed over "The screen stopped", and a
+    failure while the app is behind another asks nothing until it is in front again.
+  - **Where the pairing is held follows the pairing in use.** A carry not made leaves the note
+    where the pairing was (5b); if the tablet is then paired by hand at the new address, the
+    next visit there finds a pairing (`HAS_PAIRING`, a script that says true or false and reads
+    no token) and the note moves to it, so the next move carries the pairing in use.
+  - **A debug build can be given a responder** (`-PmezMdns=<IPv4>:<port>`, `make android
+    MEZ_MDNS=...`): the emulator's network carries no multicast, so its question goes there by
+    unicast. A release build always asks the group.
+Seen, 2026-11-02. The app's own question, run on the JVM from the developer's PC against a
+running mez (`MdnsLiveTest`, `MEZ_MDNS_LIVE=<address>`): asked on the default network alone it
+heard only the WSL adapter's address; asked on every network it heard `192.168.29.211`,
+`172.22.144.1` and `172.25.224.1`, the PC's three. On an Android 13 tablet emulator built with
+`-PmezMdns=10.0.2.2:5354`, a script on the PC passing the emulator's question on to the real
+announcer by multicast on one chosen network and its answers back, bytes as they came:
+  - the till paired at `10.0.2.2:7786` (mez on the PC's loopback) and on screen; mez moved to
+    `192.168.29.211:7786`: one second later the app logged the PC found there, the pairing
+    read in place, proved (`proof` 200), carried, and the till Live at the new address as the
+    same device, nobody touching the tablet;
+  - mez stopped there, the till still on screen, a script answering `mez.local` with
+    `172.25.224.1`, where an impostor answered health with the venue's id: found, the proof
+    refused, the screen untouched (the till's own "Reconnecting"), the note unchanged, no
+    token in any request the impostor saw; the next two ticks heard the impostor's address
+    again and did not ask it;
+  - the app's data cleared, the till paired at `192.168.29.211:7786`, mez moved to
+    `172.22.144.1:7786`, the app started again: "Can't reach the mez PC", then 9 seconds
+    after start the till Live at the new address, as the same device.
+Before the data was cleared, two carries found no pairing to read: the emulator, killed hard
+earlier in the day, had left the WebView's storage log with a zeroed stretch, and LevelDB's
+reader drops the rest of that 32 KB block on every open, so each pairing written after it was
+gone on the app's next start. A walk artifact (the emulator is now stopped after `sync`), and a
+warning: a tablet that loses power while WebView's storage is unwritten can lose its pairing
+as any web app would. Both times the tablet stayed where it was, as decided.
+A review then found: a blank page possible if the carry failed after leaving the till; one
+missed answer enough to move; answers flooded without limit; a failure on the tablet's side
+setting a good PC aside for two minutes; the proof queued behind the probe; asking resumed
+behind another app. All taken above. Walked again with them: the till on screen at
+`172.22.144.1:7786` as device 3, mez moved to `192.168.29.211:7786`, the till Live there 38
+seconds later (two missed ticks, then the look), the same device, nobody touching it. The
+9-second follow from "Can't reach the mez PC" above was before two misses were asked for.
+Not seen: a real tablet on a venue's wifi, which is the check this task owes; Android 17; the
+kitchen display; the renderer lost mid-carry.
+Rejected: a watch that replaces the page as soon as the kept address stops answering (the web
+app reconnects by itself, and a PC that restarts would cost the person the screen in front of
+them); following a found address without a pairing to prove (the PIN pad above); asking on the
+default network only (missed the PC on a multi-homed machine); holding a `MulticastLock`
+(the answers are unicast); a sweep of the subnet (ADR-416).
+Cost: a health request every 15 seconds per tablet while the till shows. A PC that comes back
+at a new address is found within about 30 to 45 seconds, and the tablet signs everyone out
+(ADR-416).
+Real tablets' multicast on real venue wifi (an access point that filters it, client isolation)
+is unknown until walked; the fallback then is "Pair again", or ADR-416's subnet sweep.

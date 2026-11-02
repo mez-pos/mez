@@ -11,8 +11,9 @@
 `docs/phases/phase-18.md`, opened 2026-11-01 (ADR-409): a native Kotlin
 WebView shell in `android-app/` around the screens the PC serves, so a
 tablet is full screen, awake, back in mez after a reboot, paired by
-scanning and not unpaired by a new address. Tasks 1 to 4, 5a and 5b are
-done; Task 5 was split on 2026-11-02 (ADR-416, ADR-417), the finding last. `make check`
+scanning and not unpaired by a new address. Tasks 1 to 5 are done (5 in
+three parts, ADR-416 to ADR-418); a real tablet on a venue's wifi is owed
+for every one of them. `make check`
 never builds the app; `make android` does (a JDK and the Android SDK).
 
 Before it, **Phase 17 - Every screen at the venue's own size**,
@@ -30,37 +31,32 @@ list below.
 
 ## Last completed task
 
-**Phase 18, Task 5b: the PC proves itself**, 2026-11-02 (ADR-417). Task 5b
-split from the finding (now 5c): before any carry the new address answers
-`GET /api/v1/devices/{id}/proof?nonce=&at=`, an HMAC over the nonce and the
-address asked, keyed by the stored hash of the device's token, made only
-when `at` is the server's own end of the connection (421 otherwise; 404
-for no such pairing; not through the relay). The app reads the device's id
-and token at the old address (`readHeld`), checks the answer (`Proof.kt`)
-and carries only on a match; a refused carry opens the new address unpaired
-and leaves the note of where the pairing is held as it was. Seen on an
-Android 13 emulator: an impostor with venue A's id given nothing, the real
-PC at a new LAN address proven and carried to, a proof across the
-emulator's NAT refused.
+**Phase 18, Task 5c: the PC found by itself**, 2026-11-02 (ADR-418). While
+the PC's screens show, its address is asked every 15 s; one that misses
+two in a row is looked for by one legacy mDNS question
+for `mez.local` on every network the tablet is on (`Mdns.kt`,
+`Finder.kt`), the first answer whose mez names the kept venue taken, then
+5b's proof and 5a's carry. Never followed without the proof; a refused
+address left alone two minutes; the pairing read in place on the till's
+page, so a carry not made leaves the screen as it was. Seen on an Android
+13 emulator through a relay to the real announcer: the till followed the
+PC from `10.0.2.2:7786` to `192.168.29.211:7786` with nobody touching it,
+an impostor refused with the screen untouched, from "Can't reach the mez
+PC" at start to the till at a new address, and after a review's fixes
+the till following the PC 38 s after it moved.
 
 ## Next task
 
-**Here: Phase 18 Task 5c, the PC found by itself** (ADR-416, ADR-417):
-while the PC's page shows, a health check now and then; when the kept
-address does not answer (that, or "Can't reach the mez PC"), one legacy
-mDNS query for `mez.local` from an ordinary port (pion/mdns answers it by
-unicast, RFC 6762 6.7), at the kept port; each address answered asked its
-health, the kept venue's taken, then 5b's proof and 5a's carry
-(`carryFrom()` in `MainActivity.kt`), then the till. A refused proof
-leaves the tablet where it is. The page in front is replaced only when the
-PC is found elsewhere. The packet's making and reading are pure, with unit
-tests. The emulator's NAT carries no multicast, and the proof refuses an
-address reached through it: check the query from the PC against the real
-announcer (a JVM run of the same code), feed the emulator the PC's LAN
-address as the answer, and walk a real tablet when one is to hand. On the
-AVD `mez_tablet_33`, mez bound to the PC's LAN address alone is a new
-address the emulator reaches and the proof accepts. `adb` trusts the key
-under `D:\AndroidSDK\Android\.android`.
+**Here: Phase 18 Task 6, locked to mez**: the app as the tablet's home
+app, so the home button and a reboot come back to it; lock task mode when
+the app is the device owner (`adb shell dpm set-device-owner`, on a tablet
+with no accounts, written up for the human), screen pinning where it is
+not; the way out (change venue, Android's settings, leave the app) behind
+a long press and a manager's PIN checked by the server, the way the till
+checks it, never a PIN the app keeps. Walk on the AVD `mez_tablet_33`
+(`adb` trusts the key under `D:\AndroidSDK\Android\.android`); stop the
+emulator with `adb shell sync` first: killed hard, it left WebView's
+storage log damaged and pairings written after it lost (ADR-418).
 
 **Out of phase, before the venue's install: the re-run's other two P1s**
 (TBS-20 is fixed), TBS-21 (the approval sheet: scrolled, the cashier

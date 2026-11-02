@@ -10,6 +10,22 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The tablet app finding its PC by itself** (ADR-418, Phase 18 Task 5c;
+  2026-11-02). Seen on an Android 13 tablet emulator, its question passed
+  to the real announcer by a relay on the PC: the till followed the PC to
+  a new address with nobody touching it; an impostor answering `mez.local`
+  refused with the screen untouched and left alone after; from "Can't
+  reach the mez PC" at start to the till at the PC's new address; after a
+  review, the till followed the PC 38 s after it moved (two missed ticks).
+  The query itself run on the PC against the real announcer. **Not seen:**
+  a real tablet on a venue's wifi (an access point that filters multicast,
+  or isolates clients, would stop it: then "Pair again"); Android 17; the
+  kitchen display; a renderer lost mid-carry. **Left as is:** a health
+  request every 15 s per tablet while the till shows; a tablet whose PC
+  never named its venue does not look; a tablet that loses power while
+  WebView's storage is unwritten can lose its pairing (seen with the
+  emulator killed hard: LevelDB drops the rest of a damaged block).
+
 - **The tablet app's proof before a carry** (ADR-417, Phase 18 Task 5b;
   2026-11-02). Seen on an Android 13 tablet emulator: an impostor
   answering health with the venue's id given nothing; the real PC at a
@@ -30,8 +46,7 @@
   mez given nothing. **Not seen:** the kitchen display's carry (its
   station and board settings with it); a scanned link carried (the same
   path as typed); a renderer lost mid-carry; the five-second give-up; a
-  real tablet; Android 17. **Left as is:** the PC is not yet found by
-  itself (5c); a move signs the staff out; "Pair again"'s question still
+  real tablet; Android 17. **Left as is:** a move signs the staff out; "Pair again"'s question still
   says to pair again from the Devices page, where the same venue's PC now
   needs no code (Task 10's words); a venue made by `mez setup` while the
   server runs is named by health only from its next start; the venue's id

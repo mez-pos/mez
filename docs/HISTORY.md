@@ -8,6 +8,19 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 18, Task 5b: the PC proves itself**, 2026-11-02 (ADR-417). Task 5b
+split from the finding (now 5c): before any carry the new address answers
+`GET /api/v1/devices/{id}/proof?nonce=&at=`, an HMAC over the nonce and the
+address asked, keyed by the stored hash of the device's token, made only
+when `at` is the server's own end of the connection (421 otherwise; 404
+for no such pairing; not through the relay). The app reads the device's id
+and token at the old address (`readHeld`), checks the answer (`Proof.kt`)
+and carries only on a match; a refused carry opens the new address unpaired
+and leaves the note of where the pairing is held as it was. Seen on an
+Android 13 emulator: an impostor with venue A's id given nothing, the real
+PC at a new LAN address proven and carried to, a proof across the
+emulator's NAT refused.
+
 **Phase 18, Task 5a: the pairing carried**, 2026-11-02 (ADR-416). Health
 names the venue (`venue`, its public id) to the venue's network, never
 through the relay, from what the server holds (set at start, and by the

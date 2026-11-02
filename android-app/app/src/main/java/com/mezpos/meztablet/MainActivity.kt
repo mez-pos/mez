@@ -29,6 +29,9 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.webkit.WebViewAssetLoader
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 
 /**
  * The app's one activity and its one WebView (ADR-409). It shows the mez PC's
@@ -45,6 +48,15 @@ class MainActivity : ComponentActivity() {
     private lateinit var camera: FrameLayout
     private lateinit var scanner: Scanner
     private var showing: Start? = null
+        set(value) {
+            field = value
+            watching = value == Start.MEZ
+        }
+
+    // Whether the PC's screens are what the app shows, for the watch, which
+    // asks off the main thread.
+    @Volatile
+    private var watching = false
     private val prefs by lazy { getSharedPreferences(PREFS, MODE_PRIVATE) }
 
     // True from Continue to Android's answer. A second tap meanwhile would be
@@ -128,11 +140,39 @@ class MainActivity : ComponentActivity() {
         val venue: String,
         val page: String,
         val write: String?,
+        // Found by the watch, not typed or scanned (Task 5c): a carry not
+        // made leaves the tablet where it was.
+        val auto: Boolean = false,
+        // Read in place, on the PC's page that was showing: a carry not made
+        // leaves the screen as it was.
+        val here: Boolean = false,
     )
 
     // Volatile: ShellClient asks which page to serve off the main thread.
     @Volatile
     private var carry: Carrying? = null
+
+    // While the PC's screens show, its address is asked now and then; one
+    // that stops answering is looked for by name (ADR-416, Task 5c).
+    private val finder = Finder(to = mdnsTo(BuildConfig.MEZ_MDNS))
+    private val watch = Ticker(every = WATCH_EVERY_MS, failed = { Log.w(TAG, "the watch for the PC failed", it) }) {
+        watchTick()
+    }
+
+    // Addresses whose mez did not prove it holds the pairing, and when: not
+    // asked again for a while, so a device on the wifi cannot keep a tablet
+    // busy, nor its screen flickering.
+    private val refused = ConcurrentHashMap<String, Long>()
+
+    // How many ticks in a row the kept address has not answered. The watch's
+    // thread alone reads and writes it.
+    private var misses = 0
+
+    // The proof is asked on a thread of its own, not behind the probe's
+    // asking of an address that does not answer.
+    private val proofs = Executors.newSingleThreadExecutor { task ->
+        Thread(task, "mez-proof").apply { isDaemon = true }
+    }
 
     private val shell = object : Shell {
         override val pc: String get() = this@MainActivity.pc
@@ -148,6 +188,7 @@ class MainActivity : ComponentActivity() {
                 web.clearHistory()
             }
             askVenue()
+            noteHeld()
         }
         override fun gone(view: WebView, crashed: Boolean) = this@MainActivity.gone(view, crashed)
         override val carrying: String? get() = carry?.page
@@ -198,6 +239,7 @@ class MainActivity : ComponentActivity() {
         }
         // Asking stops while the app is not in front; it starts again at once.
         if (away?.page == AppPages.UNREACHABLE) tryAgain(after = 0)
+        watch.start(after = WATCH_FIRST_MS)
     }
 
     // On first run, and on coming back from Android's prompt or its Settings,
@@ -216,6 +258,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         probe.stop()
+        watch.stop()
         // A scan ends when the app goes behind another: Scan starts it again.
         if (::scanner.isInitialized && scanner.isRunning) load(AppPages.page(Start.PAIR.page.orEmpty()))
         super.onStop()
@@ -223,6 +266,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         probe.close()
+        watch.close()
+        proofs.shutdownNow()
         if (::scanner.isInitialized) scanner.stop()
         // Not made if the WebView itself failed to load (one being updated).
         if (::web.isInitialized) {
@@ -291,18 +336,25 @@ class MainActivity : ComponentActivity() {
         open(link.open)
     }
 
-    // The carry's first step: the app's empty page at the address holding the
-    // pairing, where finished() reads it. A carry that has not ended in a few
-    // seconds is given up: the new address opens as without one.
-    private fun carryFrom(from: String, link: Pairing.Link, venue: String) {
-        val page = carryPage(from) ?: return keep(link, venue)
-        val first = Carrying(from, link, venue, page, write = null)
+    // The carry's first step: the pairing read at the address holding it,
+    // where finished() reads it on the app's empty page, or in place on the
+    // PC's page showing there when the watch found the PC. A carry that has
+    // not ended in a few seconds is given up.
+    private fun carryFrom(from: String, link: Pairing.Link, venue: String, auto: Boolean = false) {
+        val page = carryPage(from)
+        if (page == null) {
+            if (!auto) keep(link, venue)
+            return
+        }
+        val here = auto && web.url?.let { samePc(it, from) && !isCarryPage(it) } == true
+        val first = Carrying(from, link, venue, page, write = null, auto = auto, here = here)
         carry = first
-        load(page)
+        if (here) readKeys(first) else load(page)
         frame.postDelayed({
-            if (!isDestroyed && carry?.link === link) {
+            val late = carry
+            if (!isDestroyed && late?.link === link) {
                 Log.w(TAG, "the pairing was not carried to the PC's new address in time")
-                carried(first, moved = false)
+                notCarried(late)
             }
         }, CARRY_TIMEOUT_MS)
     }
@@ -314,19 +366,25 @@ class MainActivity : ComponentActivity() {
         if (!atCarryPage(url, step.page)) return
         val write = step.write
         if (write == null) {
-            web.evaluateJavascript(READ_KEYS) { keys -> gotKeys(step, keys) }
+            readKeys(step)
         } else {
             web.evaluateJavascript(write) { written -> wrote(step, written == "true") }
         }
     }
 
+    private fun readKeys(step: Carrying) {
+        web.evaluateJavascript(READ_KEYS) { keys -> gotKeys(step, keys) }
+    }
+
     // The keys read: then the pairing they hold, for the new address to prove.
+    // With none, a typed address opens as it is; a found one is not followed:
+    // an address that has proved nothing does not get the screen.
     private fun gotKeys(step: Carrying, keys: String?) {
         if (carry !== step) return
         val write = keys?.let(::writeKeys)
         if (write == null) {
             Log.i(TAG, "no pairing at the PC's old address to carry")
-            carried(step, moved = true)
+            if (step.auto) notCarried(step) else carried(step, moved = true)
             return
         }
         web.evaluateJavascript(READ_HELD) { read -> gotHeld(step, write, read) }
@@ -339,12 +397,16 @@ class MainActivity : ComponentActivity() {
         val held = read?.let(::heldOf)
         if (held == null) {
             Log.w(TAG, "the pairing at the PC's old address could not be read to prove")
-            carried(step, moved = false)
+            notCarried(step)
             return
         }
-        probe.run {
-            val proven = held.all { Proof.proves(step.link.pc, it) }
-            runOnUiThread { proved(step, write, proven) }
+        try {
+            proofs.execute {
+                val proven = held.all { Proof.proves(step.link.pc, it) }
+                runOnUiThread { proved(step, write, proven) }
+            }
+        } catch (e: RejectedExecutionException) {
+            // The activity is gone, and nobody is waiting.
         }
     }
 
@@ -354,10 +416,12 @@ class MainActivity : ComponentActivity() {
         val page = carryPage(step.link.pc)
         if (!proven || page == null) {
             Log.w(TAG, "the PC's new address did not prove it holds this tablet's pairing; it is not carried")
-            carried(step, moved = false)
+            notCarried(step, refuse = proven.not())
             return
         }
-        carry = step.copy(page = page, write = write)
+        // The screen leaves the page read in place: a failure from here on
+        // brings back "Can't reach the mez PC".
+        carry = step.copy(page = page, write = write, here = false)
         load(page)
     }
 
@@ -374,6 +438,64 @@ class MainActivity : ComponentActivity() {
     private fun carried(step: Carrying, moved: Boolean) {
         carry = null
         keep(step.link, step.venue, held = if (moved) step.link.pc else step.from)
+    }
+
+    // A carry not made. Typed or scanned, the new address opens as without
+    // one. Found by the watch, the tablet stays where it was: the screen as
+    // it was if it was read in place, else "Can't reach the mez PC", asking
+    // again only while the app is in front. An address [refuse]d (it did not
+    // prove the pairing) is not asked again for a while; a carry that failed
+    // on this side is tried again at the next tick.
+    private fun notCarried(step: Carrying, refuse: Boolean = false) {
+        if (!step.auto) return carried(step, moved = false)
+        carry = null
+        if (refuse) hostOf(step.link.pc)?.let { refused[it] = SystemClock.elapsedRealtime() }
+        if (step.here) return
+        standIn(Away(retryOf(away?.url ?: lastMez ?: opened ?: pc, asked = opened), AppPages.UNREACHABLE))
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) tryAgain(after = Probe.RETRY_EVERY_MS)
+    }
+
+    // The watch's tick, off the main thread: the kept address asked, and if
+    // it does not answer as the kept venue's mez, the PC looked for by name.
+    // A mez that names no venue is taken as the kept one. Without a kept
+    // venue there is nothing to know the PC by, and it is not looked for.
+    // Two misses in a row before it looks, so a busy PC or a moment of bad
+    // wifi does not move the till; after a minute of misses it looks once a
+    // minute; and the kept address is asked once more before the move.
+    private fun watchTick() {
+        if (!watching || carry != null) return
+        val kept = pc
+        val venue = prefs.getString(VENUE, null) ?: return
+        val health = healthOf(kept) ?: return
+        if (isHere(Probe.ask(health), venue)) {
+            misses = 0
+            return
+        }
+        misses++
+        if (misses < MISSES_BEFORE_LOOKING || (misses > LOOK_EVERY_TICK_UNTIL && misses % LOOK_EVERY_LATER != 0)) return
+        val since = SystemClock.elapsedRealtime() - REFUSED_FOR_MS
+        refused.entries.removeIf { it.value < since }
+        val answered = nearFirst(finder.find().filterNot(refused::containsKey), own = ownAddresses())
+        val link = lookFor(kept, venue, answered, ask = Probe::ask) ?: return
+        if (isHere(Probe.ask(health), venue)) {
+            misses = 0
+            return
+        }
+        runOnUiThread { foundAt(kept, link, venue) }
+    }
+
+    // Whether [mez], the kept address's answer, is the kept venue's PC: a
+    // mez that names no venue is taken as it.
+    private fun isHere(mez: Mez?, venue: String): Boolean = mez != null && (mez.venue == null || mez.venue == venue)
+
+    // The PC answers at another address: its pairing goes there once proved
+    // (ADR-417), and the till with it.
+    private fun foundAt(kept: String, link: Pairing.Link, venue: String) {
+        if (isDestroyed || !watching || pc != kept || carry != null || candidate != null) return
+        if (prefs.getString(VENUE, null) != venue || away?.page == AppPages.STOPPED) return
+        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) return
+        Log.i(TAG, "the PC answers at ${place(link.pc)}: carrying the pairing there")
+        carryFrom(held, link, venue, auto = true)
     }
 
     // The app's own way to a page; a stand-in it replaces stops asking, and
@@ -528,6 +650,18 @@ class MainActivity : ComponentActivity() {
         open(page.url)
     }
 
+    // The PC's page is at an address other than where the pairing was held
+    // (a carry not made, then the tablet paired there by hand): once the
+    // page's address holds a pairing, that is the one in use, and the next
+    // move carries it.
+    private fun noteHeld() {
+        val here = pc
+        if (here.isEmpty() || held == here || carry != null) return
+        web.evaluateJavascript(HAS_PAIRING) { has ->
+            if (has == "true" && pc == here && carry == null) prefs.edit { putString(HELD, here) }
+        }
+    }
+
     // A PC kept before health named its venue is asked once, when its page
     // opens: without the venue, its pairing cannot follow it to a new
     // address (ADR-416).
@@ -591,8 +725,13 @@ class MainActivity : ComponentActivity() {
         val step = carry
         when {
             // A carry goes on in the new WebView from the step it was at:
-            // reading and writing are each the same done twice.
-            step != null -> load(step.page)
+            // reading and writing are each the same done twice. A read in
+            // place goes on at the app's empty page: the page it read on is
+            // gone with the renderer.
+            step != null -> {
+                carry = step.copy(here = false)
+                load(step.page)
+            }
             // The app's own pages are a few kilobytes: they come back as they
             // were, and an address being asked is asked again.
             showing != Start.MEZ || candidate != null -> {
@@ -652,8 +791,24 @@ class MainActivity : ComponentActivity() {
         const val HELD = "held"
         const val VENUE = "venue"
 
-        // A carry is two empty pages, three scripts and one question for the
-        // PC, whose connection and read may each take Probe.TIMEOUT_MS.
-        const val CARRY_TIMEOUT_MS = 10_000L
+        // A carry is two empty pages, three scripts and a question for the
+        // PC per pairing held, whose connection and read may each take
+        // Probe.TIMEOUT_MS.
+        const val CARRY_TIMEOUT_MS = 20_000L
+
+        // How often the watch asks the kept address while the PC's screens
+        // show, and how soon after the app comes to the front.
+        const val WATCH_EVERY_MS = 15_000L
+        const val WATCH_FIRST_MS = 3_000L
+
+        // How long an address that proved nothing is left alone.
+        const val REFUSED_FOR_MS = 120_000L
+
+        // Ticks the kept address must miss in a row before the PC is looked
+        // for; then it is looked for at each tick up to the fifth miss (a
+        // minute), and after that at every fourth (once a minute).
+        const val MISSES_BEFORE_LOOKING = 2
+        const val LOOK_EVERY_TICK_UNTIL = 5
+        const val LOOK_EVERY_LATER = 4
     }
 }
