@@ -5,6 +5,29 @@ import (
 	"time"
 )
 
+// WithVenue names the venue this server serves, by its public id, for health
+// to tell the venue's network (ADR-416). A tablet that finds a mez at a new
+// address carries its pairing there only if that mez names the same venue.
+// Empty before a venue is made; first run over HTTP names it as it makes it.
+func WithVenue(publicID string) Option {
+	return func(s *Server) { s.nameVenue(publicID) }
+}
+
+// nameVenue keeps the venue health names; an empty id names none.
+func (s *Server) nameVenue(publicID string) {
+	if publicID != "" {
+		s.venue.Store(&publicID)
+	}
+}
+
+// venueID is the venue health names, or "" before there is one.
+func (s *Server) venueID() string {
+	if v := s.venue.Load(); v != nil {
+		return *v
+	}
+	return ""
+}
+
 // Check results. Every check is unknown until the subsystem that answers it
 // exists: Phase 02 wires db and disk, Phase 07 the printer, Phase 11 the tunnel.
 // The tunnel stays unknown on a venue with no relay: there is nothing to fail.
@@ -38,6 +61,10 @@ type healthResponse struct {
 	// checks, and an unknown check does not make the server unhealthy.
 	Status string `json:"status"`
 
+	// Venue is the venue's public id, for a tablet to know it has found its
+	// own PC (ADR-416). Not told through the relay: nobody away needs it.
+	Venue string `json:"venue,omitempty"`
+
 	Version   string `json:"version"`
 	Commit    string `json:"commit,omitempty"`
 	BuildDate string `json:"build_date,omitempty"`
@@ -54,8 +81,13 @@ type healthResponse struct {
 // real work is one more thing that can hang, and the thing asking is usually
 // asking because something already has.
 func (s *Server) health(w http.ResponseWriter, r *http.Request) {
+	venue := s.venueID()
+	if relayed(r) {
+		venue = ""
+	}
 	writeJSON(w, s.log, http.StatusOK, healthResponse{
 		Status:    "ok",
+		Venue:     venue,
 		Version:   s.build.Version,
 		Commit:    s.build.Commit,
 		BuildDate: s.build.BuildDate,

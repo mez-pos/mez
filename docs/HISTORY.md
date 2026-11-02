@@ -8,6 +8,18 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 18, Task 4b: scanned**, 2026-11-02 (ADR-415). "Pair this
+tablet" leads with Scan the code: CameraX's preview (core, camera2,
+lifecycle; not camera-view, which brings AppCompat) on a TextureView under
+the transparent WebView, the page's words, frame and Cancel over it, and a
+copy of the preview read by ZXing's core five times a second. One camera
+stream, no ImageAnalysis: on the emulator a second stream stalled the
+camera. The code read goes through 4a's `readLink()` and health check.
+The camera asked for at Scan; a refusal or no camera leaves typing, with
+words. Release APK 1.45 MB. Seen on an Android 13 emulator fed a QR
+picture from mez's own encoder: a kitchen display and a till paired by
+scanning, the camera refused, a QR that is not mez's refused.
+
 **Phase 18, Task 4a: the address, checked, kept and typed**, 2026-11-02
 (ADR-414). Task 4 split in two, the camera apart (4b). First run is the
 app's page "Pair this tablet": the address typed as the PC shows it,

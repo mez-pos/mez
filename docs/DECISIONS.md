@@ -16215,3 +16215,107 @@ permission for the WebView, and a decoder in the page); `ImageAnalysis` (above).
 Cost: 1.2 MB of APK. A copy of the preview five times a second while the page scans. Seen on an
 emulator fed a picture, not through a real tablet's lens: the camera's focus, glare off the PC's
 screen, and a front camera on a stand are a real tablet's to show.
+
+
+## ADR-416 - A tablet follows its PC to a new address: found by name, checked by venue, its pairing carried
+2026-11 · Status: accepted. Phase 18 Task 5 (5a built; 5b, the finding, next). Follows ADR-413
+and ADR-414. Leans on ADR-338, ADR-379.
+Context: the app keeps the PC's address (ADR-414), and the web app keeps the device's pairing in
+that address's localStorage (ADR-338). A router that gives the PC a new address leaves every
+tablet at "Can't reach the mez PC", and "Pair again" with the new address opens a new origin,
+with no pairing in it: a new code from the Devices page, and the old device left on the list.
+The phase names three ways across: the token handed over before the page's scripts run, a
+bridge the web app asks at boot, or one origin that never changes.
+Decision:
+  - **The pairing is carried, at the moment of the move, by the WebView's own storage.** The app
+    serves an empty page of its own at `/mez-app-carry` on the old address and on the new
+    (`shouldInterceptRequest`: nothing is asked of the network, and the path is served only
+    while a carry is under way). At the old one, `evaluateJavascript` reads the device's keys;
+    at the new one, it writes them; then the PC's page opens there and the web app finds its
+    pairing as it always does, at boot, from localStorage. The token never rests in the app: it
+    passes through memory once, from one origin's storage to the other's. The web app does not
+    change. A carry that fails anywhere (a script error, no storage) opens the new address as
+    before, at the pairing screen: never worse than without it.
+  - **What is carried: every localStorage key that starts with `mez.`, as written**, and only
+    when the old address holds a pairing (a `mez.<app>.device`). They replace the new address's
+    `mez.` keys: the address the tablet was using is the device's truth, and an older pairing
+    left at the new address (the PC had it once before) must not outlive it. With no pairing at
+    the old address nothing is touched. The old address's storage is left as it is. Not
+    sessionStorage: **the staff session ends with a move**, and whoever was signed in signs in
+    again with their PIN. The write checks that what was read is an object of `mez.` strings
+    before it touches anything, and writes the old keys before it drops the new address's
+    others: a write that fails part way leaves the pairing, not nothing. The app keeps no staff session (the phase), and a PC that changed
+    address has usually restarted.
+  - **What the web app's keys promise** (`web/shared/auth/storage.ts`, and the kitchen's
+    station and board settings): what a device keeps across a restart is in localStorage under
+    `mez.`; none of it names the PC's address; a `mez.<app>.device` is a pairing. A key outside
+    the prefix is not carried. A test in the web app holds the till's and the kitchen's keys
+    to the prefix.
+  - **Carried only to the same venue's mez.** `GET /api/v1/health` says which venue it serves,
+    by its public id (`venue`), to the venue's network: a request through the relay is not
+    told. The server holds the id from its start, and from the setup that makes the venue, so
+    health still touches no database. A server with two venues names none. The app keeps the
+    venue with the address when mez answers there (ADR-414's check); for an address kept
+    before, it asks health once when the PC's page opens, and takes it from any later answer. A
+    pairing is carried only to an address whose mez says that same venue, and never when
+    either is unknown: not to a demo laptop's mez on the same wifi, and not on the strength of
+    an answer the app could not read. **The venue's id is an identity, not a proof**: anyone on
+    the wifi can read it and answer with it. While a person types or scans the address (5a),
+    that is the trust a typed pairing already has on the LAN's plain HTTP (ADR-257). Before the
+    app carries the pairing to an address it found by itself (5b), 5b decides whether the found
+    mez must prove it is the venue's (an HMAC over a nonce, keyed by what the server holds of
+    the device's token, from a new endpoint), or the plain LAN's exposure is taken as it is.
+  - **By hand, first (5a).** "Pair again" forgets the address the app opens and keeps where the
+    pairing is held. The PC's new address, typed or scanned on "Pair this tablet", is checked as
+    ADR-414 checks one; when its mez says the same venue, the pairing is carried: the tablet
+    opens paired, the same device, with no code. A code in a scanned link is then not needed;
+    it lapses in its ten minutes.
+  - **By itself, next (5b).** When the kept address stops answering ("Can't reach the mez PC",
+    or a health check the app makes now and then while the PC's page shows), the app asks for
+    `mez.local` (ADR-379) by one legacy multicast DNS query from an ordinary port (RFC 6762
+    §6.7). The announcer, pion/mdns 2.2, answers such a query by unicast to the asker
+    (`server.go`, `isLegacy`): no socket on 5353 beside Android's own responder. The port is the
+    kept one: a new address from the router leaves the PC's port alone. Each address answered
+    is asked its health; the one that says the kept venue is the PC: the carry, then the till.
+    The page in front is replaced only when the PC is found elsewhere, so a PC merely
+    restarting at its own address is left to the web app's own reconnecting. A
+    `WifiManager.MulticastLock` is held only if a real tablet shows that the answer needs it.
+Seen (5a), 2026-11-02, on an Android 13 tablet emulator, two demo venues from `mez setup
+-demo-menu`. Venue A's mez on the PC's loopback (the emulator's `10.0.2.2:7777`): the till
+paired by typing its address with a `mez pair` code, the app keeping `pc`, `held` and `venue`,
+Kabir signed in. mez stopped and started on the PC's LAN address alone (`192.168.29.211:7777`):
+"Can't reach the mez PC" at the old address, "pair this tablet again", its question, Forget it;
+`pc` gone, `held` and `venue` kept. The new address typed, no code: the till at its sign-in
+screen, "No Filtr", Live; on the server `GET /api/v1/devices/me` 200 as device 1 and no pairing
+request; Kabir signed out, as decided. Venue B's mez at `:7778`, through Pair again: its own
+pairing screen asking for a code, and nothing but health asked of it (no device token, no 401).
+After a review, again with its fixes: the app given the LAN address with no venue kept, the
+till opened there and the venue learned from one health request; the PC moved to a port the
+tablet had never opened (`10.0.2.2:7779`), Pair again, the address typed: carried, device 1,
+no code. The two scripts were also run in Node against a fake localStorage, from the Kotlin
+source's own text: odd characters (quotes, backslashes, U+2028, `</script>`) carried intact,
+nothing written or removed for a read that is not an object, a refused storage answered as
+such. Not seen: the kitchen display's carry (its station and board settings with it); a renderer
+lost mid-carry; the five-second give-up; a real tablet; Android 17.
+Rejected: a document-start script (`addDocumentStartJavaScript`) for the new address: the token
+must still be read from the old address first, which the empty page does anyway, and it is a
+WebView feature to test for on older tablets; the empty page does both ends, one way. A bridge
+the web app asks at boot (`addJavascriptInterface` or `addWebMessageListener`): an asynchronous
+boot in the web app, the token kept by the app at rest, a native interface offered to the PC's
+pages, and a contract between two releases to keep. One origin that never changes: `mez.local`
+(WebView resolves it only on newer Androids, ADR-379); a forwarder on the tablet's loopback
+(`http://127.0.0.1:<port>`, every byte piped to the PC's current address): it would keep the
+staff session and a half-keyed order across a move, and loopback is a secure context, but it
+puts the app's code in every request of service, a fixed port another app may hold costs every
+pairing, and it is the most code. That is the case to reopen if moves in service prove to cost
+too much. A DNS-SD service (pion/mdns 2.2 can announce one): it would carry the port, which a new
+address does not change, and the venue, which health says anyway. A sweep of the tablet's subnet
+for the port: 254 connections from every tablet each time; the fallback if a venue's wifi turns
+out to drop multicast. Carrying sessionStorage (the staff session is not the app's to keep).
+Cost: a move signs everyone out of the tablets. The venue's public id is told to anyone on the
+venue's network who asks health, and to anyone a reverse proxy or port forward other than the
+relay lets through. A move needs the old address's storage on the tablet: a tablet whose app
+data was cleared pairs again, as before. A venue made by `mez setup` while the server runs is
+named by health from the server's next start; the wizard's, at once. "Pair again"'s question
+still speaks of pairing again from the Devices page, where the same venue's PC now needs no
+code: Task 10's words. A CSP on the app's empty page was not added: there is nothing in it.

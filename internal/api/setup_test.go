@@ -377,10 +377,11 @@ func TestSetupFailures(t *testing.T) {
 		method string
 		status int
 		code   ErrorCode
+		venue  any // what health names afterwards (ADR-416)
 	}{
-		{"the status cannot be read", brokenFirstRun{needed: disk}, http.MethodGet, http.StatusInternalServerError, CodeInternal},
-		{"the venue cannot be written", brokenFirstRun{run: disk}, http.MethodPost, http.StatusInternalServerError, CodeInternal},
-		{"the venue was made and the code was not", brokenFirstRun{run: errors.Join(firstrun.ErrNoCode, disk)}, http.MethodPost, http.StatusInternalServerError, CodeSetupNoCode},
+		{"the status cannot be read", brokenFirstRun{needed: disk}, http.MethodGet, http.StatusInternalServerError, CodeInternal, nil},
+		{"the venue cannot be written", brokenFirstRun{run: disk}, http.MethodPost, http.StatusInternalServerError, CodeInternal, nil},
+		{"the venue was made and the code was not", brokenFirstRun{run: errors.Join(firstrun.ErrNoCode, disk)}, http.MethodPost, http.StatusInternalServerError, CodeSetupNoCode, "ven_AAAAAAAA"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -396,6 +397,13 @@ func TestSetupFailures(t *testing.T) {
 			// What went wrong inside is for the log, not the caller.
 			if strings.Contains(rec.Body.String(), "ProgramData") {
 				t.Errorf("the response says where the data is: %s", rec.Body)
+			}
+			var health map[string]any
+			if err := json.Unmarshal(from(h, atTheTill(), http.MethodGet, "/api/v1/health", "").Body.Bytes(), &health); err != nil {
+				t.Fatalf("health: %v", err)
+			}
+			if health["venue"] != tt.venue {
+				t.Errorf("health names the venue %v, want %v", health["venue"], tt.venue)
 			}
 		})
 	}
@@ -416,5 +424,34 @@ func TestLoopbackHost(t *testing.T) {
 		if got := loopbackHost(tt.host); got != tt.want {
 			t.Errorf("loopbackHost(%q) = %v, want %v", tt.host, got, tt.want)
 		}
+	}
+}
+
+// TestSetupTellsHealthTheVenue: the venue the wizard makes is the one health
+// names from then on, without the server starting again (ADR-416).
+func TestSetupTellsHealthTheVenue(t *testing.T) {
+	h, _, _ := setupServer(t, testConfig())
+	till := atTheTill()
+	venueOf := func() any {
+		var body map[string]any
+		if err := json.Unmarshal(from(h, till, http.MethodGet, "/api/v1/health", "").Body.Bytes(), &body); err != nil {
+			t.Fatalf("health: %v", err)
+		}
+		return body["venue"]
+	}
+	if v := venueOf(); v != nil {
+		t.Fatalf("health on a new install names the venue %v", v)
+	}
+
+	rec := from(h, till, http.MethodPost, "/api/v1/setup", setupBody)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("setup: status %d, body %s", rec.Code, rec.Body)
+	}
+	var made setupResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &made); err != nil {
+		t.Fatalf("setup response: %v", err)
+	}
+	if v := venueOf(); v != made.VenueID {
+		t.Errorf("health after setup names the venue %v, want %q", v, made.VenueID)
 	}
 }

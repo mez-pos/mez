@@ -8,6 +8,11 @@
 // Keys carry the app, because the terminal and the back office share an
 // origin: a manager's laptop can be paired as both without one erasing the
 // other.
+//
+// What a device keeps across a restart is in localStorage under "mez.", and
+// none of it names the PC's address: the mez app for Android tablets carries
+// those keys as they are when the PC moves to a new address, if a
+// "mez.<app>.device" is among them (ADR-416). Session storage stays behind.
 
 import type { DeviceResponse, Permission, StaffResponse } from "../api-types";
 

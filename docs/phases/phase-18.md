@@ -162,6 +162,38 @@ Words in `docs/hardware.md`, `docs/deploy.md` and `docs/releasing.md`.
   says what the web app's storage keys then promise (`web/shared/auth/
   storage.ts`, `mez.<app>.device`). Tests on both sides. **Seen:** a paired
   tablet, the PC given a new address, the till back without a pairing.
+  Split in two on 2026-11-02 (ADR-416), the finding apart: the emulator's
+  network carries no multicast, so the carry is walked by hand first.
+
+  - [x] **Task 5a - The pairing carried.** Done 2026-11-02 (ADR-416), seen
+    on an Android 13 emulator: a till carried twice, as the same device,
+    and another venue's mez given nothing; not yet on a real tablet, nor a
+    kitchen display. Health says which venue
+    it serves (its public id, `venue`), to the venue's network only, from
+    what the server holds: no database. The app keeps the venue with the
+    address once mez answers there. "Pair again" keeps where the pairing is
+    held; the PC's new address typed or scanned, its mez saying the same
+    venue, carries the pairing: the old address's `mez.` localStorage keys
+    written at the new one by the app's own empty page at each, before the
+    PC's page opens there. Tests in `internal/api`, the app (the carry's
+    checks and scripts), and the web app (the keys' prefix). **Seen:** on an
+    emulator, a paired till, "Pair again", the same PC at another address
+    typed: the till at its sign-in screen, the same device, no code.
+
+  - [ ] **Task 5b - The PC found by itself.** ADR-416. While the PC's page
+    shows, a health check now and then; when the kept address does not
+    answer (that, or "Can't reach the mez PC"), one legacy mDNS query for
+    `mez.local` from an ordinary port, the kept port, each address asked its
+    health, the kept venue's taken: 5a's carry, then the till. First, the
+    question ADR-416 leaves to this task: the venue's id is no proof, so
+    must a mez the app found by itself prove it is the venue's (an HMAC
+    over a nonce, keyed by what the server holds of the device's token)
+    before the pairing goes to it, or is the plain LAN's exposure taken as
+    it is (ADR-257)? An ADR either way. The packet's
+    making and reading are pure functions with unit tests. **Seen:** on a
+    real tablet on the venue's wifi (or the emulator with the answer fed,
+    and the query checked from the PC against the real announcer), the PC
+    given a new address, the till back by itself.
 
 - [ ] **Task 6 - Locked to mez.** The app as the tablet's home app, so the
   home button and a reboot come back to it. Lock task mode when the app is

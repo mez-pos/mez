@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"sync/atomic"
 	"time"
 
 	"github.com/mez-pos/mez/internal/config"
@@ -17,6 +18,7 @@ type Server struct {
 	build         BuildInfo
 	now           func() time.Time
 	started       time.Time
+	venue         atomic.Pointer[string]
 	bundles       map[string]fs.FS
 	dbCheck       func() string
 	tunnel        func() TunnelStatus

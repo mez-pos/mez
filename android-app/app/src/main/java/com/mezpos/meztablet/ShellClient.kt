@@ -8,6 +8,7 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.webkit.WebViewAssetLoader
+import java.io.ByteArrayInputStream
 
 /** What the WebView tells the activity, through [ShellClient]. */
 interface Shell {
@@ -25,6 +26,15 @@ interface Shell {
 
     /** Android took [view]'s renderer away: [view] is dead, and must go. */
     fun gone(view: WebView, crashed: Boolean)
+
+    /**
+     * The app's empty page a carry is serving now (ADR-416), or null: no
+     * other is served. Read off the main thread.
+     */
+    val carrying: String?
+
+    /** [view] has finished loading [url]. */
+    fun finished(view: WebView, url: String)
 }
 
 /**
@@ -38,8 +48,14 @@ class ShellClient(
     private val shell: Shell,
 ) : WebViewClient() {
 
-    override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
-        assets.shouldInterceptRequest(request.url)
+    override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
+        if (request.isForMainFrame && atCarryPage(request.url.toString(), shell.carrying)) return emptyPage()
+        return assets.shouldInterceptRequest(request.url)
+    }
+
+    override fun onPageFinished(view: WebView, url: String) {
+        shell.finished(view, url)
+    }
 
     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
         val url = request.url.toString()
@@ -84,5 +100,18 @@ class ShellClient(
     private companion object {
         const val TAG = "mez"
         const val LOGGED_LINK = 64
+
+        // The app's empty page on a PC's address, in the screens' ground, so
+        // the moment it shows is not a flash of white.
+        const val EMPTY = "<!doctype html><title>mez</title><body style=\"margin:0;background:#F8F3E9\"></body>"
+
+        fun emptyPage() = WebResourceResponse(
+            "text/html",
+            "utf-8",
+            200,
+            "OK",
+            mapOf("Cache-Control" to "no-store"),
+            ByteArrayInputStream(EMPTY.toByteArray()),
+        )
     }
 }

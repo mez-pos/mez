@@ -194,6 +194,7 @@ func (s *Server) runSetup(w http.ResponseWriter, r *http.Request) {
 		return
 	case errors.Is(err, firstrun.ErrNoCode):
 		s.spendSetupToken(r)
+		s.nameVenue(res.VenuePublicID)
 		s.log.Error("first run made the venue without its pairing code",
 			"request_id", RequestID(r.Context()), "venue_id", res.VenueID, "error", err)
 		writeError(w, s.log, http.StatusInternalServerError, CodeSetupNoCode,
@@ -204,6 +205,7 @@ func (s *Server) runSetup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.spendSetupToken(r)
+	s.nameVenue(res.VenuePublicID) // Health names it from now on (ADR-416).
 	s.log.Info("the venue was set up", "request_id", RequestID(r.Context()), "venue_id", res.VenueID, "actor_id", res.OwnerID)
 
 	// The code pairs a device, so it is a secret for as long as it lives.

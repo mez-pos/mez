@@ -10,6 +10,22 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The tablet app's pairing carried to a new address** (ADR-416, Phase 18
+  Task 5a; 2026-11-02). Seen on an Android 13 tablet emulator: a till
+  paired and signed in, its PC moved to another address, "Pair again",
+  the new address typed: the till at its sign-in screen as the same
+  device, no code (twice, the second time to a port never opened, after
+  the venue was learned from the till's page opening); another venue's
+  mez given nothing. **Not seen:** the kitchen display's carry (its
+  station and board settings with it); a scanned link carried (the same
+  path as typed); a renderer lost mid-carry; the five-second give-up; a
+  real tablet; Android 17. **Left as is:** the PC is not yet found by
+  itself (5b); a move signs the staff out; "Pair again"'s question still
+  says to pair again from the Devices page, where the same venue's PC now
+  needs no code (Task 10's words); a venue made by `mez setup` while the
+  server runs is named by health only from its next start; the venue's id
+  is no proof of the venue (5b decides).
+
 - **The tablet app's scanner** (ADR-415, Phase 18 Task 4b; 2026-11-02).
   Seen on an Android 13 tablet emulator whose back camera was fed a QR
   picture drawn by mez's own encoder: a kitchen display and a till paired

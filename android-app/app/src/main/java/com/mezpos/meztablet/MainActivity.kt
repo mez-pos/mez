@@ -74,6 +74,15 @@ class MainActivity : ComponentActivity() {
     private val pc: String
         get() = prefs.getString(PC, null).orEmpty()
 
+    // Where the device's pairing is: the PC's address, or after "Pair again"
+    // the one it had (ADR-416). Before that ADR only the PC's address was kept.
+    private val held: String
+        get() = prefs.getString(HELD, null) ?: pc
+
+    // Whether this run has asked the PC which venue it serves, for a PC kept
+    // before health named it: once is enough.
+    private var askedVenue = false
+
     // A link read well ("Pair this tablet", readLink()) and not yet asked:
     // held, with its pairing code, until mez answers at it, then kept without
     // the code and opened with it once. What was typed, for a refusal.
@@ -105,7 +114,18 @@ class MainActivity : ComponentActivity() {
     // The stand-in the probe asks for: its answer opens that one, and no
     // stand-in that took its place before the answer reached this thread.
     private var probing: Away? = null
-    private val probe = Probe { runOnUiThread(::answered) }
+    private val probe = Probe { mez -> runOnUiThread { answered(mez) } }
+
+    /**
+     * A carry under way (ADR-416): the pairing being read at the address that
+     * holds it ([write] null), or written at [link]'s ([write] the script that
+     * writes it). [page] is the app's empty page that step is served.
+     */
+    private data class Carrying(val link: Pairing.Link, val venue: String, val page: String, val write: String?)
+
+    // Volatile: ShellClient asks which page to serve off the main thread.
+    @Volatile
+    private var carry: Carrying? = null
 
     private val shell = object : Shell {
         override val pc: String get() = this@MainActivity.pc
@@ -114,14 +134,19 @@ class MainActivity : ComponentActivity() {
             if (view === web) this@MainActivity.unreachable(url)
         }
         override fun visited(view: WebView, url: String) {
-            if (view !== web || !samePc(url, pc)) return
+            if (view !== web || isCarryPage(url) || !samePc(url, pc)) return
             lastMez = url
             if (forget) {
                 forget = false
                 web.clearHistory()
             }
+            askVenue()
         }
         override fun gone(view: WebView, crashed: Boolean) = this@MainActivity.gone(view, crashed)
+        override val carrying: String? get() = carry?.page
+        override fun finished(view: WebView, url: String) {
+            if (view === web) this@MainActivity.finished(url)
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -201,7 +226,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun where(): Start = start(
-        address = pc.ifEmpty { candidate?.pc.orEmpty() },
+        address = pc.ifEmpty { candidate?.pc ?: carry?.link?.pc.orEmpty() },
         sdk = Build.VERSION.SDK_INT,
         granted = ContextCompat.checkSelfPermission(this, LOCAL_NETWORK) ==
             PackageManager.PERMISSION_GRANTED,
@@ -222,27 +247,101 @@ class MainActivity : ComponentActivity() {
     private fun check(link: Pairing.Link) {
         val health = healthOf(link.pc)
         if (health == null) {
-            checked(link, isMez = false)
+            checked(link, mez = null)
             return
         }
         load(AppPages.checking(link.pc))
-        probe.once(health) { isMez -> runOnUiThread { checked(link, isMez) } }
+        probe.once(health) { mez -> runOnUiThread { checked(link, mez) } }
     }
 
-    private fun checked(link: Pairing.Link, isMez: Boolean) {
+    // mez answered at the link, or nothing did. The same venue's mez at
+    // another address than the one holding the pairing takes the pairing
+    // with it first (ADR-416).
+    private fun checked(link: Pairing.Link, mez: Mez?) {
         if (isDestroyed || candidate !== link) return
         candidate = null
-        if (isMez) {
-            prefs.edit { putString(PC, link.pc) }
-            open(link.open)
-        } else {
-            showing = Start.PAIR
-            load(AppPages.pairRefused(Why.NO_MEZ, candidateText))
+        val venue = mez?.venue
+        when {
+            mez == null -> {
+                showing = Start.PAIR
+                load(AppPages.pairRefused(Why.NO_MEZ, candidateText))
+            }
+            venue != null && carries(held, prefs.getString(VENUE, null), link.pc, venue) ->
+                carryFrom(held, link, venue)
+            else -> keep(link, venue)
         }
     }
 
-    // The app's own way to a page; a stand-in it replaces stops asking.
+    // The address kept, with the venue its mez named, and opened with its
+    // code once. The pairing is held there from now on.
+    private fun keep(link: Pairing.Link, venue: String?) {
+        prefs.edit {
+            putString(PC, link.pc)
+            putString(HELD, link.pc)
+            if (venue == null) remove(VENUE) else putString(VENUE, venue)
+        }
+        open(link.open)
+    }
+
+    // The carry's first step: the app's empty page at the address holding the
+    // pairing, where finished() reads it. A carry that has not ended in a few
+    // seconds is given up: the new address opens as without one.
+    private fun carryFrom(from: String, link: Pairing.Link, venue: String) {
+        val page = carryPage(from) ?: return keep(link, venue)
+        carry = Carrying(link, venue, page, write = null)
+        load(page)
+        frame.postDelayed({
+            if (!isDestroyed && carry?.link === link) {
+                Log.w(TAG, "the pairing was not carried to the PC's new address in time")
+                carried(link, venue)
+            }
+        }, CARRY_TIMEOUT_MS)
+    }
+
+    // The empty page is there: read the pairing at the old address, or write
+    // it at the new one.
+    private fun finished(url: String) {
+        val step = carry ?: return
+        if (!atCarryPage(url, step.page)) return
+        val write = step.write
+        if (write == null) {
+            web.evaluateJavascript(READ_KEYS) { keys -> gotKeys(step, keys) }
+        } else {
+            web.evaluateJavascript(write) { written -> wrote(step, written == "true") }
+        }
+    }
+
+    private fun gotKeys(step: Carrying, keys: String?) {
+        if (carry !== step) return
+        val write = keys?.let(::writeKeys)
+        val page = carryPage(step.link.pc)
+        if (write == null || page == null) {
+            Log.i(TAG, "no pairing at the PC's old address to carry")
+            carried(step.link, step.venue)
+            return
+        }
+        carry = step.copy(page = page, write = write)
+        load(page)
+    }
+
+    private fun wrote(step: Carrying, written: Boolean) {
+        if (carry !== step) return
+        if (!written) Log.w(TAG, "the pairing could not be written at the PC's new address")
+        carried(step.link, step.venue)
+    }
+
+    // The carry is over, whatever came of it: the new address is kept and
+    // opened. One that failed opens at the pairing screen, as without it.
+    private fun carried(link: Pairing.Link, venue: String) {
+        carry = null
+        keep(link, venue)
+    }
+
+
+    // The app's own way to a page; a stand-in it replaces stops asking, and
+    // a carry under way is given up.
     private fun open(url: String) {
+        carry = null
         away = null
         probe.stop()
         if (!AppPages.isOwn(url)) {
@@ -315,7 +414,7 @@ class MainActivity : ComponentActivity() {
     // The address typed on "Pair this tablet": kept, and opened with its code
     // once Android lets the app reach it; or the page again, saying why not.
     private fun typed(text: String) {
-        if (candidate != null) return // One address asked at a time.
+        if (candidate != null || carry != null) return // One address asked at a time.
         when (val link = readLink(text)) {
             is Pairing.Link -> {
                 candidate = link
@@ -328,10 +427,13 @@ class MainActivity : ComponentActivity() {
     }
 
     // "Pair again", from "Can't reach the mez PC": the address is forgotten.
-    // The pairing stays in the WebView's storage for that address, so the
-    // same PC paired again opens as it was.
+    // The pairing stays in the WebView's storage for that address, and the
+    // app keeps where it is held and the venue: the same PC typed again
+    // opens as it was, and the same venue's PC at a new address takes the
+    // pairing with it (ADR-416).
     private fun pairAgain() {
         prefs.edit { remove(PC) }
+        carry = null
         candidate = null
         opened = null
         lastMez = null
@@ -380,11 +482,34 @@ class MainActivity : ComponentActivity() {
     }
 
     // The PC answered: back to the page it stood in for.
-    private fun answered() {
+    private fun answered(mez: Mez) {
         if (isDestroyed) return
         val page = away ?: return
         if (page !== probing) return
+        learn(page.url, mez)
         open(page.url)
+    }
+
+    // A PC kept before health named its venue is asked once, when its page
+    // opens: without the venue, its pairing cannot follow it to a new
+    // address (ADR-416).
+    private fun askVenue() {
+        if (askedVenue || prefs.contains(VENUE)) return
+        val health = healthOf(pc) ?: return
+        askedVenue = true
+        val asked = pc
+        probe.once(health) { mez -> if (mez != null) runOnUiThread { learn(asked, mez) } }
+    }
+
+    // A PC kept before health named its venue is known by it from its next
+    // answer (ADR-416).
+    private fun learn(url: String, mez: Mez) {
+        val venue = mez.venue ?: return
+        if (isDestroyed || pc.isEmpty() || !samePc(url, pc) || prefs.contains(VENUE)) return
+        prefs.edit {
+            putString(HELD, pc)
+            putString(VENUE, venue)
+        }
     }
 
     private fun back() {
@@ -393,6 +518,8 @@ class MainActivity : ComponentActivity() {
             load(AppPages.page(Start.PAIR.page.orEmpty()))
             return
         }
+        // A carry is a moment, and its pages are not the person's.
+        if (carry != null) return
         val history = web.copyBackForwardList()
         val behind = (0 until history.currentIndex).map { history.getItemAtIndex(it)?.url }
         if (goesBack(history.currentItem?.url, behind, web.canGoBack())) web.goBack()
@@ -423,7 +550,11 @@ class MainActivity : ComponentActivity() {
     // The new WebView opens what the old one showed, or "The screen stopped".
     private fun reopen(next: Revival) {
         val standing = away
+        val step = carry
         when {
+            // A carry goes on in the new WebView from the step it was at:
+            // reading and writing are each the same done twice.
+            step != null -> load(step.page)
             // The app's own pages are a few kilobytes: they come back as they
             // were, and an address being asked is asked again.
             showing != Start.MEZ || candidate != null -> {
@@ -477,5 +608,13 @@ class MainActivity : ComponentActivity() {
         const val ASKED = "asked-local-network"
         const val PC = "pc"
         const val SEEDED = "seeded"
+
+        // Where the device's pairing is held, and the venue whose mez
+        // answered there (ADR-416).
+        const val HELD = "held"
+        const val VENUE = "venue"
+
+        // A carry is two empty pages and two scripts: milliseconds.
+        const val CARRY_TIMEOUT_MS = 5_000L
     }
 }

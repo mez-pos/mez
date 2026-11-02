@@ -600,6 +600,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 	srv = api.New(cfg, log, build,
 		api.WithStatic(bundles),
 		api.WithDBCheck(dbhealth.Check(database)),
+		api.WithVenue(venueAtStart(ctx, database, log)),
 		api.WithTunnel(link.status),
 		api.WithPairing(link.pairedTo),
 		api.WithPublicURL(link.publicURL),

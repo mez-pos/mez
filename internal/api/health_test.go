@@ -169,3 +169,44 @@ func keysOf(m map[string]json.RawMessage) []string {
 	}
 	return keys
 }
+
+// TestHealthSaysWhichVenue: a tablet that finds a mez at a new address asks
+// it which venue it serves before carrying its pairing there (ADR-416). The
+// venue's network is told; a request through the relay is not.
+func TestHealthSaysWhichVenue(t *testing.T) {
+	tests := []struct {
+		name string
+		opts []Option
+		via  []string // X-Mez-Via, as the tunnel sets it
+		want string
+	}{
+		{name: "on the venue's network", opts: []Option{WithVenue("ven_7K3M9Q")}, want: "ven_7K3M9Q"},
+		{name: "through the relay", opts: []Option{WithVenue("ven_7K3M9Q")}, via: []string{ViaRelay}, want: ""},
+		// relayed() counts any claim to have come that way, and so does health.
+		{name: "saying anything of the relay", opts: []Option{WithVenue("ven_7K3M9Q")}, via: []string{"lan", "relay"}, want: ""},
+		{name: "no venue yet", want: ""},
+		{name: "an empty name names none", opts: []Option{WithVenue("ven_7K3M9Q"), WithVenue("")}, want: "ven_7K3M9Q"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := httptest.NewRequest(http.MethodGet, "/api/v1/health", nil)
+			for _, v := range tt.via {
+				r.Header.Add(HeaderVia, v)
+			}
+			resp := do(t, newTestServer(t, testConfig(), tt.opts...), r)
+
+			var body map[string]any
+			decode(t, resp, &body)
+			got, present := body["venue"]
+			if tt.want == "" {
+				if present {
+					t.Errorf("venue = %v, want none", got)
+				}
+				return
+			}
+			if got != tt.want {
+				t.Errorf("venue = %v, want %q", got, tt.want)
+			}
+		})
+	}
+}
