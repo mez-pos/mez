@@ -75,6 +75,8 @@
     box-shadow: var(--shadow-card);
   }
   section:target { display: block; }
+  /* hidden hides, a button's own display notwithstanding. */
+  [hidden] { display: none !important; }
 
   img { display: block; width: 56px; height: 56px; margin-bottom: 20px; }
 
@@ -216,7 +218,8 @@
   #way-out .button.secondary, #way-out-open .button.secondary { margin-left: 0; }
   p.aside a { color: inherit; font-weight: 700; text-underline-offset: 3px; }
   #way-out-open p.aside { margin-top: 24px; }
-  #way-out-open .button + .button { margin-left: 8px; }
+  .retry + p.aside { margin-top: 16px; }
+  #way-out-open .actions { display: flex; flex-wrap: wrap; column-gap: 8px; }
 </style>
 </head>
 <body>
@@ -262,6 +265,8 @@
     <button type="button" class="link" data-ask="pair-again">pair this
     tablet again</button>.</p>
   <a class="button retry" href="mez-app:retry">Try again</a>
+  <p class="aside" data-lock-show="kiosk" hidden>Not on the venue's wifi?
+    <a href="mez-app:wifi">Wi-Fi settings</a></p>
   <div class="confirm" id="pair-again" hidden>
     <p>Forget this address, and pair the tablet again from the PC's
       <strong>Devices</strong> page?</p>
@@ -386,8 +391,21 @@
   <h1>The way out is open</h1>
   <p><span data-by-line hidden>Opened by <strong data-by></strong>. </span>mez
     stays on this tablet, for when you come back.</p>
-  <a class="button" href="mez-app:way-out-settings">Android's settings</a>
-  <a class="button secondary" href="mez-app:way-out-pair-again">Pair this tablet again</a>
+  <div class="actions">
+    <a class="button" href="mez-app:way-out-settings">Android's settings</a>
+    <a class="button secondary" href="mez-app:way-out-pair-again">Pair this tablet again</a>
+    <a class="button secondary" href="mez-app:way-out-leave" data-lock-show="any" hidden>Leave mez</a>
+  </div>
+  <p class="aside" data-lock-show="kiosk" hidden>This tablet is locked to mez
+    as its device owner: after Leave mez, Home brings the till back, locked.
+    <button type="button" class="link" data-ask="release">Release
+    it</button> to make it an ordinary tablet again.</p>
+  <div class="confirm" id="release" hidden>
+    <p>Release this tablet? mez stays on it but no longer locks it, and
+      locking it again takes a computer.</p>
+    <a class="button secondary" href="mez-app:way-out-release">Release it</a>
+    <button type="button" class="link" data-keep="release">Keep it locked</button>
+  </div>
   <p class="aside"><a href="mez-app:way-out-back">Back to mez</a></p>
 </section>
 
@@ -477,6 +495,13 @@
     }
     location.href = "mez-app:way-out-open?staff=" + encodeURIComponent(chosen) + "&pin=" + encodeURIComponent(pin.value);
   });
+  // How the tablet is held to mez, from ?lock= (ADR-420): a locked tablet's
+  // own links show.
+  const lock = params.get("lock");
+  for (const el of document.querySelectorAll("[data-lock-show]")) {
+    el.hidden = el.dataset.lockShow === "any" ? !lock : el.dataset.lockShow !== lock;
+  }
+
   const by = params.get("by");
   for (const el of document.querySelectorAll("[data-by]")) el.textContent = by ?? "";
   for (const el of document.querySelectorAll("[data-by-line]")) el.hidden = !by;

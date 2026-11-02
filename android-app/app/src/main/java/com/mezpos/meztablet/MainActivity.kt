@@ -1,8 +1,13 @@
 package com.mezpos.meztablet
 
 import android.Manifest
+import android.app.ActivityManager
+import android.app.admin.DevicePolicyManager
+import android.os.UserManager
 import android.content.ActivityNotFoundException
+import android.content.ComponentName
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
@@ -181,13 +186,15 @@ class MainActivity : ComponentActivity() {
 
     /**
      * The way out under way (ADR-419): the PC asked, the pairing it is asked
-     * with (none if no PC page was showing), who may open it as the PC said,
+     * with (none if no PC page was showing), whether it has been asked yet,
+     * who may open it as the PC said,
      * whether the PC has said yes and who to, and what Back goes back to: the
      * PC's page that was showing, or the app's page that stood in for it.
      */
     private data class Leaving(
         val pc: String,
         val held: Held? = null,
+        val asked: Boolean = false,
         val who: String? = null,
         val open: Boolean = false,
         val by: String = "",
@@ -197,6 +204,33 @@ class MainActivity : ComponentActivity() {
     )
 
     private var leaving: Leaving? = null
+
+    // The lock (ADR-419, ADR-420): lock task mode as the device owner, screen
+    // pinning otherwise. [left]: the way out lifted it, until mez has gone
+    // behind another app and come back; [askedToPin]: screen pinning asked
+    // for, this start; [inFront]: resumed, the only time a lock is asked.
+    private val policy by lazy { getSystemService(DevicePolicyManager::class.java) }
+    private val admin by lazy { ComponentName(this, Admin::class.java) }
+    private var left = false
+    private var askedToPin = false
+    private var inFront = false
+
+    // The kiosk's rules as last set, this start: with Android's Wi-Fi panel
+    // let run, or not; null before they are set. They are set once, not at
+    // every page.
+    private var kioskHeld: Boolean? = null
+
+    private val owner: Boolean
+        get() = policy?.isDeviceOwnerApp(packageName) == true
+
+    private val inLockTask: Boolean
+        get() = getSystemService(ActivityManager::class.java)?.lockTaskModeState
+            ?.let { it != ActivityManager.LOCK_TASK_MODE_NONE } == true
+
+    // How the tablet is held, for its pages: a kiosk once it is due to be
+    // one, before Android has finished locking it.
+    private val locking: Locking?
+        get() = if (owner && prefs.getBoolean(LOCKED, false) && !left) Locking.KIOSK else lockingOf(owner, inLockTask)
 
     // The proof, and the way out's questions, are asked on a thread of their
     // own, not behind the probe's asking of an address that does not answer.
@@ -219,6 +253,7 @@ class MainActivity : ComponentActivity() {
             }
             askVenue()
             noteHeld()
+            lockIfDue()
         }
         override fun gone(view: WebView, crashed: Boolean) = this@MainActivity.gone(view, crashed)
         override val carrying: String? get() = carry?.page
@@ -276,8 +311,10 @@ class MainActivity : ComponentActivity() {
     // where the local network may have been allowed since.
     override fun onResume() {
         super.onResume()
+        inFront = true
         hideSystemBars()
         if (!asking) show(where())
+        lockIfDue()
     }
 
     // A prompt or a dialog over the app can bring the bars back.
@@ -286,7 +323,14 @@ class MainActivity : ComponentActivity() {
         if (hasFocus) hideSystemBars()
     }
 
+    override fun onPause() {
+        inFront = false
+        super.onPause()
+    }
+
     override fun onStop() {
+        // What the way out lifted holds again when mez is back in front.
+        left = false
         probe.stop()
         watch.stop()
         // A way out ends when the app goes behind another.
@@ -394,6 +438,7 @@ class MainActivity : ComponentActivity() {
     // The empty page is there: read the pairing at the old address, or write
     // it at the new one.
     private fun finished(url: String) {
+        wayOutAsk(url)
         val step = carry ?: return
         if (!atCarryPage(url, step.page)) return
         val write = step.write
@@ -559,7 +604,8 @@ class MainActivity : ComponentActivity() {
                 prefs.edit { putBoolean(ASKED, true) }
                 askLocalNetwork.launch(LOCAL_NETWORK)
             }
-            Action.OPEN_SETTINGS -> openSettings()
+            // Locked, Android's settings are the way out's (ADR-420).
+            Action.OPEN_SETTINGS -> if (locking != null) wayOut() else openSettings()
             Action.RETRY -> retry()
             Action.ADDRESS -> typed(typedOf(link).orEmpty())
             Action.PAIR_AGAIN -> pairAgain()
@@ -569,6 +615,9 @@ class MainActivity : ComponentActivity() {
             Action.WAY_OUT_BACK -> wayOutBack()
             Action.WAY_OUT_SETTINGS -> if (leaving?.open == true) wayOutSettings()
             Action.WAY_OUT_PAIR_AGAIN -> if (leaving?.open == true) pairAgain()
+            Action.WAY_OUT_LEAVE -> if (leaving?.open == true) wayOutLeave()
+            Action.WAY_OUT_RELEASE -> if (leaving?.open == true) wayOutRelease()
+            Action.WIFI -> if (away?.page == AppPages.UNREACHABLE) wifiSettings()
         }
     }
 
@@ -666,7 +715,9 @@ class MainActivity : ComponentActivity() {
         val way = leaving
         load(
             when {
-                page.page == AppPages.UNREACHABLE -> AppPages.unreachable(page.url)
+                page.page == AppPages.UNREACHABLE -> AppPages.unreachable(page.url, locking)
+                // Lost before the PC was asked: asked once this page loads.
+                page.page == AppPages.WAY_OUT && way != null && way.held != null && !way.asked -> wayOutAsking()
                 page.page == AppPages.WAY_OUT && way != null -> wayOutPage(way, why = null)
                 else -> AppPages.page(page.page)
             },
@@ -793,10 +844,23 @@ class MainActivity : ComponentActivity() {
             load(wayOutPage(step, why = Opened.NOT_PAIRED.why))
             return
         }
-        val next = step.copy(held = held)
+        leaving = step.copy(held = held)
+        // The till goes at once: the person sees their hold was made. The PC
+        // is asked once this page has loaded (wayOutAsk).
+        load(wayOutAsking())
+    }
+
+    private fun wayOutAsking() = AppPages.wayOut(who = null, why = WAY_OUT_ASKING)
+
+    // "Asking the mez PC" has loaded: now the PC is asked who may open the
+    // way out. Asked any sooner, a quick answer's page was overtaken by this
+    // one, still loading, and the way out stayed on "Asking".
+    private fun wayOutAsk(url: String) {
+        val step = leaving ?: return
+        val held = step.held ?: return
+        if (step.asked || url.substringBefore('#') != wayOutAsking().substringBefore('#')) return
+        val next = step.copy(asked = true)
         leaving = next
-        // The till goes at once: the person sees their hold was made.
-        load(AppPages.wayOut(who = null, why = WAY_OUT_ASKING))
         ask { WayOutAsk.who(next.pc, held.token).let { who -> runOnUiThread { wayOutWho(next, who) } } }
     }
 
@@ -837,7 +901,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun wayOutPage(step: Leaving, why: String?): String =
-        if (step.open) AppPages.wayOutOpen(step.by) else AppPages.wayOut(step.who, why, step.chosen)
+        if (step.open) AppPages.wayOutOpen(step.by, locking) else AppPages.wayOut(step.who, why, step.chosen)
 
     // Back to what the way out was opened over: the PC's page, or the app's
     // page that stood in for it, or where the app starts.
@@ -864,12 +928,200 @@ class MainActivity : ComponentActivity() {
     // Android's settings, the way out open: mez is back behind them, as it
     // was, for when the person comes back.
     private fun wayOutSettings() {
+        left = true
         wayOutBack()
+        // The lock lifted while they are open; it holds again when mez is
+        // back in front (lockIfDue).
+        stopLock()
         try {
             startActivity(Intent(Settings.ACTION_SETTINGS))
         } catch (e: ActivityNotFoundException) {
             Log.w(TAG, "no Settings to open from the way out", e)
+            relock()
         }
+    }
+
+    // Nothing opened in mez's place: the lock holds again at once.
+    private fun relock() {
+        left = false
+        lockIfDue()
+    }
+
+    // Locks the tablet to mez when it is due (ADR-420): the till has shown
+    // once on this tablet, and from then on on every page, while mez is in
+    // front. As the device owner, the kiosk's rules are set each time.
+    // Called from onResume and when the PC's page shows; Android refuses a
+    // lock asked from behind another app, which is let go, and asked again
+    // at the next resume.
+    private fun lockIfDue() {
+        if (!inFront || isFinishing || isDestroyed) return
+        val kiosk = owner
+        // Made the device owner again after a release: a kiosk again.
+        if (kiosk && prefs.getBoolean(RELEASED, false)) prefs.edit { remove(RELEASED) }
+        val released = prefs.getBoolean(RELEASED, false)
+        if (showing == Start.MEZ && pc.isNotEmpty() && !released && !prefs.getBoolean(LOCKED, false)) {
+            prefs.edit { putBoolean(LOCKED, true) }
+        }
+        val engaged = prefs.getBoolean(LOCKED, false)
+        if (kiosk && engaged) holdAsKiosk()
+        if (!shouldLock(kiosk, engaged, inLockTask, left, askedToPin)) return
+        try {
+            startLockTask()
+            if (!kiosk) askedToPin = true
+        } catch (e: IllegalStateException) {
+            Log.w(TAG, "the tablet could not be locked to mez", e)
+        } catch (e: IllegalArgumentException) {
+            Log.w(TAG, "the tablet could not be locked to mez", e)
+        } catch (e: SecurityException) {
+            Log.w(TAG, "the tablet could not be locked to mez", e)
+        }
+    }
+
+    // A kiosk's rules, as the device owner, set once a start: mez alone runs
+    // while locked (and Android's Wi-Fi panel while it is open from "Can't
+    // reach the mez PC"), the power menu kept, no lock screen, mez the
+    // tablet's home; no factory reset, safe mode or new user from Settings,
+    // which the Wi-Fi panel can reach; and the local network allowed, so
+    // that a kiosk is never stuck on a permission only Settings could give.
+    private fun holdAsKiosk(wifi: Boolean = false) {
+        if (kioskHeld == wifi) return
+        val rules = policy ?: return
+        try {
+            val settings = if (wifi) wifiPackage() else null
+            rules.setLockTaskPackages(admin, listOfNotNull(packageName, settings).toTypedArray())
+            if (kioskHeld == null) {
+                rules.setLockTaskFeatures(admin, DevicePolicyManager.LOCK_TASK_FEATURE_GLOBAL_ACTIONS)
+                rules.setKeyguardDisabled(admin, true)
+                val home = IntentFilter(Intent.ACTION_MAIN).apply {
+                    addCategory(Intent.CATEGORY_HOME)
+                    addCategory(Intent.CATEGORY_DEFAULT)
+                }
+                rules.addPersistentPreferredActivity(admin, home, ComponentName(this, MainActivity::class.java))
+                for (rule in KIOSK_RESTRICTIONS) rules.addUserRestriction(admin, rule)
+                // False where Android has no such permission (before 17).
+                rules.setPermissionGrantState(admin, packageName, LOCAL_NETWORK, DevicePolicyManager.PERMISSION_GRANT_STATE_GRANTED)
+            }
+            kioskHeld = wifi
+        } catch (e: SecurityException) {
+            Log.w(TAG, "the kiosk's rules could not be set", e)
+        } catch (e: IllegalArgumentException) {
+            Log.w(TAG, "the kiosk's rules could not be set", e)
+        }
+    }
+
+    private fun stopLock() {
+        if (!inLockTask) return
+        try {
+            stopLockTask()
+        } catch (e: IllegalStateException) {
+            Log.w(TAG, "the lock could not be lifted", e)
+        }
+    }
+
+    // "Wi-Fi settings" on a kiosk whose PC does not answer: Android's Wi-Fi
+    // panel, let run inside the lock until mez is back in front, with no PIN,
+    // since the PIN needs the PC (ADR-420).
+    private fun wifiSettings() {
+        if (locking != Locking.KIOSK) return
+        holdAsKiosk(wifi = true)
+        try {
+            startActivity(Intent(Settings.Panel.ACTION_WIFI))
+        } catch (e: ActivityNotFoundException) {
+            holdAsKiosk()
+            Log.w(TAG, "no Wi-Fi settings to open", e)
+        }
+    }
+
+    private fun wifiPackage(): String? =
+        packageManager.queryIntentActivities(Intent(Settings.Panel.ACTION_WIFI), 0).firstOrNull()?.activityInfo?.packageName
+
+    // "Leave mez": the lock lifted for a visit to the tablet's own home app.
+    // mez stays the home a kiosk is held to, so Home, or a reboot, brings the
+    // till back, locked again (ADR-420). With no home app of the tablet's
+    // own, Android's choice of one.
+    private fun wayOutLeave() {
+        left = true
+        stopLock()
+        wayOutBack()
+        val other = otherHome(homeApps(), packageName)
+        if (other == null) {
+            if (!openHomeChoice()) relock()
+            return
+        }
+        try {
+            startActivity(homeIntent().setClassName(other.pkg, other.activity))
+        } catch (e: ActivityNotFoundException) {
+            Log.w(TAG, "the tablet's home app could not be opened", e)
+            if (!openHomeChoice()) relock()
+        }
+    }
+
+    private fun homeIntent() = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+
+    private fun homeApps(): List<HomeApp> =
+        packageManager.queryIntentActivities(homeIntent(), 0).map {
+            HomeApp(it.activityInfo.packageName, it.activityInfo.name, it.priority)
+        }
+
+    // "Release this tablet": an ordinary tablet again, mez no longer its
+    // device owner nor the home it is held to, and Android's choice of home
+    // app; locking it again takes a computer (adb).
+    private fun wayOutRelease() {
+        if (!owner) return
+        release()
+        // Set again in full at the next lock, whatever release undid.
+        kioskHeld = null
+        if (owner) {
+            // Not released: the way out stays open, and says nothing new.
+            Log.w(TAG, "the tablet could not be released; it is still locked to mez")
+            lockIfDue()
+            return
+        }
+        left = true
+        // Not asked to pin either: an ordinary tablet, until it is made the
+        // device owner again.
+        prefs.edit {
+            remove(LOCKED)
+            putBoolean(RELEASED, true)
+        }
+        wayOutBack()
+        if (!openHomeChoice()) relock()
+    }
+
+    // Each rule undone apart, so that one refused does not keep the rest.
+    private fun release() {
+        stopLock()
+        val rules = policy ?: return
+        val steps = listOf<() -> Unit>(
+            { rules.clearPackagePersistentPreferredActivities(admin, packageName) },
+            { rules.setKeyguardDisabled(admin, false) },
+            { rules.setLockTaskPackages(admin, emptyArray()) },
+            { for (rule in KIOSK_RESTRICTIONS) rules.clearUserRestriction(admin, rule) },
+            {
+                rules.setPermissionGrantState(admin, packageName, LOCAL_NETWORK, DevicePolicyManager.PERMISSION_GRANT_STATE_DEFAULT)
+            },
+            {
+                @Suppress("DEPRECATION")
+                rules.clearDeviceOwnerApp(packageName)
+            },
+        )
+        for (step in steps) {
+            try {
+                step()
+            } catch (e: SecurityException) {
+                Log.w(TAG, "a rule of the kiosk could not be undone", e)
+            } catch (e: IllegalArgumentException) {
+                Log.w(TAG, "a rule of the kiosk could not be undone", e)
+            }
+        }
+    }
+
+    private fun openHomeChoice(): Boolean = try {
+        startActivity(Intent(Settings.ACTION_HOME_SETTINGS))
+        true
+    } catch (e: ActivityNotFoundException) {
+        Log.w(TAG, "no home app choice to open", e)
+        false
     }
 
     // The way out is in use: it goes back to mez a minute after the last of it.
@@ -988,6 +1240,23 @@ class MainActivity : ComponentActivity() {
         const val ASKED = "asked-local-network"
         const val PC = "pc"
         const val SEEDED = "seeded"
+
+        // Whether the tablet has been locked to mez: the till has shown on it
+        // since it was last released (ADR-420).
+        const val LOCKED = "locked"
+
+        // What a kiosk forbids from Settings, which Android's Wi-Fi panel
+        // reaches (ADR-420): a factory reset, safe mode (from the power menu
+        // the kiosk keeps, it starts the tablet without mez), a new user.
+        val KIOSK_RESTRICTIONS = listOf(
+            UserManager.DISALLOW_FACTORY_RESET,
+            UserManager.DISALLOW_SAFE_BOOT,
+            UserManager.DISALLOW_ADD_USER,
+        )
+
+        // Released by the way out: no lock asked until the app is made the
+        // device owner again.
+        const val RELEASED = "released"
 
         // Where the device's pairing is held, and the venue whose mez
         // answered there (ADR-416).

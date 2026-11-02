@@ -39,7 +39,7 @@ object AppPages {
      * answer. The page shows the PC's host and port, never the rest: a
      * pairing link carries its code in the fragment.
      */
-    fun unreachable(failed: String): String = at(UNREACHABLE, failed)
+    fun unreachable(failed: String, lock: Locking? = null): String = withLock(at(UNREACHABLE, failed), lock)
 
     /** "Looking for mez" at [address]'s host and port, while the app asks it. */
     fun checking(address: String): String = at(CHECKING, address)
@@ -73,8 +73,19 @@ object AppPages {
         return "${ASSETS}start.html${if (query.isEmpty()) "" else "?$query"}#$WAY_OUT"
     }
 
-    /** The way out opened, by [by], and what it offers. */
-    fun wayOutOpen(by: String): String = "${ASSETS}start.html?by=${URLEncoder.encode(by, "UTF-8")}#$WAY_OUT_OPEN"
+    /** The way out opened, by [by], and what it offers: more when the tablet is held by [lock]. */
+    fun wayOutOpen(by: String, lock: Locking? = null): String =
+        withLock("${ASSETS}start.html?by=${URLEncoder.encode(by, "UTF-8")}#$WAY_OUT_OPEN", lock)
+
+    // [page], saying how the tablet is held to mez (ADR-420): its links for a
+    // locked tablet show.
+    private fun withLock(page: String, lock: Locking?): String {
+        if (lock == null) return page
+        val address = page.substringBefore('#')
+        val id = page.substringAfter('#', "")
+        val joined = "$address${if ('?' in address) "&" else "?"}lock=${lock.id}"
+        return if (id.isEmpty()) joined else "$joined#$id"
+    }
 
     /** The app's page [id], one `<section id>` of `start.html`. */
     fun page(id: String): String = "${ASSETS}start.html#$id"
@@ -115,6 +126,15 @@ enum class Action(val link: String, val takesQuery: Boolean = false) {
     /** What the way out offers, once the PC has said yes: Android's settings, or pairing again. */
     WAY_OUT_SETTINGS("mez-app:way-out-settings"),
     WAY_OUT_PAIR_AGAIN("mez-app:way-out-pair-again"),
+
+    /** The way out open on a locked tablet (ADR-420): the lock lifted until mez is back in front. */
+    WAY_OUT_LEAVE("mez-app:way-out-leave"),
+
+    /** The way out open on a kiosk: an ordinary tablet again, mez no longer its device owner. */
+    WAY_OUT_RELEASE("mez-app:way-out-release"),
+
+    /** Android's Wi-Fi settings, from "Can't reach the mez PC" on a kiosk, inside the lock. */
+    WIFI("mez-app:wifi"),
     ;
 
     companion object {

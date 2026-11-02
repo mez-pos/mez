@@ -213,7 +213,8 @@ Words in `docs/hardware.md`, `docs/deploy.md` and `docs/releasing.md`.
     the real announcer), the PC given a new address, the till back by
     itself.
 
-- [ ] **Task 6 - Locked to mez.** The app as the tablet's home app, so the
+- [x] **Task 6 - Locked to mez.** Done 2026-11-02 in two parts (ADR-419,
+  ADR-420). The app as the tablet's home app, so the
   home button and a reboot come back to it. Lock task mode when the app is
   the device owner (`adb shell dpm set-device-owner`, on a tablet with no
   accounts, written up for the human); screen pinning where it is not. The
@@ -240,7 +241,13 @@ Words in `docs/hardware.md`, `docs/deploy.md` and `docs/releasing.md`.
     cashier refused, a wrong PIN refused, a manager's PIN opening Android's
     settings.
 
-  - [ ] **Task 6b - Locked.** ADR-419. The app as the tablet's home app;
+  - [x] **Task 6b - Locked.** Done 2026-11-02 (ADR-420), seen on an
+    Android 13 emulator: pinned when not the device owner; as the device
+    owner, Home, Recents and the shade staying in mez, a reboot landing
+    in the till locked, the Wi-Fi panel inside the lock, "Leave mez" to
+    the tablet's launcher and Home back to the till locked, "Release it"
+    undoing the kiosk. "Pair again" on "Can't reach the mez PC" keeps
+    needing no PIN (ADR-420 says why). ADR-419. The app as the tablet's home app;
     lock task mode when the app is the device owner (`adb shell dpm
     set-device-owner`, on a tablet with no accounts, written up for the
     human), the keyguard off, the power menu kept; screen pinning where it

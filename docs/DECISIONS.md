@@ -16495,7 +16495,7 @@ is unknown until walked; the fallback then is "Pair again", or ADR-416's subnet 
 
 
 ## ADR-419 - A tablet locked to mez, and its way out: two fingers held, a manager's PIN the PC checks
-2026-11 · Status: accepted. Phase 18 Task 6 (6a, the way out, built first; 6b, the lock, next).
+2026-11 · Status: accepted. Phase 18 Task 6 (6a, the way out, built first; 6b, the lock, ADR-420).
 Context: Task 6 locks a tablet to mez: the home app, so the home button and a reboot come back
 to it; lock task mode when the app is the device owner; screen pinning where it is not. The way
 out (change venue, Android's settings, leave) is behind a long press and a manager's PIN
@@ -16572,3 +16572,101 @@ Cost: the way out needs the PC, and the PC's own address: across a NAT the proof
 PIN is not sent. As made only the owner may open it. Anyone who can make the hold can spend the
 owner's PIN attempts into the lockout, as at the till's sign-in. A deliberate hold reloads the
 till: what was only in its memory is gone.
+
+## ADR-420 - Locked: the device owner's kiosk, screen pinning, and leaving
+2026-11 · Status: accepted. Phase 18 Task 6b.
+Context: ADR-419 settled the lock's shape and built the way out first (6a). 6b locks the tablet:
+the home app, lock task mode as the device owner, screen pinning otherwise, the way out's
+"Leave mez" lifting the lock, what a locked tablet whose PC does not answer offers, and the
+app's own ways round the PIN closed.
+Decision:
+  - **When it locks: once the till has shown on this tablet**, kept, and from then on whenever
+    mez is in front, on every page of the app's. Android's permission prompts and the first
+    pairing come before it, so a new tablet is never locked on a page it cannot leave.
+  - **As the device owner, a kiosk.** `adb shell dpm set-device-owner
+    com.mezpos.meztablet/.Admin`, on a tablet with no accounts; `Admin` is a device admin
+    with no policy of its own. Once the till has shown, mez sets the kiosk's rules, once each
+    start: lock task mode with mez alone let run, Android's power menu kept and nothing else
+    (no home, recents, notifications or status bar), no lock screen, and mez the tablet's
+    home, so Home and a reboot land in it; no factory reset, safe mode or new user from
+    Android's settings (safe mode, from the power menu the kiosk keeps, would start the
+    tablet without mez); and mez's own local network permission granted (Android 17's), so
+    that a kiosk is never stuck on a permission page only Settings could clear. A tablet made
+    the device owner after pairing is a kiosk the next time mez is in front.
+  - **Otherwise, screen pinning**, as Android has it: Android says the app is pinned, and its
+    own gesture unpins. Asked once each time the app starts, so an unpinning is not undone at
+    once.
+  - **The pages say how the tablet is held** (`?lock=kiosk|pinned` on the app's pages). A
+    kiosk's "Can't reach the mez PC" offers "Wi-Fi settings", honoured only while that page
+    shows: Android's Wi-Fi panel, its package let run inside the lock until mez is back in
+    front, with no PIN, since the PIN needs the PC. Locked, Open Settings on the permission pages opens the way out instead.
+  - **"Leave mez"**, on the open way out of a locked tablet: the lock lifted for a visit to
+    the tablet's own home app (any other than mez and Android's fallback, opened by name).
+    mez stays the kiosk's home, so Home, or a reboot, brings the till back, locked again; the
+    lock is lifted until mez has gone behind another app and come back. A tablet with no home
+    app of its own is shown Android's choice of one; where nothing opens, the lock holds again
+    at once.
+  - **"Release it"**, on a kiosk's open way out, confirmed: mez no longer the device owner,
+    the lock screen back, the lock's list emptied, the kiosk's restrictions and its grant
+    lifted, mez no longer the home it is held to, and Android's choice of home app; each undone
+    apart, and a tablet still the device owner after it is not treated as released. A released
+    tablet is not asked to pin; locking it again takes a computer.
+  - **"Pair again" on "Can't reach the mez PC" keeps needing no PIN**, locked or not, which is
+    not what ADR-419's review asked. That page shows only while the PC does not answer, when
+    no PIN can be checked: behind the way out, it would simply be gone, and a locked tablet
+    whose PC moved where 5c's finding cannot see would wait for a factory reset. It leads
+    only to mez's own pairing pages, inside the lock.
+  - **The way out asks the PC once "Asking the mez PC" has loaded.** Asked sooner, a quick
+    answer's page was overtaken by that page, still loading, and the way out stayed on
+    "Asking" (seen once in the walk below).
+For the human, a kiosk: a tablet with no accounts (new, or reset, then set up skipping the
+Google account); the mez app installed, opened and paired, the till shown once; USB debugging on
+(Settings, About tablet, Build number tapped seven times; Developer options, USB debugging); on
+a computer with Android's platform tools, `adb shell dpm set-device-owner
+com.mezpos.meztablet/.Admin`; open mez, which locks; USB debugging off. Task 10 puts this in
+`hardware.md`. To undo: the way out, then "Release it".
+Seen (6b), 2026-11-02, on an Android 13 tablet emulator, the till paired to a demo venue's mez
+at `192.168.29.211:7786`, two fingers through the emulator's gRPC controller. Not the device
+owner: "App is pinned" once the till showed, and Home stayed in mez. Made the device owner (no
+accounts): locked as a kiosk at the next resume; Home, Recents and the notification shade
+(`cmd statusbar expand-notifications`) did not leave it; `adb reboot` landed in the till,
+locked, with no lock screen; a reinstall came back locked. The PC stopped, the way out said so,
+and "Can't reach the mez PC" offered Wi-Fi settings: Android's Wi-Fi panel opened inside the
+lock, and Home and Back came back to mez, locked. The way out opened with the owner's PIN (the
+proof, then the PIN's 200), with "Leave mez" and "Release it". "Leave mez": the tablet's own
+launcher, unlocked; Settings opened from it; Home, the till, locked again. "Release it",
+confirmed: no device owner, unlocked, Android's choice of home app; back in mez, not asked to
+pin. The first build's "Leave mez" opened Android's choice of home app with mez still chosen,
+and Home from there went straight back into a locked mez: replaced by the launcher, above. One
+hold stayed on "Asking the mez PC" though the PC had answered in a millisecond: the
+sequencing above, then four holds in a row reached the PIN.
+A review (2026-11-02) found the Wi-Fi panel's way into Settings (factory reset and safe mode
+reachable with no PIN), honoured from any page of the app's; the kiosk's rules written to
+Android at every page the till showed; a kiosk on Android 17 that could be stuck on the local
+network permission; a release that stopped at its first refusal and said it had released; and
+the lock left lifted when "Leave mez" or Android's settings opened nothing: all taken above. Its
+claim that the Wi-Fi panel needs Android 11 is not so (it is Android 10's, API 29, which lint
+checks). Walked again after: as the device owner, `dumpsys user` showing the three
+restrictions; the PC stopped, the Wi-Fi panel inside the lock, and after it the lock's list mez
+alone again; the till back by itself when the PC was; "Leave mez" and Home as before; "Release
+it" leaving no owner, no admin and no restriction, and mez not pinned.
+Not seen: a real tablet; Android 10 to 12, or 14 and on (Android 17's grant above included);
+a pinned tablet's reboot (it lands in mez only where mez was chosen as the home app); the Wi-Fi
+panel joining another network; the kitchen display locked; "Leave mez" on a pinned tablet, or
+with no other home app.
+Rejected: "Leave mez" as Android's choice of home app (above; and a tablet left that way stayed
+out across a reboot); the kiosk's home pointed at the tablet's launcher while left (nothing
+brings a forgotten "Leave mez" back); a boot receiver (the home app starts at boot);
+`setStatusBarDisabled` (lock task with no features already hides the shade); "Pair again"
+behind the way out (above); forbidding debugging (it is how a kiosk is made and undone),
+installs from unknown sources (how the app reaches a tablet, Task 7) or the managing of apps
+(the owner's own use of Settings, through the way out); a Wi-Fi chooser of mez's own (a device
+owner may join a network itself; worth it only if the panel's reach is).
+Cost: a kiosk takes a computer once, and a tablet with no accounts; so does locking a released
+one. Android's Wi-Fi panel has its own way into Settings, which the lock lets run while the
+panel is open: while the PC does not answer, Settings is reached with no PIN, less a factory
+reset, safe mode and a new user. Someone who can stop the PC answering, and has a mez of their own and its
+pairing code, can pair a locked tablet to it and open that one's way out with their own PIN.
+Neither is worse than what anyone holding the tablet can do with its buttons (a reset from
+recovery): the lock keeps a till a till in service, it does not guard the tablet from its
+holder.

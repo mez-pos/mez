@@ -8,6 +8,17 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 18, Task 6a: the way out**, 2026-11-02 (ADR-419). Task 6 split in
+two, the way out before the lock. Two fingers held still three seconds
+anywhere: the page's touch cancelled, the device's token read from the
+till's page, and the app's page "Let this tablet out": who may (a role
+with `device.manage`, the owner's alone as made, from
+`GET /api/v1/devices/me/way-out`), their PIN checked by the PC
+(`POST /api/v1/devices/me/way-out`, the till's `Authorise` and lockout, no
+session opened, the venue's network only). Opened: Android's settings, pair
+again, back to mez. No PC, no PIN: the page says so. Seen on an Android 13
+emulator, two fingers through its gRPC controller.
+
 **Phase 18, Task 5c: the PC found by itself**, 2026-11-02 (ADR-418). While
 the PC's screens show, its address is asked every 15 s; one that misses
 two in a row is looked for by one legacy mDNS question

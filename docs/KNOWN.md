@@ -10,6 +10,22 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The tablet locked to mez** (ADR-420, Phase 18 Task 6b; 2026-11-02).
+  Seen on an Android 13 tablet emulator: pinned when not the device owner;
+  as the device owner, Home, Recents and the shade staying in mez, a reboot
+  and a reinstall landing in the till locked, the Wi-Fi panel inside the
+  lock, "Leave mez" to the tablet's launcher and Home back to the till
+  locked, "Release it" undoing the kiosk. **Not seen:** a real tablet;
+  Android 10 to 12, or 14 and on; a pinned tablet's reboot; the Wi-Fi panel
+  joining another network; the kitchen display locked; "Leave mez" on a
+  pinned tablet, or on one with no home app but mez; Android 17's local
+  network grant. **Left as is:** while the PC does not answer, "Pair again"
+  needs no PIN, and Android's Wi-Fi panel has its own way into Settings
+  (less a factory reset, safe mode and a new user), let run in the lock
+  while the panel is open (ADR-420's Cost); a kiosk takes a
+  computer once (`adb shell dpm set-device-owner`), and its steps are in
+  ADR-420 until Task 10 puts them in `hardware.md`.
+
 - **The tablet app's way out** (ADR-419, Phase 18 Task 6a; 2026-11-02).
   Seen on an Android 13 tablet emulator, two fingers through its gRPC
   controller: the owner alone listed, a wrong PIN refused, her PIN opening
@@ -17,8 +33,7 @@
   so. **Not seen:** a real tablet's two fingers; Android 17; the kitchen
   display; the lockout's words. **Left as is:** as made, only the owner
   may let a tablet out (a manager's role is given "Pair and remove
-  devices" in the back office); the way out needs the PC; nothing is
-  locked yet (6b), so the way out leads where a tablet could already go.
+  devices" in the back office); the way out needs the PC.
 
 - **The tablet app finding its PC by itself** (ADR-418, Phase 18 Task 5c;
   2026-11-02). Seen on an Android 13 tablet emulator, its question passed

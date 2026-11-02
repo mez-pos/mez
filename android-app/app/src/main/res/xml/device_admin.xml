@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The app's device admin (ADR-420) asks no policy: as the device owner,
+     lock task mode, the keyguard and the home app are its without one. -->
+<device-admin>
+    <uses-policies />
+</device-admin>

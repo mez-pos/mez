@@ -14,6 +14,19 @@
         android:name="android.hardware.camera"
         android:required="false" />
 
+    <!-- A kiosk's "Wi-Fi settings" (ADR-420) opens Android's Wi-Fi panel,
+         whose package the lock lets run while it is open; "Leave mez" opens
+         the tablet's own home app, which it has to find. -->
+    <queries>
+        <intent>
+            <action android:name="android.settings.panel.action.WIFI" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+        </intent>
+    </queries>
+
     <!-- No backup: the WebView's storage holds the device's pairing token
          (ADR-338), and a copy restored onto another tablet would be a second
          device holding the first one's token. fullBackupContent is Android
@@ -37,15 +50,39 @@
         <!-- configChanges: a rotation, a keyboard plugged in, or the tablet's
              language, font size or bold text changed mid-service must not
              recreate the activity, which would reload the till mid-order. -->
+        <!-- singleTask: one till, whether it is opened from its icon or as
+             the tablet's home app (ADR-420), which the home button and a
+             reboot come back to. -->
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode|density|locale|layoutDirection|fontScale|fontWeightAdjustment|colorMode"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
+
+        <!-- The device admin that makes the app the tablet's device owner
+             for lock task mode (ADR-420):
+             adb shell dpm set-device-owner com.mezpos.meztablet/.Admin -->
+        <receiver
+            android:name=".Admin"
+            android:exported="true"
+            android:permission="android.permission.BIND_DEVICE_ADMIN">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

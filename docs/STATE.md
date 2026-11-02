@@ -11,9 +11,9 @@
 `docs/phases/phase-18.md`, opened 2026-11-01 (ADR-409): a native Kotlin
 WebView shell in `android-app/` around the screens the PC serves, so a
 tablet is full screen, awake, back in mez after a reboot, paired by
-scanning and not unpaired by a new address. Tasks 1 to 5 and 6a are done
-(5 in three parts, ADR-416 to ADR-418; 6 split, ADR-419); a real tablet on
-a venue's wifi is owed for every one of them. `make check`
+scanning and not unpaired by a new address. Tasks 1 to 6 are done
+(5 in three parts, ADR-416 to ADR-418; 6 in two, ADR-419 and ADR-420); a
+real tablet on a venue's wifi is owed for every one of them. `make check`
 never builds the app; `make android` does (a JDK and the Android SDK).
 
 Before it, **Phase 17 - Every screen at the venue's own size**,
@@ -31,27 +31,27 @@ list below.
 
 ## Last completed task
 
-**Phase 18, Task 6a: the way out**, 2026-11-02 (ADR-419). Task 6 split in
-two, the way out before the lock. Two fingers held still three seconds
-anywhere: the page's touch cancelled, the device's token read from the
-till's page, and the app's page "Let this tablet out": who may (a role
-with `device.manage`, the owner's alone as made, from
-`GET /api/v1/devices/me/way-out`), their PIN checked by the PC
-(`POST /api/v1/devices/me/way-out`, the till's `Authorise` and lockout, no
-session opened, the venue's network only). Opened: Android's settings, pair
-again, back to mez. No PC, no PIN: the page says so. Seen on an Android 13
-emulator, two fingers through its gRPC controller.
+**Phase 18, Task 6b: locked**, 2026-11-02 (ADR-420). Once the till has
+shown, the tablet locks whenever mez is in front: as the device owner
+(`adb shell dpm set-device-owner com.mezpos.meztablet/.Admin`, no
+accounts; the steps for the human are in ADR-420) a kiosk, mez alone,
+the power menu kept, no lock screen, mez the home; otherwise screen
+pinning. A kiosk's "Can't reach the mez PC" offers Android's Wi-Fi panel
+inside the lock. The open way out adds "Leave mez" (the tablet's own
+launcher; Home or a reboot brings the till back, locked) and, on a kiosk,
+"Release it". "Pair again" there keeps needing no PIN (ADR-420). Seen on an
+Android 13 emulator; a race in the way out's asking fixed on the way.
 
 ## Next task
 
-**Here: Phase 18 Task 6b, locked** (ADR-419): the app as the tablet's home
-app; lock task mode when the app is the device owner (`adb shell dpm
-set-device-owner`, on a tablet with no accounts, written up for the
-human), the keyguard off, the power menu kept; screen pinning where it is
-not; the way out's "Leave mez" lifting the lock (6a's page, honoured only
-after the PC's yes, `leaving.open` in `MainActivity.kt`); what a locked
-tablet whose PC does not answer offers (the Wi-Fi settings, narrowly).
-Walk on the AVD `mez_tablet_33`: two fingers through the emulator's gRPC
+**Here: Phase 18 Task 7, installed from the venue's PC.** ADR first, on
+how the APK reaches the PC: the release builds and signs it and the Go
+build embeds it under a build tag, or the installer carries it beside the
+binary. The PC serves it at a fixed path with its version; Devices draws
+"Install the mez app" as a QR beside the pairing QR. The AVD
+`mez_tablet_33` is a device owner no more (6b's walk released it); `adb
+shell dpm set-device-owner com.mezpos.meztablet/.Admin` makes it a kiosk
+again. Walk on it: two fingers through the emulator's gRPC
 controller (a scratch `touch.py` with the SDK's `emulator_controller.proto`;
 the token and port are in `%LOCALAPPDATA%\Temp\avd\running\pid_*.ini`),
 since its console and `adb shell input` give one finger. Stop the
