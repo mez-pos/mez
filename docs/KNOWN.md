@@ -10,6 +10,16 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The tablet app's way out** (ADR-419, Phase 18 Task 6a; 2026-11-02).
+  Seen on an Android 13 tablet emulator, two fingers through its gRPC
+  controller: the owner alone listed, a wrong PIN refused, her PIN opening
+  Android's settings and Back returning to the till, the PC down saying
+  so. **Not seen:** a real tablet's two fingers; Android 17; the kitchen
+  display; the lockout's words. **Left as is:** as made, only the owner
+  may let a tablet out (a manager's role is given "Pair and remove
+  devices" in the back office); the way out needs the PC; nothing is
+  locked yet (6b), so the way out leads where a tablet could already go.
+
 - **The tablet app finding its PC by itself** (ADR-418, Phase 18 Task 5c;
   2026-11-02). Seen on an Android 13 tablet emulator, its question passed
   to the real announcer by a relay on the PC: the till followed the PC to
@@ -24,7 +34,11 @@
   request every 15 s per tablet while the till shows; a tablet whose PC
   never named its venue does not look; a tablet that loses power while
   WebView's storage is unwritten can lose its pairing (seen with the
-  emulator killed hard: LevelDB drops the rest of a damaged block).
+  emulator killed hard: LevelDB drops the rest of a damaged block); a
+  device on the venue's subnet flooding `mez.local` answers can keep the
+  real PC out of the four asked, so the tablet does not follow by itself
+  ("Pair again" still does): the fix, when wanted, is to set aside
+  addresses whose health fails too, so later ticks reach further.
 
 - **The tablet app's proof before a carry** (ADR-417, Phase 18 Task 5b;
   2026-11-02). Seen on an Android 13 tablet emulator: an impostor

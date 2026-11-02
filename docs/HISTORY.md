@@ -8,6 +8,20 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 18, Task 5c: the PC found by itself**, 2026-11-02 (ADR-418). While
+the PC's screens show, its address is asked every 15 s; one that misses
+two in a row is looked for by one legacy mDNS question
+for `mez.local` on every network the tablet is on (`Mdns.kt`,
+`Finder.kt`), the first answer whose mez names the kept venue taken, then
+5b's proof and 5a's carry. Never followed without the proof; a refused
+address left alone two minutes; the pairing read in place on the till's
+page, so a carry not made leaves the screen as it was. Seen on an Android
+13 emulator through a relay to the real announcer: the till followed the
+PC from `10.0.2.2:7786` to `192.168.29.211:7786` with nobody touching it,
+an impostor refused with the screen untouched, from "Can't reach the mez
+PC" at start to the till at a new address, and after a review's fixes
+the till following the PC 38 s after it moved.
+
 **Phase 18, Task 5b: the PC proves itself**, 2026-11-02 (ADR-417). Task 5b
 split from the finding (now 5c): before any carry the new address answers
 `GET /api/v1/devices/{id}/proof?nonce=&at=`, an HMAC over the nonce and the

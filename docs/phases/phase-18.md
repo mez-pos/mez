@@ -221,6 +221,36 @@ Words in `docs/hardware.md`, `docs/deploy.md` and `docs/releasing.md`.
   long press and a manager's PIN checked by the server, the way the till
   checks it; never a PIN the app keeps. **Seen:** a reboot lands in mez;
   home, recents and the notification shade do not leave it.
+  Split in two on 2026-11-02 (ADR-419), the way out first, so that no
+  tablet is ever locked without one.
+
+  - [x] **Task 6a - The way out.** Done 2026-11-02 (ADR-419), seen on an
+    Android 13 emulator (two fingers through its gRPC controller): the
+    owner alone listed, a wrong PIN refused, her PIN opening Android's
+    settings, the PC down saying so; a cashier refused in the API's tests,
+    which the page never lists. ADR-419. Two fingers held still for
+    three seconds anywhere: the page's touch cancelled, the device's token
+    read from the till's page, and the app's page "Let this tablet out":
+    who may (a role with `device.manage`, from
+    `GET /api/v1/devices/me/way-out`), and their PIN, checked by the PC
+    (`POST /api/v1/devices/me/way-out`, the till's `Authorise`, its
+    lockout). Opened: Android's settings, pair again, back to mez. No PC,
+    no PIN: the page says so. Tests in `internal/api` and the app (the
+    hold, the answers read). **Seen:** on an emulator, the hold made, a
+    cashier refused, a wrong PIN refused, a manager's PIN opening Android's
+    settings.
+
+  - [ ] **Task 6b - Locked.** ADR-419. The app as the tablet's home app;
+    lock task mode when the app is the device owner (`adb shell dpm
+    set-device-owner`, on a tablet with no accounts, written up for the
+    human), the keyguard off, the power menu kept; screen pinning where it
+    is not; the way out's "Leave mez" lifting the lock; what a locked
+    tablet whose PC does not answer offers (the Wi-Fi settings). Locked,
+    the app's own ways round the PIN are closed: "Pair again" on "Can't
+    reach the mez PC" and Open Settings on the permission pages go behind
+    the way out (ADR-419's review). **Seen:** a reboot lands in mez; home,
+    recents and the notification shade do not leave it; the way out
+    leaves it.
 
 - [ ] **Task 7 - Installed from the venue's PC.** ADR first, on how the
   APK reaches the PC: the release builds and signs it and the Go build

@@ -1,6 +1,5 @@
 package com.mezpos.meztablet
 
-import java.net.URLDecoder
 import java.net.URLEncoder
 
 /**
@@ -22,6 +21,10 @@ object AppPages {
 
     /** The camera's picture under it: the page's words and Cancel over it. */
     const val SCANNING = "scanning"
+
+    /** The way out (ADR-419): who may open it, and the PIN; then what it offers. */
+    const val WAY_OUT = "way-out"
+    const val WAY_OUT_OPEN = "way-out-open"
 
     /** "Pair this tablet" when the camera is refused, or there is none. */
     const val CAMERA_REFUSED = "refused"
@@ -56,6 +59,23 @@ object AppPages {
     /** "Pair this tablet", saying why the camera cannot scan: [why], [CAMERA_REFUSED] or [CAMERA_NONE]. */
     fun pairWithoutCamera(why: String): String = "${ASSETS}start.html?camera=$why#${Start.PAIR.page}"
 
+    /**
+     * The way out, listing [who] may open it (the PC's JSON, which the page
+     * reads), saying [why] the last PIN did not, or why it cannot be asked,
+     * with the one [chosen] for it still chosen.
+     */
+    fun wayOut(who: String?, why: String?, chosen: String? = null): String {
+        val query = listOfNotNull(
+            who?.let { "who=" + URLEncoder.encode(it, "UTF-8") },
+            why?.let { "why=" + URLEncoder.encode(it, "UTF-8") },
+            chosen?.let { "chosen=" + URLEncoder.encode(it, "UTF-8") },
+        ).joinToString("&")
+        return "${ASSETS}start.html${if (query.isEmpty()) "" else "?$query"}#$WAY_OUT"
+    }
+
+    /** The way out opened, by [by], and what it offers. */
+    fun wayOutOpen(by: String): String = "${ASSETS}start.html?by=${URLEncoder.encode(by, "UTF-8")}#$WAY_OUT_OPEN"
+
     /** The app's page [id], one `<section id>` of `start.html`. */
     fun page(id: String): String = "${ASSETS}start.html#$id"
 
@@ -85,6 +105,16 @@ enum class Action(val link: String, val takesQuery: Boolean = false) {
 
     /** Back to "Pair this tablet" from the camera. */
     CANCEL_SCAN("mez-app:cancel-scan"),
+
+    /** The way out (ADR-419): a PIN for it, `mez-app:way-out-open?staff=...&pin=...`. */
+    WAY_OUT_OPEN("mez-app:way-out-open", takesQuery = true),
+
+    /** Back to mez from the way out, open or not. */
+    WAY_OUT_BACK("mez-app:way-out-back"),
+
+    /** What the way out offers, once the PC has said yes: Android's settings, or pairing again. */
+    WAY_OUT_SETTINGS("mez-app:way-out-settings"),
+    WAY_OUT_PAIR_AGAIN("mez-app:way-out-pair-again"),
     ;
 
     companion object {
@@ -102,12 +132,4 @@ enum class Action(val link: String, val takesQuery: Boolean = false) {
 }
 
 /** What was typed in [url], `mez-app:address?typed=...`, decoded; null if nothing was. */
-fun typedOf(url: String): String? {
-    val value = url.substringAfter('?', "").split('&')
-        .firstOrNull { it.startsWith("typed=") }?.removePrefix("typed=") ?: return null
-    return try {
-        URLDecoder.decode(value, "UTF-8")
-    } catch (e: IllegalArgumentException) {
-        null
-    }
-}
+fun typedOf(url: String): String? = queryOf(url, "typed")

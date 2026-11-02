@@ -16492,3 +16492,83 @@ at a new address is found within about 30 to 45 seconds, and the tablet signs ev
 (ADR-416).
 Real tablets' multicast on real venue wifi (an access point that filters it, client isolation)
 is unknown until walked; the fallback then is "Pair again", or ADR-416's subnet sweep.
+
+
+## ADR-419 - A tablet locked to mez, and its way out: two fingers held, a manager's PIN the PC checks
+2026-11 · Status: accepted. Phase 18 Task 6 (6a, the way out, built first; 6b, the lock, next).
+Context: Task 6 locks a tablet to mez: the home app, so the home button and a reboot come back
+to it; lock task mode when the app is the device owner; screen pinning where it is not. The way
+out (change venue, Android's settings, leave) is behind a long press and a manager's PIN
+checked by the server, the way the till checks it, never a PIN the app keeps. Split on
+2026-11-02: the way out first (6a), so that no tablet is ever locked without one; the lock
+second (6b).
+Decision:
+  - **The gesture: two fingers held still on the screen for three seconds, anywhere.** The app
+    sees every touch before the WebView (`dispatchTouchEvent`) and passes it on, untouched,
+    until the hold is made; then the page is told its touch was cancelled, so nothing on the
+    till is pressed, and the rest of that touch is the app's. A till is worked with one
+    finger; two held still for three seconds is never service. Rejected: a corner to press
+    (a customer finds it, and it takes a corner of every screen of the till's), a one-finger
+    long press (the till's own), a number of taps (a busy waiter makes them).
+  - **Who: a staff member whose role holds `device.manage`** (the back office's "Pair and
+    remove devices": the owner's alone as made, and any role the owner gives it to; a
+    manager's does not have it until then), with their PIN, checked by the PC with the same `Authorise`
+    the till's overrides use: the same lockout after wrong PINs, counted and recorded in the
+    same place. Two routes, both needing the tablet's device token and both at the venue only
+    (not through the relay): `GET /api/v1/devices/me/way-out` lists who may open it;
+    `POST /api/v1/devices/me/way-out` takes an `Override` (who, and the PIN) and answers who
+    opened it, which the PC logs. No session is opened: a manager signed in only to let a
+    tablet out would be left signed in on it.
+  - **The app reads the device's token from the till's page when the hold is made**, the way
+    the carry reads it (ADR-416), keeps it in memory for this way out alone, and sends it as
+    the till would. The till goes at once ("Asking the mez PC"), then the PC is asked who may
+    open the way out. **Before the PIN is sent, the address proves it holds the pairing**
+    (ADR-417's proof): a device that took the PC's address is never sent the owner's PIN, and
+    a yes counts only if it names the person whose PIN was sent.
+  - **The way out's page** (`start.html#way-out`): who may open it, as buttons with their
+    names and roles, and the PIN. A refusal says why: the PIN is not right, that person cannot
+    let a tablet out, too many wrong PINs (wait a few minutes), the PC not answering, the
+    address not proving itself. Opened, it offers Android's settings, pairing the tablet
+    again, and back to mez; 6b adds leaving the lock. What it offers is done only after the PC
+    said yes, in this visit: the app keeps that in memory, and a page cannot claim it. **A way
+    out left alone a minute goes back to mez**, as it does when the app goes behind another: a
+    manager who opened it and walked off does not leave Android's settings a tap away. Android's
+    autofill is kept off the WebView, so it never offers to keep a PIN.
+  - **No PC, no PIN.** A manager's PIN is checked by the PC or not at all: a tablet that is
+    not paired, or whose PC does not answer, is told so on the way out's page. What a locked
+    tablet offers then (the Wi-Fi settings, so that it can reach the PC again) is 6b's to
+    decide, narrowly.
+  - **The lock (6b, as the phase has it):** mez as the tablet's home app; lock task mode as
+    the device owner (`adb shell dpm set-device-owner`, on a tablet with no accounts, written
+    up for the human), the keyguard off, Android's power menu kept; screen pinning where the
+    app is not the device owner, Android's own way to unpin then left as Android has it.
+Seen (6a), 2026-11-02, on an Android 13 tablet emulator, the till paired to a demo venue's
+mez at `192.168.29.211:7786`, two fingers held through the emulator's gRPC controller (its
+console and `adb shell input` give one finger; the emulator's own touchscreen took the two).
+Held 3.6 seconds on the till's number pad: the way out's page, after one
+`GET /api/v1/devices/me/way-out`, listing Priya, the owner, alone (as made, a manager's role
+has no "Pair and remove devices"), already chosen. A wrong PIN: 401, "That PIN isn't right",
+Priya still chosen. Her PIN: 200, the PC's log "a tablet's way out was opened" with the device
+and who, the PIN in no log; "The way out is open, opened by Priya"; Android's settings opened,
+and Back came back to the till. Back to mez from the open page: the till. The PC stopped, the
+hold made over "Can't reach the mez PC": the PC isn't answering, only Back; Back to "Can't
+reach the mez PC", which kept asking, and the till came back 7 seconds after the PC did. The
+refusals the page cannot reach (a cashier named, no tablet, the relay) are the API tests'.
+Not seen: a real tablet's two fingers; Android 17; the kitchen display; the lockout's words
+(five wrong PINs).
+A review (2026-11-02) found the PIN sent on any address that answered, an opened way out that
+never closed, a stale way out that could block the next hold, and the till left live while the
+PC was asked: all taken above, and walked again (the proof 200 before the PIN's 200; back to the
+till a minute after opening). It also found what 6b must close: "Pair again" on "Can't reach the
+mez PC" and Open Settings on the permission pages need no PIN, which is harmless while nothing
+is locked and a hole once it is.
+Rejected: a PIN kept by the app (the phase); signing the manager in (above); checking the PIN in
+the web app (a bridge between the app and the web app's sign-in, for one screen); a way out
+with no PIN while the PC is down (6b decides what little a locked tablet offers then); the way
+out in a second WebView over the till (it would keep an order half-keyed in the till's memory
+through an accidental hold, at the cost of a second renderer on a cheap tablet; the staff
+session is in session storage and survives the reload either way).
+Cost: the way out needs the PC, and the PC's own address: across a NAT the proof fails and the
+PIN is not sent. As made only the owner may open it. Anyone who can make the hold can spend the
+owner's PIN attempts into the lockout, as at the till's sign-in. A deliberate hold reloads the
+till: what was only in its memory is gone.

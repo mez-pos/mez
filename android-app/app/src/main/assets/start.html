@@ -194,6 +194,29 @@
   .scan-words h1 { color: var(--on-fill); }
   .scan-cancel { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); }
   .scan-cancel .button.secondary { margin: 0; }
+
+  /* The way out (ADR-419): who may open it, as choices; the one chosen in
+     green with its halo, as a focused field is. */
+  .who { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .who button {
+    min-width: 8rem;
+    min-height: 56px;
+    padding: 8px 18px;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 14px;
+    background: var(--card);
+    color: var(--body);
+    font: inherit;
+    font-weight: 700;
+    text-align: left;
+  }
+  .who button small { display: block; color: var(--muted); font-weight: 400; }
+  .who button[aria-checked="true"] { border: 1.5px solid var(--green); box-shadow: 0 0 0 3px var(--green-tint); }
+  .who button:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+  #way-out .button.secondary, #way-out-open .button.secondary { margin-left: 0; }
+  p.aside a { color: inherit; font-weight: 700; text-underline-offset: 3px; }
+  #way-out-open p.aside { margin-top: 24px; }
+  #way-out-open .button + .button { margin-left: 8px; }
 </style>
 </head>
 <body>
@@ -318,6 +341,56 @@
   </div>
 </section>
 
+<section id="way-out">
+  <img src="brand/mez-mark.svg" alt="">
+  <h1>Let this tablet out</h1>
+  <div data-way-can hidden>
+    <p>Only someone who may pair this venue's devices can let this tablet
+      out of mez. Choose who you are, then type your PIN.</p>
+    <div class="who" id="who" role="radiogroup" aria-label="Who is letting it out"></div>
+    <form id="way-out-form" novalidate>
+      <label for="pin">PIN</label>
+      <input id="pin" type="password" inputmode="numeric" autocomplete="off"
+        maxlength="12" aria-describedby="way-why">
+      <div id="way-why" aria-live="polite">
+        <p class="refusal" data-way-why="choose" hidden>Choose who you are
+          first.</p>
+        <p class="refusal" data-way-why="wrong-pin" hidden>That PIN isn't
+          right.</p>
+        <p class="refusal" data-way-why="cannot" hidden>That person can't let
+          a tablet out: only a role that may pair and remove devices can.</p>
+        <p class="refusal" data-way-why="locked" hidden>Too many wrong PINs.
+          Wait a few minutes, then try again.</p>
+      </div>
+      <button class="button" type="submit">Let it out</button>
+    </form>
+  </div>
+  <p class="notice" data-way-why="asking" hidden aria-live="polite">Asking the
+    mez PC who may let this tablet out.</p>
+  <p class="notice" data-way-why="unproven" hidden>The PC at this tablet's
+    address didn't prove it is this venue's mez, so the PIN was not sent.
+    Check the PC, then try again.</p>
+  <p class="notice" data-way-why="no-answer" hidden>The mez PC isn't
+    answering, and only the PC can check the PIN that lets this tablet out.
+    Try again once the till is back.</p>
+  <p class="notice" data-way-why="not-paired" hidden>This tablet isn't paired
+    with a mez PC, and only the PC can check the PIN that lets it out.</p>
+  <p class="notice" data-way-why="nobody" hidden>Nobody here can let a tablet
+    out. In the back office, give a role <strong>Pair and remove
+    devices</strong>.</p>
+  <a class="button secondary" href="mez-app:way-out-back">Back to mez</a>
+</section>
+
+<section id="way-out-open">
+  <img src="brand/mez-mark.svg" alt="">
+  <h1>The way out is open</h1>
+  <p><span data-by-line hidden>Opened by <strong data-by></strong>. </span>mez
+    stays on this tablet, for when you come back.</p>
+  <a class="button" href="mez-app:way-out-settings">Android's settings</a>
+  <a class="button secondary" href="mez-app:way-out-pair-again">Pair this tablet again</a>
+  <p class="aside"><a href="mez-app:way-out-back">Back to mez</a></p>
+</section>
+
 <script>
   // Where the app is looking for the PC, from ?pc=: set as text, never as
   // markup, though the app wrote it.
@@ -356,6 +429,57 @@
   for (const keep of document.querySelectorAll("[data-keep]")) {
     keep.addEventListener("click", () => { document.getElementById(keep.dataset.keep).hidden = true; });
   }
+
+  // The way out (ADR-419): who may open it, from ?who= (the PC's list, read
+  // as data and written as text), then their PIN, sent to the app, which asks
+  // the PC. Why it was refused, or cannot be asked, from ?why=.
+  const whoBox = document.getElementById("who");
+  const pin = document.getElementById("pin");
+  let chosen = null;
+  let staff = [];
+  try {
+    staff = (JSON.parse(params.get("who") ?? "null") ?? {}).staff ?? [];
+  } catch {
+    staff = [];
+  }
+  const choose = (person, button) => {
+    chosen = person.id;
+    for (const other of whoBox.children) other.setAttribute("aria-checked", String(other === button));
+  };
+  const valid = staff.filter((person) => typeof person?.id === "string" && typeof person?.name === "string");
+  for (const person of valid) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.setAttribute("role", "radio");
+    button.setAttribute("aria-checked", "false");
+    button.textContent = person.name;
+    const role = document.createElement("small");
+    role.textContent = typeof person.role === "string" ? person.role : "";
+    button.append(role);
+    button.addEventListener("click", () => {
+      choose(person, button);
+      pin.focus();
+    });
+    whoBox.append(button);
+    if (person.id === params.get("chosen")) choose(person, button);
+  }
+  if (valid.length === 1) choose(valid[0], whoBox.firstElementChild);
+  const asked = params.has("who");
+  document.querySelector("[data-way-can]").hidden = !asked || whoBox.children.length === 0;
+  const wayWhy = asked && whoBox.children.length === 0 ? "nobody" : why;
+  for (const el of document.querySelectorAll("[data-way-why]")) el.hidden = el.dataset.wayWhy !== wayWhy;
+  if (["wrong-pin", "cannot", "locked"].includes(wayWhy)) pin.setAttribute("aria-invalid", "true");
+  document.getElementById("way-out-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!chosen) {
+      for (const el of document.querySelectorAll("[data-way-why]")) el.hidden = el.dataset.wayWhy !== "choose";
+      return;
+    }
+    location.href = "mez-app:way-out-open?staff=" + encodeURIComponent(chosen) + "&pin=" + encodeURIComponent(pin.value);
+  });
+  const by = params.get("by");
+  for (const el of document.querySelectorAll("[data-by]")) el.textContent = by ?? "";
+  for (const el of document.querySelectorAll("[data-by-line]")) el.hidden = !by;
 
   // Try again asks the PC, which takes up to a few seconds: the button says
   // so meanwhile. If the PC answers, mez opens over this page.

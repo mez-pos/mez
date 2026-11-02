@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -168,8 +169,37 @@ class MainActivity : ComponentActivity() {
     // thread alone reads and writes it.
     private var misses = 0
 
-    // The proof is asked on a thread of its own, not behind the probe's
-    // asking of an address that does not answer.
+    // The way out's gesture (ADR-419), watched on every touch before the
+    // WebView; once made, the rest of that touch is the app's ([claimed]).
+    private val hold by lazy { Hold(slop = resources.displayMetrics.density * HOLD_SLOP_DP) }
+    private var claimed = false
+    private val holdCheck = Runnable { if (hold.made(SystemClock.uptimeMillis())) holdMade() }
+
+    // A way out left alone goes back to mez: a manager who opened it and
+    // walked off does not leave Android's settings a tap away.
+    private val wayOutIdle = Runnable { if (leaving != null) wayOutBack() }
+
+    /**
+     * The way out under way (ADR-419): the PC asked, the pairing it is asked
+     * with (none if no PC page was showing), who may open it as the PC said,
+     * whether the PC has said yes and who to, and what Back goes back to: the
+     * PC's page that was showing, or the app's page that stood in for it.
+     */
+    private data class Leaving(
+        val pc: String,
+        val held: Held? = null,
+        val who: String? = null,
+        val open: Boolean = false,
+        val by: String = "",
+        val chosen: String? = null,
+        val back: String? = null,
+        val before: Away? = null,
+    )
+
+    private var leaving: Leaving? = null
+
+    // The proof, and the way out's questions, are asked on a thread of their
+    // own, not behind the probe's asking of an address that does not answer.
     private val proofs = Executors.newSingleThreadExecutor { task ->
         Thread(task, "mez-proof").apply { isDaemon = true }
     }
@@ -259,6 +289,8 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         probe.stop()
         watch.stop()
+        // A way out ends when the app goes behind another.
+        if (leaving != null) wayOutBack()
         // A scan ends when the app goes behind another: Scan starts it again.
         if (::scanner.isInitialized && scanner.isRunning) load(AppPages.page(Start.PAIR.page.orEmpty()))
         super.onStop()
@@ -492,16 +524,17 @@ class MainActivity : ComponentActivity() {
     // (ADR-417), and the till with it.
     private fun foundAt(kept: String, link: Pairing.Link, venue: String) {
         if (isDestroyed || !watching || pc != kept || carry != null || candidate != null) return
-        if (prefs.getString(VENUE, null) != venue || away?.page == AppPages.STOPPED) return
+        if (prefs.getString(VENUE, null) != venue || away?.page in setOf(AppPages.STOPPED, AppPages.WAY_OUT)) return
         if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) return
         Log.i(TAG, "the PC answers at ${place(link.pc)}: carrying the pairing there")
         carryFrom(held, link, venue, auto = true)
     }
 
     // The app's own way to a page; a stand-in it replaces stops asking, and
-    // a carry under way is given up.
+    // a carry or a way out under way is given up.
     private fun open(url: String) {
         carry = null
+        leaving = null
         away = null
         probe.stop()
         if (!AppPages.isOwn(url)) {
@@ -532,6 +565,10 @@ class MainActivity : ComponentActivity() {
             Action.PAIR_AGAIN -> pairAgain()
             Action.SCAN -> scan()
             Action.CANCEL_SCAN -> load(AppPages.page(Start.PAIR.page.orEmpty()))
+            Action.WAY_OUT_OPEN -> wayOutOpen(link)
+            Action.WAY_OUT_BACK -> wayOutBack()
+            Action.WAY_OUT_SETTINGS -> if (leaving?.open == true) wayOutSettings()
+            Action.WAY_OUT_PAIR_AGAIN -> if (leaving?.open == true) pairAgain()
         }
     }
 
@@ -594,6 +631,8 @@ class MainActivity : ComponentActivity() {
     private fun pairAgain() {
         prefs.edit { remove(PC) }
         carry = null
+        leaving = null
+        away = null
         candidate = null
         opened = null
         lastMez = null
@@ -621,8 +660,16 @@ class MainActivity : ComponentActivity() {
 
     private fun standIn(page: Away) {
         away = page
+        // Another stand-in in the way out's place ends it (a renderer lost,
+        // "The screen stopped"): the next hold starts one afresh.
+        if (page.page != AppPages.WAY_OUT) leaving = null
+        val way = leaving
         load(
-            if (page.page == AppPages.UNREACHABLE) AppPages.unreachable(page.url) else AppPages.page(page.page),
+            when {
+                page.page == AppPages.UNREACHABLE -> AppPages.unreachable(page.url)
+                page.page == AppPages.WAY_OUT && way != null -> wayOutPage(way, why = null)
+                else -> AppPages.page(page.page)
+            },
         )
     }
 
@@ -681,6 +728,162 @@ class MainActivity : ComponentActivity() {
         prefs.edit {
             putString(HELD, pc)
             putString(VENUE, venue)
+        }
+    }
+
+    // Every touch, before the WebView: the way out's gesture is watched for,
+    // and the touch passed on, until the hold is made.
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        val action = event.actionMasked
+        // The rest of the touch the hold was made by is the app's; a new
+        // touch is the page's again, whatever became of the last one's end.
+        if (claimed && action != MotionEvent.ACTION_DOWN) {
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) claimed = false
+            return true
+        }
+        claimed = false
+        val fingers = when (action) {
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> 0
+            MotionEvent.ACTION_POINTER_UP -> event.pointerCount - 1
+            else -> event.pointerCount
+        }
+        val places = FloatArray(event.pointerCount * 2) { if (it % 2 == 0) event.getX(it / 2) else event.getY(it / 2) }
+        val due = hold.touch(fingers, places, event.eventTime)
+        frame.removeCallbacks(holdCheck)
+        if (due != null) frame.postDelayed(holdCheck, maxOf(0L, due - SystemClock.uptimeMillis()))
+        return super.dispatchTouchEvent(event)
+    }
+
+    // The hold is made: the page's touch is cancelled, so nothing on the till
+    // is pressed, and the way out opens.
+    private fun holdMade() {
+        hold.reset()
+        claimed = true
+        val now = SystemClock.uptimeMillis()
+        val cancel = MotionEvent.obtain(now, now, MotionEvent.ACTION_CANCEL, 0f, 0f, 0)
+        super.dispatchTouchEvent(cancel)
+        cancel.recycle()
+        wayOut()
+    }
+
+    // The way out (ADR-419). From the PC's page, the pairing is read there and
+    // the PC asked who may open it; from any other, there is no PC to check a
+    // PIN, and the page says so.
+    private fun wayOut() {
+        if (away?.page == AppPages.WAY_OUT || carry != null || candidate != null || scanner.isRunning) return
+        val url = web.url.orEmpty()
+        val here = pc
+        val onPc = here.isNotEmpty() && samePc(url, here) && !isCarryPage(url)
+        val step = Leaving(pc = here, back = url.takeIf { onPc }, before = away)
+        leaving = step
+        probe.stop()
+        away = Away(step.back ?: step.before?.url ?: lastMez ?: here, AppPages.WAY_OUT)
+        stillThere()
+        if (!onPc) {
+            load(wayOutPage(step, why = if (here.isEmpty()) Opened.NOT_PAIRED.why else Opened.NO_ANSWER.why))
+            return
+        }
+        web.evaluateJavascript(READ_HELD) { read -> wayOutHeld(step, read) }
+    }
+
+    private fun wayOutHeld(step: Leaving, read: String?) {
+        if (leaving !== step) return
+        val held = read?.let(::heldOf)?.firstOrNull()
+        if (held == null) {
+            load(wayOutPage(step, why = Opened.NOT_PAIRED.why))
+            return
+        }
+        val next = step.copy(held = held)
+        leaving = next
+        // The till goes at once: the person sees their hold was made.
+        load(AppPages.wayOut(who = null, why = WAY_OUT_ASKING))
+        ask { WayOutAsk.who(next.pc, held.token).let { who -> runOnUiThread { wayOutWho(next, who) } } }
+    }
+
+    private fun wayOutWho(step: Leaving, who: String?) {
+        if (isDestroyed || leaving !== step) return
+        val next = step.copy(who = who)
+        leaving = next
+        load(wayOutPage(next, why = if (who == null) Opened.NO_ANSWER.why else null))
+    }
+
+    // A PIN typed on the way out's page, for the PC to check.
+    private fun wayOutOpen(link: String) {
+        val step = leaving ?: return
+        val held = step.held ?: return
+        if (step.open) return
+        val staff = queryOf(link, "staff").orEmpty()
+        val pin = queryOf(link, "pin").orEmpty()
+        val asking = step.copy(chosen = staff)
+        leaving = asking
+        stillThere()
+        ask {
+            val (opened, by) = WayOutAsk.open(asking.pc, held, staff, pin)
+            runOnUiThread { wayOutOpened(asking, opened, by) }
+        }
+    }
+
+    private fun wayOutOpened(step: Leaving, opened: Opened, by: String?) {
+        if (isDestroyed || leaving !== step) return
+        if (opened != Opened.OPEN) {
+            load(wayOutPage(step, why = opened.why))
+            return
+        }
+        Log.i(TAG, "the way out was opened")
+        val next = step.copy(open = true, by = by.orEmpty())
+        leaving = next
+        stillThere()
+        load(wayOutPage(next, why = null))
+    }
+
+    private fun wayOutPage(step: Leaving, why: String?): String =
+        if (step.open) AppPages.wayOutOpen(step.by) else AppPages.wayOut(step.who, why, step.chosen)
+
+    // Back to what the way out was opened over: the PC's page, or the app's
+    // page that stood in for it, or where the app starts.
+    private fun wayOutBack() {
+        val step = leaving ?: return
+        leaving = null
+        frame.removeCallbacks(wayOutIdle)
+        val before = step.before
+        val back = step.back
+        when {
+            back != null -> open(back)
+            before != null -> {
+                standIn(before)
+                if (before.page == AppPages.UNREACHABLE) tryAgain(after = 0)
+            }
+            else -> {
+                away = null
+                showing = null
+                show(where())
+            }
+        }
+    }
+
+    // Android's settings, the way out open: mez is back behind them, as it
+    // was, for when the person comes back.
+    private fun wayOutSettings() {
+        wayOutBack()
+        try {
+            startActivity(Intent(Settings.ACTION_SETTINGS))
+        } catch (e: ActivityNotFoundException) {
+            Log.w(TAG, "no Settings to open from the way out", e)
+        }
+    }
+
+    // The way out is in use: it goes back to mez a minute after the last of it.
+    private fun stillThere() {
+        frame.removeCallbacks(wayOutIdle)
+        frame.postDelayed(wayOutIdle, WAY_OUT_IDLE_MS)
+    }
+
+    // A question for the PC, on the proofs' thread.
+    private fun ask(task: () -> Unit) {
+        try {
+            proofs.execute(task)
+        } catch (e: RejectedExecutionException) {
+            // The activity is gone, and nobody is waiting.
         }
     }
 
@@ -800,6 +1003,15 @@ class MainActivity : ComponentActivity() {
         // show, and how soon after the app comes to the front.
         const val WATCH_EVERY_MS = 15_000L
         const val WATCH_FIRST_MS = 3_000L
+
+        // How far a finger may wander while the way out's two are held (ADR-419).
+        const val HOLD_SLOP_DP = 24f
+
+        // How long the way out waits on the person before it goes back to mez.
+        const val WAY_OUT_IDLE_MS = 60_000L
+
+        // The way out's page while the PC is asked who may open it.
+        const val WAY_OUT_ASKING = "asking"
 
         // How long an address that proved nothing is left alone.
         const val REFUSED_FOR_MS = 120_000L

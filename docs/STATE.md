@@ -11,9 +11,9 @@
 `docs/phases/phase-18.md`, opened 2026-11-01 (ADR-409): a native Kotlin
 WebView shell in `android-app/` around the screens the PC serves, so a
 tablet is full screen, awake, back in mez after a reboot, paired by
-scanning and not unpaired by a new address. Tasks 1 to 5 are done (5 in
-three parts, ADR-416 to ADR-418); a real tablet on a venue's wifi is owed
-for every one of them. `make check`
+scanning and not unpaired by a new address. Tasks 1 to 5 and 6a are done
+(5 in three parts, ADR-416 to ADR-418; 6 split, ADR-419); a real tablet on
+a venue's wifi is owed for every one of them. `make check`
 never builds the app; `make android` does (a JDK and the Android SDK).
 
 Before it, **Phase 17 - Every screen at the venue's own size**,
@@ -31,32 +31,31 @@ list below.
 
 ## Last completed task
 
-**Phase 18, Task 5c: the PC found by itself**, 2026-11-02 (ADR-418). While
-the PC's screens show, its address is asked every 15 s; one that misses
-two in a row is looked for by one legacy mDNS question
-for `mez.local` on every network the tablet is on (`Mdns.kt`,
-`Finder.kt`), the first answer whose mez names the kept venue taken, then
-5b's proof and 5a's carry. Never followed without the proof; a refused
-address left alone two minutes; the pairing read in place on the till's
-page, so a carry not made leaves the screen as it was. Seen on an Android
-13 emulator through a relay to the real announcer: the till followed the
-PC from `10.0.2.2:7786` to `192.168.29.211:7786` with nobody touching it,
-an impostor refused with the screen untouched, from "Can't reach the mez
-PC" at start to the till at a new address, and after a review's fixes
-the till following the PC 38 s after it moved.
+**Phase 18, Task 6a: the way out**, 2026-11-02 (ADR-419). Task 6 split in
+two, the way out before the lock. Two fingers held still three seconds
+anywhere: the page's touch cancelled, the device's token read from the
+till's page, and the app's page "Let this tablet out": who may (a role
+with `device.manage`, the owner's alone as made, from
+`GET /api/v1/devices/me/way-out`), their PIN checked by the PC
+(`POST /api/v1/devices/me/way-out`, the till's `Authorise` and lockout, no
+session opened, the venue's network only). Opened: Android's settings, pair
+again, back to mez. No PC, no PIN: the page says so. Seen on an Android 13
+emulator, two fingers through its gRPC controller.
 
 ## Next task
 
-**Here: Phase 18 Task 6, locked to mez**: the app as the tablet's home
-app, so the home button and a reboot come back to it; lock task mode when
-the app is the device owner (`adb shell dpm set-device-owner`, on a tablet
-with no accounts, written up for the human), screen pinning where it is
-not; the way out (change venue, Android's settings, leave the app) behind
-a long press and a manager's PIN checked by the server, the way the till
-checks it, never a PIN the app keeps. Walk on the AVD `mez_tablet_33`
-(`adb` trusts the key under `D:\AndroidSDK\Android\.android`); stop the
-emulator with `adb shell sync` first: killed hard, it left WebView's
-storage log damaged and pairings written after it lost (ADR-418).
+**Here: Phase 18 Task 6b, locked** (ADR-419): the app as the tablet's home
+app; lock task mode when the app is the device owner (`adb shell dpm
+set-device-owner`, on a tablet with no accounts, written up for the
+human), the keyguard off, the power menu kept; screen pinning where it is
+not; the way out's "Leave mez" lifting the lock (6a's page, honoured only
+after the PC's yes, `leaving.open` in `MainActivity.kt`); what a locked
+tablet whose PC does not answer offers (the Wi-Fi settings, narrowly).
+Walk on the AVD `mez_tablet_33`: two fingers through the emulator's gRPC
+controller (a scratch `touch.py` with the SDK's `emulator_controller.proto`;
+the token and port are in `%LOCALAPPDATA%\Temp\avd\running\pid_*.ini`),
+since its console and `adb shell input` give one finger. Stop the
+emulator with `adb shell sync` first.
 
 **Out of phase, before the venue's install: the re-run's other two P1s**
 (TBS-20 is fixed), TBS-21 (the approval sheet: scrolled, the cashier

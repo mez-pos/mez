@@ -111,21 +111,29 @@ class Probe(
         fun ask(health: String): Mez? = fetch(health)?.let { heard(it.status, it.body) }
 
         /**
-         * A GET of [url] on the PC, on the caller's thread: its status, and
-         * the start of its body when it is a 200. Null if nothing answered.
-         * No redirect is followed, nothing is cached, and nothing waits
-         * longer than [TIMEOUT_MS] at a time.
+         * A GET of [url] on the PC, or a POST of [post] as JSON, on the
+         * caller's thread, with the device's [bearer] token if given: its
+         * status, and the start of its body, an error's included. Null if
+         * nothing answered. No redirect is followed, nothing is cached, and
+         * nothing waits longer than [TIMEOUT_MS] at a time.
          */
-        fun fetch(url: String): Fetched? = try {
+        fun fetch(url: String, bearer: String? = null, post: String? = null): Fetched? = try {
             val call = URI(url).toURL().openConnection() as HttpURLConnection
             call.connectTimeout = TIMEOUT_MS
             call.readTimeout = TIMEOUT_MS
             call.useCaches = false
             call.instanceFollowRedirects = false
+            if (bearer != null) call.setRequestProperty("Authorization", "Bearer $bearer")
+            if (post != null) {
+                call.requestMethod = "POST"
+                call.doOutput = true
+                call.setRequestProperty("Content-Type", "application/json")
+                call.outputStream.use { it.write(post.toByteArray(Charsets.UTF_8)) }
+            }
             try {
                 val status = call.responseCode
-                val body = if (status == HttpURLConnection.HTTP_OK) call.inputStream.bufferedReader().use(::readStart) else ""
-                Fetched(status, body)
+                val stream = if (status < HttpURLConnection.HTTP_BAD_REQUEST) call.inputStream else call.errorStream
+                Fetched(status, stream?.bufferedReader()?.use(::readStart).orEmpty())
             } finally {
                 call.disconnect()
             }

@@ -17,6 +17,9 @@ import android.webkit.WebViewClient
 @SuppressLint("SetJavaScriptEnabled")
 fun Context.mezWebView(client: WebViewClient): WebView = WebView(this).apply {
     setBackgroundColor(getColor(R.color.parchment))
+    // PINs are typed on these screens, the way out's included: Android's
+    // autofill is not to offer to keep one.
+    importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
     // A till is an app, not a page: the whole screen does not stretch when
     // a list is pulled past its end. Lists inside the page still scroll.
     overScrollMode = View.OVER_SCROLL_NEVER
