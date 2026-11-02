@@ -11,8 +11,8 @@
 `docs/phases/phase-18.md`, opened 2026-11-01 (ADR-409): a native Kotlin
 WebView shell in `android-app/` around the screens the PC serves, so a
 tablet is full screen, awake, back in mez after a reboot, paired by
-scanning and not unpaired by a new address. Tasks 1 to 4 and 5a are done;
-Task 5 was split on 2026-11-02 (ADR-416), the finding apart. `make check`
+scanning and not unpaired by a new address. Tasks 1 to 4, 5a and 5b are
+done; Task 5 was split on 2026-11-02 (ADR-416, ADR-417), the finding last. `make check`
 never builds the app; `make android` does (a JDK and the Android SDK).
 
 Before it, **Phase 17 - Every screen at the venue's own size**,
@@ -30,44 +30,37 @@ list below.
 
 ## Last completed task
 
-**Phase 18, Task 5a: the pairing carried**, 2026-11-02 (ADR-416). Health
-names the venue (`venue`, its public id) to the venue's network, never
-through the relay, from what the server holds (set at start, and by the
-setup wizard): no database. The app keeps the venue with the address,
-and after "Pair again" keeps where the pairing is held. The same venue's
-mez at another address, typed or scanned, gets the pairing carried: the
-app's own empty page at `/mez-app-carry` of each address (intercepted,
-never asked of the network), the old address's `mez.` localStorage keys
-read there and written at the new one, then the till. The staff session
-stays behind. The web app is unchanged; a test holds its keys to the
-prefix. Seen on an Android 13 emulator: a till paired and signed in at
-`10.0.2.2:7777`, mez moved to `192.168.29.211:7777`, Pair again, the new
-address typed: the till at its sign-in screen as the same device, no
-code; another venue's mez at `:7778` given nothing.
+**Phase 18, Task 5b: the PC proves itself**, 2026-11-02 (ADR-417). Task 5b
+split from the finding (now 5c): before any carry the new address answers
+`GET /api/v1/devices/{id}/proof?nonce=&at=`, an HMAC over the nonce and the
+address asked, keyed by the stored hash of the device's token, made only
+when `at` is the server's own end of the connection (421 otherwise; 404
+for no such pairing; not through the relay). The app reads the device's id
+and token at the old address (`readHeld`), checks the answer (`Proof.kt`)
+and carries only on a match; a refused carry opens the new address unpaired
+and leaves the note of where the pairing is held as it was. Seen on an
+Android 13 emulator: an impostor with venue A's id given nothing, the real
+PC at a new LAN address proven and carried to, a proof across the
+emulator's NAT refused.
 
 ## Next task
 
-**Here: Phase 18 Task 5b, the PC found by itself** (ADR-416). First the
-question ADR-416 leaves open, in an ADR: the venue's id is no proof, so
-must a mez found by itself prove it is the venue's before the pairing
-goes to it (an HMAC over a nonce, keyed by what the server holds of the
-device's token), or is the plain LAN taken as it is (ADR-257)? Then,
+**Here: Phase 18 Task 5c, the PC found by itself** (ADR-416, ADR-417):
 while the PC's page shows, a health check now and then; when the kept
 address does not answer (that, or "Can't reach the mez PC"), one legacy
 mDNS query for `mez.local` from an ordinary port (pion/mdns answers it by
 unicast, RFC 6762 6.7), at the kept port; each address answered asked its
-health, the kept venue's taken: 5a's carry (`carryFrom()` in
-`MainActivity.kt`), then the till. The page in front is replaced only when
-the PC is found elsewhere. The packet's making and reading are pure, with
-unit tests. The emulator's NAT carries no multicast: check the query from
-the PC against the real announcer (a JVM run of the same code), feed the
-emulator the answer, and walk a real tablet on the LAN when one is to hand.
-Walk on the AVD `mez_tablet_33`; mez bound to `127.0.0.1:7777` is the
-emulator's `10.0.2.2:7777`, and bound to the PC's LAN address alone it
-is a new address the emulator reaches. `adb` trusts the key under
-`D:\AndroidSDK\Android\.android`; the WebView takes the DevTools protocol
-through `adb forward tcp:9222 localabstract:webview_devtools_remote_<pid>`
-in a debug build.
+health, the kept venue's taken, then 5b's proof and 5a's carry
+(`carryFrom()` in `MainActivity.kt`), then the till. A refused proof
+leaves the tablet where it is. The page in front is replaced only when the
+PC is found elsewhere. The packet's making and reading are pure, with unit
+tests. The emulator's NAT carries no multicast, and the proof refuses an
+address reached through it: check the query from the PC against the real
+announcer (a JVM run of the same code), feed the emulator the PC's LAN
+address as the answer, and walk a real tablet when one is to hand. On the
+AVD `mez_tablet_33`, mez bound to the PC's LAN address alone is a new
+address the emulator reaches and the proof accepts. `adb` trusts the key
+under `D:\AndroidSDK\Android\.android`.
 
 **Out of phase, before the venue's install: the re-run's other two P1s**
 (TBS-20 is fixed), TBS-21 (the approval sheet: scrolled, the cashier

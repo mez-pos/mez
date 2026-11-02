@@ -96,3 +96,9 @@ WHERE venue_id = ? AND cloud = 1 AND revoked_at IS NULL;
 INSERT INTO devices (public_id, venue_id, name, kind, token_hash, paired_at, created_at, cloud)
 VALUES (sqlc.arg(public_id), sqlc.arg(venue_id), sqlc.arg(name), 'back_office', '', sqlc.arg(now), sqlc.arg(now), 1)
 RETURNING id;
+
+-- name: DeviceProofKey :one
+-- What a device's proof is keyed by (ADR-417): the stored hash of its token.
+SELECT token_hash, revoked_at
+FROM devices
+WHERE public_id = ?;

@@ -68,6 +68,9 @@ func registeredRoutes(t *testing.T) []string {
 // until they do, so "can this be done from outside?" is asked of every route
 // and answered by a person (ADR-308).
 var staysAtTheVenue = []string{
+	// A tablet asking the PC at a new address to prove it holds its pairing
+	// (ADR-417): a question asked on the venue's network, and bound to it.
+	"GET /api/v1/devices/{id}/proof",
 	// Orders, as anything but something to read.
 	"POST /api/v1/orders",
 	"GET /api/v1/orders/closed",

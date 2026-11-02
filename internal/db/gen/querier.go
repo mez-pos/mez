@@ -220,6 +220,8 @@ type Querier interface {
 	// Every device ever paired at the venue, revoked included, for the same
 	// reason: history names the till an event came from.
 	DeviceNamesForVenue(ctx context.Context, venueID int64) ([]DeviceNamesForVenueRow, error)
+	// What a device's proof is keyed by (ADR-417): the stored hash of its token.
+	DeviceProofKey(ctx context.Context, publicID string) (DeviceProofKeyRow, error)
 	// The back office's devices screen (phase 10, Task 6k). Every one is scoped by
 	// venue_id: an id from another venue matches nothing.
 	// Every paired device, revoked ones last: the screen lists who is in service

@@ -9,7 +9,8 @@ import java.net.URISyntaxException
  * and a new address is a new origin with none. At the moment of the move the
  * app serves an empty page of its own at each address, never asked of the
  * network, reads the device's keys at the old one and writes them at the new
- * one; then the PC's page opens there, paired.
+ * one; then the PC's page opens there, paired. Nothing is written until the
+ * new address has proved it holds the pairing (ADR-417, Proof.kt).
  */
 
 /** Where on a PC's address the app serves its empty page, while a carry is under way. */

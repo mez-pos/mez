@@ -10,6 +10,17 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The tablet app's proof before a carry** (ADR-417, Phase 18 Task 5b;
+  2026-11-02). Seen on an Android 13 tablet emulator: an impostor
+  answering health with the venue's id given nothing; the real PC at a
+  new LAN address proven and carried to; a proof across the emulator's
+  NAT refused. **Not seen:** a real tablet; the kitchen display; a carry
+  given up at its ten seconds. **Left as is:** a NAT or port forward
+  between tablet and PC defeats the proof (no carry, pair again); an
+  address typed as `mez.local` is not carried to; an impostor asked
+  learns the device's public id; whoever holds a copy of the database (a
+  backup, the mez Cloud mirror's) holds the proof's keys (ADR-417's Cost).
+
 - **The tablet app's pairing carried to a new address** (ADR-416, Phase 18
   Task 5a; 2026-11-02). Seen on an Android 13 tablet emulator: a till
   paired and signed in, its PC moved to another address, "Pair again",
@@ -20,11 +31,11 @@
   station and board settings with it); a scanned link carried (the same
   path as typed); a renderer lost mid-carry; the five-second give-up; a
   real tablet; Android 17. **Left as is:** the PC is not yet found by
-  itself (5b); a move signs the staff out; "Pair again"'s question still
+  itself (5c); a move signs the staff out; "Pair again"'s question still
   says to pair again from the Devices page, where the same venue's PC now
   needs no code (Task 10's words); a venue made by `mez setup` while the
   server runs is named by health only from its next start; the venue's id
-  is no proof of the venue (5b decides).
+  is no proof of the venue (ADR-417 adds the proof, 5b).
 
 - **The tablet app's scanner** (ADR-415, Phase 18 Task 4b; 2026-11-02).
   Seen on an Android 13 tablet emulator whose back camera was fed a QR

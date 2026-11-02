@@ -117,11 +117,18 @@ class MainActivity : ComponentActivity() {
     private val probe = Probe { mez -> runOnUiThread { answered(mez) } }
 
     /**
-     * A carry under way (ADR-416): the pairing being read at the address that
-     * holds it ([write] null), or written at [link]'s ([write] the script that
-     * writes it). [page] is the app's empty page that step is served.
+     * A carry under way (ADR-416): the pairing being read at [from], the
+     * address that holds it ([write] null), or written at [link]'s ([write]
+     * the script that writes it). [page] is the app's empty page that step is
+     * served.
      */
-    private data class Carrying(val link: Pairing.Link, val venue: String, val page: String, val write: String?)
+    private data class Carrying(
+        val from: String,
+        val link: Pairing.Link,
+        val venue: String,
+        val page: String,
+        val write: String?,
+    )
 
     // Volatile: ShellClient asks which page to serve off the main thread.
     @Volatile
@@ -273,11 +280,12 @@ class MainActivity : ComponentActivity() {
     }
 
     // The address kept, with the venue its mez named, and opened with its
-    // code once. The pairing is held there from now on.
-    private fun keep(link: Pairing.Link, venue: String?) {
+    // code once. The pairing is held there from now on, unless a carry that
+    // was not made leaves it [held] where it was.
+    private fun keep(link: Pairing.Link, venue: String?, held: String = link.pc) {
         prefs.edit {
             putString(PC, link.pc)
-            putString(HELD, link.pc)
+            putString(HELD, held)
             if (venue == null) remove(VENUE) else putString(VENUE, venue)
         }
         open(link.open)
@@ -288,12 +296,13 @@ class MainActivity : ComponentActivity() {
     // seconds is given up: the new address opens as without one.
     private fun carryFrom(from: String, link: Pairing.Link, venue: String) {
         val page = carryPage(from) ?: return keep(link, venue)
-        carry = Carrying(link, venue, page, write = null)
+        val first = Carrying(from, link, venue, page, write = null)
+        carry = first
         load(page)
         frame.postDelayed({
             if (!isDestroyed && carry?.link === link) {
                 Log.w(TAG, "the pairing was not carried to the PC's new address in time")
-                carried(link, venue)
+                carried(first, moved = false)
             }
         }, CARRY_TIMEOUT_MS)
     }
@@ -311,13 +320,41 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // The keys read: then the pairing they hold, for the new address to prove.
     private fun gotKeys(step: Carrying, keys: String?) {
         if (carry !== step) return
         val write = keys?.let(::writeKeys)
-        val page = carryPage(step.link.pc)
-        if (write == null || page == null) {
+        if (write == null) {
             Log.i(TAG, "no pairing at the PC's old address to carry")
-            carried(step.link, step.venue)
+            carried(step, moved = true)
+            return
+        }
+        web.evaluateJavascript(READ_HELD) { read -> gotHeld(step, write, read) }
+    }
+
+    // The new address asked, off the main thread, to prove it holds every
+    // pairing the carry would write, before anything is written (ADR-417).
+    private fun gotHeld(step: Carrying, write: String, read: String?) {
+        if (carry !== step) return
+        val held = read?.let(::heldOf)
+        if (held == null) {
+            Log.w(TAG, "the pairing at the PC's old address could not be read to prove")
+            carried(step, moved = false)
+            return
+        }
+        probe.run {
+            val proven = held.all { Proof.proves(step.link.pc, it) }
+            runOnUiThread { proved(step, write, proven) }
+        }
+    }
+
+    // Proven: the keys written at the new address. Not: nothing carried.
+    private fun proved(step: Carrying, write: String, proven: Boolean) {
+        if (isDestroyed || carry !== step) return
+        val page = carryPage(step.link.pc)
+        if (!proven || page == null) {
+            Log.w(TAG, "the PC's new address did not prove it holds this tablet's pairing; it is not carried")
+            carried(step, moved = false)
             return
         }
         carry = step.copy(page = page, write = write)
@@ -327,16 +364,17 @@ class MainActivity : ComponentActivity() {
     private fun wrote(step: Carrying, written: Boolean) {
         if (carry !== step) return
         if (!written) Log.w(TAG, "the pairing could not be written at the PC's new address")
-        carried(step.link, step.venue)
+        carried(step, moved = written)
     }
 
     // The carry is over, whatever came of it: the new address is kept and
-    // opened. One that failed opens at the pairing screen, as without it.
-    private fun carried(link: Pairing.Link, venue: String) {
+    // opened. One that failed opens at the pairing screen, as without it, and
+    // the pairing is still held where it was unless it [moved]: a refused
+    // proof costs the next move nothing.
+    private fun carried(step: Carrying, moved: Boolean) {
         carry = null
-        keep(link, venue)
+        keep(step.link, step.venue, held = if (moved) step.link.pc else step.from)
     }
-
 
     // The app's own way to a page; a stand-in it replaces stops asking, and
     // a carry under way is given up.
@@ -614,7 +652,8 @@ class MainActivity : ComponentActivity() {
         const val HELD = "held"
         const val VENUE = "venue"
 
-        // A carry is two empty pages and two scripts: milliseconds.
-        const val CARRY_TIMEOUT_MS = 5_000L
+        // A carry is two empty pages, three scripts and one question for the
+        // PC, whose connection and read may each take Probe.TIMEOUT_MS.
+        const val CARRY_TIMEOUT_MS = 10_000L
     }
 }

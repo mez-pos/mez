@@ -253,6 +253,25 @@ func (q *Queries) DeviceNamesForVenue(ctx context.Context, venueID int64) ([]Dev
 	return items, nil
 }
 
+const deviceProofKey = `-- name: DeviceProofKey :one
+SELECT token_hash, revoked_at
+FROM devices
+WHERE public_id = ?
+`
+
+type DeviceProofKeyRow struct {
+	TokenHash string
+	RevokedAt sql.NullTime
+}
+
+// What a device's proof is keyed by (ADR-417): the stored hash of its token.
+func (q *Queries) DeviceProofKey(ctx context.Context, publicID string) (DeviceProofKeyRow, error) {
+	row := q.db.QueryRowContext(ctx, deviceProofKey, publicID)
+	var i DeviceProofKeyRow
+	err := row.Scan(&i.TokenHash, &i.RevokedAt)
+	return i, err
+}
+
 const devicesForVenue = `-- name: DevicesForVenue :many
 
 SELECT id, public_id, name, kind, paired_at, last_seen_at, revoked_at, cloud

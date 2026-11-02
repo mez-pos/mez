@@ -8,6 +8,21 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 18, Task 5a: the pairing carried**, 2026-11-02 (ADR-416). Health
+names the venue (`venue`, its public id) to the venue's network, never
+through the relay, from what the server holds (set at start, and by the
+setup wizard): no database. The app keeps the venue with the address,
+and after "Pair again" keeps where the pairing is held. The same venue's
+mez at another address, typed or scanned, gets the pairing carried: the
+app's own empty page at `/mez-app-carry` of each address (intercepted,
+never asked of the network), the old address's `mez.` localStorage keys
+read there and written at the new one, then the till. The staff session
+stays behind. The web app is unchanged; a test holds its keys to the
+prefix. Seen on an Android 13 emulator: a till paired and signed in at
+`10.0.2.2:7777`, mez moved to `192.168.29.211:7777`, Pair again, the new
+address typed: the till at its sign-in screen as the same device, no
+code; another venue's mez at `:7778` given nothing.
+
 **Phase 18, Task 4b: scanned**, 2026-11-02 (ADR-415). "Pair this
 tablet" leads with Scan the code: CameraX's preview (core, camera2,
 lifecycle; not camera-view, which brings AppCompat) on a TextureView under

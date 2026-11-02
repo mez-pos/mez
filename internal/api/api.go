@@ -136,6 +136,7 @@ func (s *Server) routes() http.Handler {
 	s.mountSetup(mux)
 	s.mountRecovery(mux)
 	s.mountDevices(mux)
+	s.mountDeviceProof(mux)
 	s.mountTunnel(mux)
 	s.mountCloudPairing(mux)
 	s.mountGuests(mux)

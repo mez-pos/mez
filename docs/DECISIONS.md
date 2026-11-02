@@ -16218,7 +16218,7 @@ screen, and a front camera on a stand are a real tablet's to show.
 
 
 ## ADR-416 - A tablet follows its PC to a new address: found by name, checked by venue, its pairing carried
-2026-11 · Status: accepted. Phase 18 Task 5 (5a built; 5b, the finding, next). Follows ADR-413
+2026-11 · Status: accepted. Phase 18 Task 5 (5a built; the finding is 5c, after ADR-417's proof, 5b). Follows ADR-413
 and ADR-414. Leans on ADR-338, ADR-379.
 Context: the app keeps the PC's address (ADR-414), and the web app keeps the device's pairing in
 that address's localStorage (ADR-338). A router that gives the PC a new address leaves every
@@ -16319,3 +16319,82 @@ data was cleared pairs again, as before. A venue made by `mez setup` while the s
 named by health from the server's next start; the wizard's, at once. "Pair again"'s question
 still speaks of pairing again from the Devices page, where the same venue's PC now needs no
 code: Task 10's words. A CSP on the app's empty page was not added: there is nothing in it.
+
+
+## ADR-417 - The PC proves it holds the tablet's pairing before the pairing goes to it
+2026-11 · Status: accepted. Phase 18 Task 5b. Answers the question ADR-416 left open.
+Context: ADR-416 carries a tablet's pairing to the same venue's mez at a new address, the venue
+known by its public id, which health tells anyone on the venue's network. That is an identity,
+not a proof: a device on the wifi that answers health with the copied id is handed the device's
+token. While a person types or scans the address, that is the trust a typed pairing already has.
+Once the app finds the address itself (Task 5c, by `mez.local`), it is not: a responder on the
+wifi that answers `mez.local` while the PC restarts would collect every tablet's token, unasked,
+at every restart. The plain LAN exposes tokens already (ADR-257), but to someone who intercepts
+traffic; this would hand them over. Two automated security reviews of ADR-416 rated it high.
+Task 5b, split on 2026-11-02, is this proof; finding the PC moved to 5c.
+Decision:
+  - **Before any carry, typed, scanned or found, the new address proves it holds the device's
+    pairings.** At the old address the app reads every pairing there (each `mez.<app>.device`
+    that reads as one: a manager's tablet may hold the till's and the back office's), and for
+    each draws a nonce and asks the new address
+    `GET /api/v1/devices/{id}/proof?nonce=...&at=<host:port>`. The server answers HMAC-SHA256
+    over `mez-proof-v1`, the device id, the nonce and `at`, keyed by what it stores of the
+    device's token (its SHA-256 in hex, `token_hash`). The app makes the same from the token it
+    holds and compares. Only a server holding that device's row (or a copy of it: below) can
+    answer, and nothing sent lets anyone answer later: neither the token nor its hash leaves
+    either side. Every pairing the carry would write must be proven, or none is carried; a key
+    that does not read as a pairing carries no token. The proofs are asked off the main thread,
+    before anything is written at the new address.
+  - **Bound to the address asked.** The server answers only when `at` is the address the
+    request reached (`http.LocalAddrContextKey`); 421 Misdirected Request otherwise. The app
+    accepts only a proof made for the address it asked. A device on the wifi that passes the
+    question on to the real PC gets back a proof for the PC's address, not its own: refused.
+  - **Unknown, revoked or never paired: no proof** (404, as for a device that is not there). A
+    revoked pairing is not carried.
+  - **At the venue only**: the route is not among the relay's (ADR-308). It is served where the
+    server's devices can prove (`auth.Devices.Prove`, through an interface of its own in
+    `internal/api`, so that another `Devices` need not).
+  - **A carry the new address cannot prove is not made.** Typed or scanned, the new address
+    opens as without one, at the pairing screen. Once 5c finds addresses itself, it does not
+    move at all: the tablet stays on "Can't reach the mez PC".
+  - The venue in health stays: it spares the proof a round trip to another venue's mez, and
+    it is how a tablet kept before ADR-416 learns its venue.
+  - A security review (2026-11-02) found the claim sound against a device on the wifi: the
+    server's socket is bare `net/http` (no proxy protocol, no forwarded headers read), the
+    `at` the server signs is the string it was sent, the relay's requests carry no local
+    address, and the access log keeps the path, not the query. Its finds are taken above
+    (every pairing proven) and below.
+Seen, 2026-11-02, on an Android 13 tablet emulator, the tablet holding venue A's pairing at
+`10.0.2.2:7779` (5a's walk) with nothing answering there. An impostor on the PC's LAN address
+(`:7782`, a script answering health with venue A's id and a proof of zeros): Pair again, its
+address typed; health, then the proof asked (no token in either), then its page, uncarried: its
+storage held nothing, and no request it saw carried a token. The app's note of where the
+pairing is held stayed at `10.0.2.2:7779`. Venue A's mez at `192.168.29.211:7780`, an address
+the tablet had never opened: Pair again, typed; `GET /api/v1/devices/<id>/proof` 200, the keys
+written, the till at its sign-in screen as device 1 (`GET /api/v1/devices/me` 200), no code: the
+pairing the refused carry had left where it was. Venue A's mez on the PC's loopback, reached
+through the emulator's NAT as `10.0.2.2:7781`: the proof 421, nothing carried, the pairing
+screen. After the security review (every pairing proven), again: venue A's mez at `:7783`,
+Pair again from the refused address, typed: one proof 200, carried from `:7780`, where the
+refused carry had left the pairing, device 1. Unit tests on both sides against one vector made
+outside both (Python's hmac); the `READ_HELD` script in Node against a fake storage. Not seen: a
+real tablet; the kitchen display.
+Rejected: taking the plain LAN as it is (ADR-416's other way: the collection above); an unbound
+challenge (a device on the wifi passes it on to the PC and returns the answer); asking the
+person to confirm (they cannot judge an address, and 5c has nobody to ask); a key of the
+server's pinned at pairing (the same proof with more to keep: the device's token is already a
+secret both sides hold); sending the token or its hash (the hash is the proof's key).
+Cost: whoever holds a copy of the database (a backup, the mez Cloud mirror's copy) holds the
+proof's keys: with that and a place on the venue's wifi they could answer a tablet whose PC
+moved, and be handed its token. A device that takes the PC's new address itself (ARP) and
+passes the questions on gets a proof for that address: the plain LAN's own exposure (ADR-257),
+which Task 11's certificate is for. A proof's own key apart from the token's hash, kept out of
+backups, would close the first; it is not built. The route has no rate limit: it reads one
+row, and says only whether a device id (40 bits, no secret) is paired here.
+A NAT between the tablet and the PC (the emulator's `10.0.2.2`, a port forward) defeats
+the binding: no carry across it, and the tablet pairs again. The emulator walks with the PC's
+LAN address. One more request per carry. A tablet holding no pairing of the app it opens proves
+with another app's (a manager's tablet paired as the back office too). The question names the
+device by its public id, which is no secret: an impostor asked learns it. A refused carry leaves
+the app's note of where the pairing is held as it was, so the next move can still carry it. An
+address typed as `mez.local` is not carried to: the proof is bound to an IP.

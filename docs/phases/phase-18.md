@@ -180,20 +180,33 @@ Words in `docs/hardware.md`, `docs/deploy.md` and `docs/releasing.md`.
     emulator, a paired till, "Pair again", the same PC at another address
     typed: the till at its sign-in screen, the same device, no code.
 
-  - [ ] **Task 5b - The PC found by itself.** ADR-416. While the PC's page
-    shows, a health check now and then; when the kept address does not
-    answer (that, or "Can't reach the mez PC"), one legacy mDNS query for
-    `mez.local` from an ordinary port, the kept port, each address asked its
-    health, the kept venue's taken: 5a's carry, then the till. First, the
-    question ADR-416 leaves to this task: the venue's id is no proof, so
-    must a mez the app found by itself prove it is the venue's (an HMAC
-    over a nonce, keyed by what the server holds of the device's token)
-    before the pairing goes to it, or is the plain LAN's exposure taken as
-    it is (ADR-257)? An ADR either way. The packet's
-    making and reading are pure functions with unit tests. **Seen:** on a
-    real tablet on the venue's wifi (or the emulator with the answer fed,
-    and the query checked from the PC against the real announcer), the PC
-    given a new address, the till back by itself.
+  - [x] **Task 5b - The PC proves itself.** Done 2026-11-02 (ADR-417),
+    seen on an Android 13 emulator: an impostor refused, the real PC at a
+    new address proven and carried to, a proof across a NAT refused; not
+    yet on a real tablet. ADR-417, split from the
+    finding on 2026-11-02: the venue's id is no proof, and a found address
+    must not be handed the pairing on its word. Before any carry, the new
+    address answers `GET /api/v1/devices/{id}/proof?nonce=&at=`: an HMAC
+    over the nonce and the address asked, keyed by what the server stores
+    of the device's token, made only when `at` is the address the request
+    reached. The app reads the device's id and token at the old address,
+    makes the same, and carries only on a match; otherwise the new address
+    opens at the pairing screen. Tests in `internal/auth`, `internal/api`
+    and the app (the message, the key, the answer read). **Seen:** on an
+    emulator, a till carried to the PC's LAN address with the proof; a
+    proof refused for another address; a mez that answers health with the
+    venue's id but cannot prove given nothing.
+
+  - [ ] **Task 5c - The PC found by itself.** ADR-416 and ADR-417. While
+    the PC's page shows, a health check now and then; when the kept address
+    does not answer (that, or "Can't reach the mez PC"), one legacy mDNS
+    query for `mez.local` from an ordinary port, the kept port, each address
+    asked its health, the kept venue's taken, then 5b's proof: 5a's carry,
+    then the till. The packet's making and reading are pure functions with
+    unit tests. **Seen:** on a real tablet on the venue's wifi (or the
+    emulator with the answer fed, and the query checked from the PC against
+    the real announcer), the PC given a new address, the till back by
+    itself.
 
 - [ ] **Task 6 - Locked to mez.** The app as the tablet's home app, so the
   home button and a reboot come back to it. Lock task mode when the app is

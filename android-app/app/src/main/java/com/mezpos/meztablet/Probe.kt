@@ -13,6 +13,9 @@ import java.util.concurrent.atomic.AtomicInteger
 /** mez's answer to its health check: the venue it serves, if it said which (ADR-416). */
 data class Mez(val venue: String?)
 
+/** What the PC answered a GET: its status, and the start of the body of a 200. */
+class Fetched(val status: Int, val body: String)
+
 /**
  * Asks the PC whether mez answers, on a thread of its own, every [every] ms
  * until it does; then calls [answered], on that thread, once, with what it
@@ -48,6 +51,15 @@ class Probe(
     fun once(health: String, then: (Mez?) -> Unit) {
         try {
             thread.execute { then(ask(health)) }
+        } catch (e: RejectedExecutionException) {
+            // Closed: the activity is gone, and nobody is waiting.
+        }
+    }
+
+    /** Runs [task] on the probe's thread: a question for a PC that is not its health. */
+    fun run(task: () -> Unit) {
+        try {
+            thread.execute(task)
         } catch (e: RejectedExecutionException) {
             // Closed: the activity is gone, and nobody is waiting.
         }
@@ -96,19 +108,24 @@ class Probe(
          * something else answered or nothing did. Another device given the
          * PC's old address, answering 200 to everything, is not mez.
          */
-        fun ask(health: String): Mez? = try {
-            val call = URI(health).toURL().openConnection() as HttpURLConnection
+        fun ask(health: String): Mez? = fetch(health)?.let { heard(it.status, it.body) }
+
+        /**
+         * A GET of [url] on the PC, on the caller's thread: its status, and
+         * the start of its body when it is a 200. Null if nothing answered.
+         * No redirect is followed, nothing is cached, and nothing waits
+         * longer than [TIMEOUT_MS] at a time.
+         */
+        fun fetch(url: String): Fetched? = try {
+            val call = URI(url).toURL().openConnection() as HttpURLConnection
             call.connectTimeout = TIMEOUT_MS
             call.readTimeout = TIMEOUT_MS
             call.useCaches = false
             call.instanceFollowRedirects = false
             try {
                 val status = call.responseCode
-                if (status != HttpURLConnection.HTTP_OK) {
-                    null
-                } else {
-                    heard(status, call.inputStream.bufferedReader().use(::readStart))
-                }
+                val body = if (status == HttpURLConnection.HTTP_OK) call.inputStream.bufferedReader().use(::readStart) else ""
+                Fetched(status, body)
             } finally {
                 call.disconnect()
             }
