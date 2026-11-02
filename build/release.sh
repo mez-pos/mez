@@ -50,7 +50,7 @@ checksums() {
 tablet_app() {
 	case "${TABLET_APP:-}" in
 	yes)
-		printf '\n%s\n' "**The mez app for Android tablets** comes with mez, in every download above and the Docker image: a tablet on the venue's wifi gets it from the venue's PC, at the PC's address with \`/app/mez.apk\` on the end (\`http://192.168.1.45:7777/app/mez.apk\`)."
+		printf '\n%s\n' "**The mez app for Android tablets** comes with mez, in every download above and the Docker image: a tablet on the venue's wifi gets it from the venue's PC. In the back office, Devices, **Pair a device** for a till or a kitchen display shows its QR beside the pairing code."
 		;;
 	no)
 		printf '\n%s\n' "**This release carries no tablet app.** It was made without the app's signing key; tablets use mez in their browser, as before."

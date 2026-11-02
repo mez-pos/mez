@@ -16755,6 +16755,23 @@ repository variable (`MEZ_ANDROID_KEY_SHA256`), and stops with a key and no fing
 shallow clone's build number too low, and a relative keystore path read two ways: both refused.
 Walked: another key's fingerprint stopped the build and left no package; its own let it
 through.
+Seen (7c), 2026-11-02: the back office in Chromium at 1366x768 and 1024x768, pairing a
+Terminal on a build carrying the app (signed with 7b's throwaway key): one band with the two
+codes, "1 · Install the app" and "2 · Pair", the app's address under the PC's, the words above,
+and all of it with **Done** in view at both sizes; built again without the app, one line saying
+so and the pairing code alone. Then a tablet that had never seen mez, the Android 13 emulator
+with mez uninstalled and its name lookups sent nowhere (no name on the internet resolved; the
+PC answered at its address): the app's address, as code 1 carries it, opened in Chrome; Chrome's
+first run (accepted, no account, no notifications); "File might be harmful", **Download
+anyway**, 1.43 MB from the PC; opened from Downloads, Android's "your phone currently isn't
+allowed to install unknown apps from this source", **Settings**, "Allow from this source", the
+package again, **Install**, "App installed": version 520. **Open**: "Pair this tablet"; the
+PC's address with the code in it, as code 2 carries it, typed in: paired (201), the till live,
+and "App is pinned" only then. The camera was not used: the emulator's has no QR reader of its
+own, and the app's scanner was seen in Task 4b. The browser's warning was not in the modal's
+words before the walk; it is now. A review (2026-11-02) found that a band without the app's code
+would have shown its pairing code uncaptioned under words naming "2": in that modal every
+pairing code is captioned now.
 Rejected: the installer carrying it beside the binary (Windows only: a Linux or Docker venue
 would fetch it by hand, and the PC would serve a file whose version can drift from its own);
 the internet or the Play Store (offline, no Google account); a page at `/app` before the

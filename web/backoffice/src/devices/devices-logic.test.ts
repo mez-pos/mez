@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../../shared/api";
-import type { DeviceRecordResponse } from "../../../shared/api-types";
+import type { DeviceRecordResponse, PairingPlaceResponse } from "../../../shared/api-types";
 import {
   MAX_DEVICE_NAME,
   PAIRABLE,
   actionProblemOf,
+  appOffer,
   deviceActions,
   kindText,
   revokeWords,
@@ -234,5 +235,38 @@ describe("typedAddress", () => {
   it("drops the scheme and keeps the rest", () => {
     expect(typedAddress("http://192.168.1.10:7777/kitchen")).toBe("192.168.1.10:7777/kitchen");
     expect(typedAddress("https://mez.example/backoffice/")).toBe("mez.example/backoffice/");
+  });
+});
+
+describe("the tablet app beside a pairing code (ADR-421)", () => {
+  const place = (patch: Partial<PairingPlaceResponse> = {}): PairingPlaceResponse => ({
+    adapter: "Wi-Fi",
+    virtual: false,
+    url: "http://192.168.1.10:7777",
+    svg: "<svg>pair</svg>",
+    ...patch,
+  });
+  const withApp = place({ app_url: "http://192.168.1.10:7777/app/mez.apk", app_svg: "<svg>app</svg>" });
+
+  it("is offered as a QR for a till or a kitchen display, where this build carries it", () => {
+    expect(appOffer("terminal", "v0.2.0", [withApp])).toBe("offered");
+    expect(appOffer("kitchen", "v0.2.0", [place(), withApp])).toBe("offered");
+  });
+
+  it("is named in words when this computer's address is not known", () => {
+    expect(appOffer("terminal", "v0.2.0", [])).toBe("typed");
+    expect(appOffer("kitchen", "v0.2.0", [place()])).toBe("typed");
+    expect(appOffer("terminal", "v0.2.0", [place({ app_url: "http://192.168.1.10:7777/app/mez.apk" })])).toBe("typed");
+  });
+
+  it("is said to be missing from a build without it", () => {
+    expect(appOffer("terminal", "", [place()])).toBe("not_built");
+    expect(appOffer("kitchen", undefined, [])).toBe("not_built");
+  });
+
+  it("is not offered to a back office, which is a browser", () => {
+    expect(appOffer("back_office", "v0.2.0", [withApp])).toBe("none");
+    expect(appOffer("back_office", "", [])).toBe("none");
+    expect(appOffer("back_office", undefined, [])).toBe("none");
   });
 });

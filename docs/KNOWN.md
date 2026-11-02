@@ -15,9 +15,13 @@
   package, its version and a till's pairing code carrying its QR, and the
   same server built without it saying so. 7b (2026-11-02): the release
   build signed with a throwaway key, carried by `make dist` and served,
-  installed on the emulator and paired. **Not yet:** the release workflow
-  run (no key, no tag since); the Devices page offering it (7c); a tablet
-  installing it from the PC. **Left as is:** a tablet that ever had a
+  installed on the emulator and paired. 7c (2026-11-02): the Devices
+  page offering it, seen at both sizes with and without the app; the
+  emulator, its name lookups sent nowhere, downloading it from the PC,
+  installing and pairing. **Not yet:** the release workflow run (no key,
+  no tag since); a real tablet, its own camera turning code 1 into the
+  address (the emulator's cannot), and Android 10 to 12 or 14 and on;
+  Chrome's words on another version. **Left as is:** a tablet that ever had a
   debug build (a developer's) must uninstall it, and pair again, to take a
   release: Android refuses the other key's package; a release made before
   the human's key exists carries no app, and says so in its notes. **Left as is:** a

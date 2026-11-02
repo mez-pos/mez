@@ -162,6 +162,21 @@ Inside the frame (`backoffice-shell.md`).
   is the address with `#code=7K3M-9QX2` on it: the pairing screen reads the
   code out of the address, types it in and tries it. Closing the modal
   does not cancel the code.
+  **The tablet app** (ADR-421): pairing a Terminal or a Kitchen display
+  on a build that carries the app, each band has two codes, captioned
+  "1 · Install the app" (the app's address there) and "2 · Pair", with
+  "The app: 192.168.1.10:7777/app/mez.apk" under the address, and the
+  modal is wider. The words above them: "On an Android tablet, first scan
+  **1** with its camera to get the mez app. The browser warns the file
+  might be harmful: download it anyway, and open it. Android asks to allow
+  installs from the browser: allow it, then install. Then open mez and
+  scan **2**." (each step as Chrome and Android 13 put it, seen) and,
+  small, "Any other device: scan 2, or open
+  the address in its browser. Both must be on this network." With no
+  address known, a line says to add `/app/mez.apk` to the computer's
+  address. A build without the app says, small, "This mez was built
+  without the tablet app, so a tablet pairs in its browser." and draws
+  no app code. A Back office is never offered the app.
 - **Rename:** one field. "Its label on every screen and in the history. It
   keeps working."
 - **Revoke** asks first: "It stops working at once and shows the pairing
@@ -180,6 +195,10 @@ Inside the frame (`backoffice-shell.md`).
   of the address with the code in its fragment), real adapters first, and
   empty when the server knows none (ADR-367); `named_url` is the kind's
   address by the server's network name, `mez.local` (ADR-379), or absent.
+  For a Terminal or a Kitchen display each place also has `app_url` and
+  `app_svg`, the tablet app's address there and its QR, when the build
+  carries the app; `app_version` is the app's version, "" for a build
+  without one (ADR-421).
   Only the code's hash is kept.
 - `POST /api/v1/devices/{id}/rename` `{name}` and `POST
   /api/v1/devices/{id}/revoke`: each answers with the list as it now stands.

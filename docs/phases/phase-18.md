@@ -259,7 +259,8 @@ Words in `docs/hardware.md`, `docs/deploy.md` and `docs/releasing.md`.
     recents and the notification shade do not leave it; the way out
     leaves it.
 
-- [ ] **Task 7 - Installed from the venue's PC.** ADR first, on how the
+- [x] **Task 7 - Installed from the venue's PC.** Done 2026-11-02 in three
+  parts (ADR-421). ADR first, on how the
   APK reaches the PC: the release builds and signs it and the Go build
   embeds it under a build tag, or the installer carries it beside the
   binary. The server serves it at a fixed path with its version; the
@@ -303,7 +304,11 @@ Words in `docs/hardware.md`, `docs/deploy.md` and `docs/releasing.md`.
     version code the build number, embedded in a `make dist` binary that
     serves it.
 
-  - [ ] **Task 7c - On the Devices page.** ADR-421. Pairing a till or a
+  - [x] **Task 7c - On the Devices page.** Done 2026-11-02 (ADR-421),
+    seen in a browser at both sizes, with and without the app, and on
+    an emulator that had never seen mez, its name lookups sent nowhere:
+    the app downloaded from the PC, installed, and paired. ADR-421.
+    Pairing a till or a
     kitchen display: "Install the mez app" with its QR beside the pairing
     QR, and plainly that Android will ask to allow installs from the
     browser; a build without the app says so and draws no QR. **Seen:** a

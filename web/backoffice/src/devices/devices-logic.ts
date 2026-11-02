@@ -106,6 +106,25 @@ export function pairingPlaces(open: readonly PairingPlaceResponse[] | undefined)
   return real.length > 0 ? { main: real, others: all.filter((p) => p.virtual) } : { main: all, others: [] };
 }
 
+/** The kinds of device that are tablets, which the mez app runs on (ADR-421). */
+const TABLET_KINDS: readonly DeviceKind[] = ["terminal", "kitchen"];
+
+/**
+ * What the pairing modal says of the mez app for Android tablets, which the
+ * PC carries when it was built with it (ADR-421): `offered`, its QR beside
+ * each address's pairing QR; `typed`, its address in words, when the
+ * computer's address is not known or no QR was drawn; `not_built`, that this
+ * build has no app, so a tablet pairs in its browser; `none` for a back
+ * office, which is a browser.
+ */
+export type AppOffer = "offered" | "typed" | "not_built" | "none";
+
+export function appOffer(kind: DeviceKind, appVersion: string | undefined, main: readonly PairingPlaceResponse[]): AppOffer {
+  if (!TABLET_KINDS.includes(kind)) return "none";
+  if (!appVersion) return "not_built";
+  return main.some((p) => p.app_url && p.app_svg) ? "offered" : "typed";
+}
+
 /** The address without its scheme, as a person types it into a browser's bar. */
 export function typedAddress(url: string): string {
   return url.replace(/^https?:\/\//, "");

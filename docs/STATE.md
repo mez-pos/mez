@@ -11,10 +11,10 @@
 `docs/phases/phase-18.md`, opened 2026-11-01 (ADR-409): a native Kotlin
 WebView shell in `android-app/` around the screens the PC serves, so a
 tablet is full screen, awake, back in mez after a reboot, paired by
-scanning and not unpaired by a new address. Tasks 1 to 6, 7a and 7b
-are done (5 in three parts, ADR-416 to ADR-418; 6 in two, ADR-419 and
-ADR-420; 7 split in three, ADR-421); a real tablet on a venue's wifi is
-owed for every one of them. `make check`
+scanning and not unpaired by a new address. Tasks 1 to 7 are done (5
+in three parts, ADR-416 to ADR-418; 6 in two, ADR-419 and ADR-420; 7 in
+three, ADR-421); a real tablet on a venue's wifi is owed for every one of
+them. `make check`
 never builds the app; `make android` does (a JDK and the Android SDK).
 
 Before it, **Phase 17 - Every screen at the venue's own size**,
@@ -32,34 +32,32 @@ list below.
 
 ## Last completed task
 
-**Phase 18, Task 7b: the release builds and signs the app**, 2026-11-02
-(ADR-421). `make android-release` builds the app signed with the key the
-environment names (four `MEZ_ANDROID_*` variables; refuses without
-them), its version `git describe` and its code the build number
-(ADR-410: 7a's own rule dropped), and puts it with its `app.json` where
-`make dist` embeds it. `release.yml` has a tablet app job from four
-secrets (`docs/releasing.md`), the binaries and the image carrying what
-it made, the notes saying whether there is an app; CI builds with the tag
-against a stand-in and builds the release unsigned. Found on the way: the
-lock engaged on the PC's pairing screen; now once the page holds the
-pairing (ADR-420's correction). Seen with a throwaway key.
+**Phase 18, Task 7c: the Devices page offers the app**, 2026-11-02
+(ADR-421). Pairing a till or a kitchen display on a build that carries
+the app: each address's band shows "1 · Install the app" beside "2 ·
+Pair", with words for the browser's warning and Android's allow-installs
+question; with no address known, `/app/mez.apk` in words; a build without
+the app says so and draws no app code (`appOffer` in `devices-logic.ts`).
+The release notes name the Devices page. Seen in a browser at both sizes,
+and on the emulator with no internet name resolving: the app downloaded
+from the PC, installed and paired.
 
 ## Next task
 
-**Here: Phase 18 Task 7c, the Devices page** (ADR-421): pairing a till or
-a kitchen display shows "Install the mez app" with its QR beside the
-pairing QR (the pairing code's `app_url` and `app_svg`, 7a), and says
-plainly that Android will ask to allow installs from the browser; a build
-without the app says so and draws no QR. Then the release notes name the
-Devices page (`build/release.sh`'s `tablet_app`). **Seen:** a tablet that
-has never seen mez gets the app from the PC's page and pairs, with the
-internet unplugged: a throwaway key (`docs/releasing.md`'s `keytool`, in
-a scratch folder), `make android-release`, `make build`, and the
-emulator with the app uninstalled. **The human's:** the real key, its
-four secrets and its fingerprint's variable (`docs/releasing.md`); until
-then releases carry no app.
-The AVD `mez_tablet_33` holds a release build signed with 7b's throwaway
-key, which is gone: uninstall it before any other build. It is a device
+**Here: Phase 18 Task 8, updates.** The app reads the version the PC
+serves (`GET /api/v1/app`, ADR-421: the version code is the build
+number, ADR-410) and, when it is newer than its own, offers the update
+at a quiet moment, never over an open order (the web app tells it when
+it is idle, or the app asks); the person confirms Android's install. As
+the device owner, the app installs it itself between services. **Seen:**
+an older app on a tablet takes the PC's newer one: two builds with 7b's
+throwaway key (a new one each session: `docs/releasing.md`'s `keytool`),
+the second at a higher build number. **The human's, before any release
+carries the app:** the real key, its four secrets and its fingerprint's
+variable (`docs/releasing.md`).
+The AVD `mez_tablet_33` holds a release build signed with 7c's throwaway
+key, which is gone, paired as "Tablet 6": uninstall it before any other
+build. Start it with `-dns-server 127.0.0.1` to walk with no internet. It is a device
 owner no more; `adb shell dpm set-device-owner
 com.mezpos.meztablet/.Admin` makes it a kiosk again. Walk on it: two
 fingers through the emulator's gRPC
