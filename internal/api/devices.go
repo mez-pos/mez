@@ -78,6 +78,9 @@ type pairingCodeResponse struct {
 	// (ADR-379): the server's name on the network and the kind's path.
 	// Empty when the server is not answering for a name.
 	NamedURL string `json:"named_url,omitempty"`
+	// AppVersion is the version of the tablet app this build carries, for
+	// the Devices page to offer it (ADR-421); "" for a build without one.
+	AppVersion string `json:"app_version"`
 }
 
 // pairingPlaceResponse is one place a device being paired can open mez.
@@ -93,6 +96,11 @@ type pairingPlaceResponse struct {
 	// SVG is a QR code of the address with the pairing code in its
 	// fragment, which the pairing screen reads; empty when none was drawn.
 	SVG string `json:"svg"`
+	// AppURL is where a till or a kitchen display gets the tablet app at
+	// this address, and AppSVG its QR (ADR-421); absent for a back office,
+	// and in a build without the app.
+	AppURL string `json:"app_url,omitempty"`
+	AppSVG string `json:"app_svg,omitempty"`
 }
 
 // createPairingCode makes a code for one new device.
@@ -121,8 +129,9 @@ func (s *Server) createPairingCode(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	writeJSON(w, s.log, http.StatusCreated, pairingCodeResponse{
 		Code: code.Code, ExpiresAt: code.ExpiresAt.UTC(),
-		Open:     s.pairingPlaces(r, req.Kind, code.Code),
-		NamedURL: s.namedURLFor(req.Kind),
+		Open:       s.pairingPlaces(r, req.Kind, code.Code),
+		NamedURL:   s.namedURLFor(req.Kind),
+		AppVersion: s.tabletAppVersionName(),
 	})
 }
 

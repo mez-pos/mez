@@ -180,7 +180,8 @@ func (s *Server) pairingPlaces(r *http.Request, kind auth.DeviceKind, code strin
 	}
 	out := make([]pairingPlaceResponse, 0, len(found))
 	for _, a := range found {
-		url := strings.TrimSuffix(a.URL, "/") + path
+		base := strings.TrimSuffix(a.URL, "/")
+		url := base + path
 		scan := url
 		if path == "" {
 			scan += "/"
@@ -192,6 +193,7 @@ func (s *Server) pairingPlaces(r *http.Request, kind auth.DeviceKind, code strin
 		} else {
 			place.SVG = drawn.SVG(qrQuiet)
 		}
+		s.tabletAppAt(r, &place, kind, base)
 		out = append(out, place)
 	}
 	return out

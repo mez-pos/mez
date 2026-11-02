@@ -9,6 +9,7 @@ import (
 
 	"github.com/mez-pos/mez/internal/config"
 	"github.com/mez-pos/mez/internal/device/discover"
+	"github.com/mez-pos/mez/internal/device/tabletapp"
 )
 
 // Server holds what the handlers need and builds the routing tree once.
@@ -60,8 +61,10 @@ type Server struct {
 	addresses     func() ([]discover.Address, error)
 	// namedAddress is the server's address by its network name, or "" (ADR-379).
 	namedAddress func() string
-	limiter      *limiter
-	handler      http.Handler
+	// tabletApp is the tablet app this binary carries, or nil (ADR-421).
+	tabletApp *tabletapp.App
+	limiter   *limiter
+	handler   http.Handler
 }
 
 // Option adjusts a Server at construction.
@@ -138,6 +141,7 @@ func (s *Server) routes() http.Handler {
 	s.mountDevices(mux)
 	s.mountDeviceProof(mux)
 	s.mountWayOut(mux)
+	s.mountTabletApp(mux)
 	s.mountTunnel(mux)
 	s.mountCloudPairing(mux)
 	s.mountGuests(mux)

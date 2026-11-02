@@ -921,6 +921,7 @@ export interface PairingCodeResponse {
   expires_at: string;
   open: PairingPlaceResponse[];
   named_url?: string;
+  app_version: string;
 }
 
 export interface PairingPlaceResponse {
@@ -928,6 +929,16 @@ export interface PairingPlaceResponse {
   virtual: boolean;
   url: string;
   svg: string;
+  app_url?: string;
+  app_svg?: string;
+}
+
+export interface TabletAppResponse {
+  version: string;
+  version_code: number;
+  size: number;
+  sha256: string;
+  path: string;
 }
 
 export interface DeviceRecordResponse {

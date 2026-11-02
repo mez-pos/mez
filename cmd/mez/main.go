@@ -613,6 +613,7 @@ func run(ctx context.Context, args []string, opts runOptions) (err error) {
 		// Where a second device opens this server, for whoever is pairing one.
 		api.WithAddresses(func() ([]discover.Address, error) { return (&discover.Addresser{}).Addresses(listener.Addr().String()) }),
 		api.WithNamedAddress(named),
+		api.WithTabletApp(carriedApp(log)),
 		api.WithStaff(staff),
 		api.WithOrders(orders),
 		api.WithMenus(database),

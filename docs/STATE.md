@@ -11,9 +11,10 @@
 `docs/phases/phase-18.md`, opened 2026-11-01 (ADR-409): a native Kotlin
 WebView shell in `android-app/` around the screens the PC serves, so a
 tablet is full screen, awake, back in mez after a reboot, paired by
-scanning and not unpaired by a new address. Tasks 1 to 6 are done
-(5 in three parts, ADR-416 to ADR-418; 6 in two, ADR-419 and ADR-420); a
-real tablet on a venue's wifi is owed for every one of them. `make check`
+scanning and not unpaired by a new address. Tasks 1 to 6 and 7a are
+done (5 in three parts, ADR-416 to ADR-418; 6 in two, ADR-419 and ADR-420;
+7 split in three, ADR-421); a real tablet on a venue's wifi is owed for
+every one of them. `make check`
 never builds the app; `make android` does (a JDK and the Android SDK).
 
 Before it, **Phase 17 - Every screen at the venue's own size**,
@@ -31,24 +32,28 @@ list below.
 
 ## Last completed task
 
-**Phase 18, Task 6b: locked**, 2026-11-02 (ADR-420). Once the till has
-shown, the tablet locks whenever mez is in front: as the device owner
-(`adb shell dpm set-device-owner com.mezpos.meztablet/.Admin`, no
-accounts; the steps for the human are in ADR-420) a kiosk, mez alone,
-the power menu kept, no lock screen, mez the home; otherwise screen
-pinning. A kiosk's "Can't reach the mez PC" offers Android's Wi-Fi panel
-inside the lock. The open way out adds "Leave mez" (the tablet's own
-launcher; Home or a reboot brings the till back, locked) and, on a kiosk,
-"Release it". "Pair again" there keeps needing no PIN (ADR-420). Seen on an
-Android 13 emulator; a race in the way out's asking fixed on the way.
+**Phase 18, Task 7a: the app served**, 2026-11-02 (ADR-421). Task 7 split
+in three. The PC carries the tablet app in its binary, under the build
+tag `tabletapp` (`internal/device/tabletapp`; the package and its
+`app.json` in `app/` there, gitignored; `make build` and `make dist` add
+the tag when both are in place). `GET /app/mez.apk` and its version at
+`GET /api/v1/app`, no token, refused through the relay; a build without
+the app says so (its log, 404 `app_not_built`). A till's or kitchen
+display's pairing code carries the app's address and QR at each address,
+and `app_version`. Seen with the app's debug build put in place.
 
 ## Next task
 
-**Here: Phase 18 Task 7, installed from the venue's PC.** ADR first, on
-how the APK reaches the PC: the release builds and signs it and the Go
-build embeds it under a build tag, or the installer carries it beside the
-binary. The PC serves it at a fixed path with its version; Devices draws
-"Install the mez app" as a QR beside the pairing QR. The AVD
+**Here: Phase 18 Task 7b, the release builds and signs the app**
+(ADR-421): a signed release build from Gradle with the key from the
+environment, never the repository; the version name and code from the tag
+by ADR-421's rule, with tests; `app.json` written beside it into
+`internal/device/tabletapp/app/`, which `make dist` then embeds; an
+Android job in `release.yml` before `binaries`, from the repository's
+secrets, the Docker image embedding it too; a release without the key
+carries no app and its notes say so. Walked with a throwaway key. **The
+human's:** the real key (`keytool`, the phase), then its secrets in the
+repository's settings, which 7b's `releasing.md` names. The AVD
 `mez_tablet_33` is a device owner no more (6b's walk released it); `adb
 shell dpm set-device-owner com.mezpos.meztablet/.Admin` makes it a kiosk
 again. Walk on it: two fingers through the emulator's gRPC

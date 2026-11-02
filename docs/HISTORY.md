@@ -8,6 +8,17 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 18, Task 6b: locked**, 2026-11-02 (ADR-420). Once the till has
+shown, the tablet locks whenever mez is in front: as the device owner
+(`adb shell dpm set-device-owner com.mezpos.meztablet/.Admin`, no
+accounts; the steps for the human are in ADR-420) a kiosk, mez alone,
+the power menu kept, no lock screen, mez the home; otherwise screen
+pinning. A kiosk's "Can't reach the mez PC" offers Android's Wi-Fi panel
+inside the lock. The open way out adds "Leave mez" (the tablet's own
+launcher; Home or a reboot brings the till back, locked) and, on a kiosk,
+"Release it". "Pair again" there keeps needing no PIN (ADR-420). Seen on an
+Android 13 emulator; a race in the way out's asking fixed on the way.
+
 **Phase 18, Task 6a: the way out**, 2026-11-02 (ADR-419). Task 6 split in
 two, the way out before the lock. Two fingers held still three seconds
 anywhere: the page's touch cancelled, the device's token read from the

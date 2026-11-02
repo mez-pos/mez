@@ -37,9 +37,20 @@ export CGO_ENABLED = 0
 # `make build-web && make build` is therefore one binary serving all three
 # apps. `make dist` always rebuilds them first, so a release never ships a
 # stale or missing bundle. See ADR-025 and ADR-063.
-WEB_APPS  := terminal backoffice guest
-WEB_BUILT := $(foreach a,$(WEB_APPS),$(wildcard web/$(a)/dist/index.html))
-TAGS      := $(if $(filter 3,$(words $(WEB_BUILT))),frontend,)
+WEB_APPS     := terminal backoffice guest
+WEB_BUILT    := $(foreach a,$(WEB_APPS),$(wildcard web/$(a)/dist/index.html))
+FRONTEND_TAG := $(if $(filter 3,$(words $(WEB_BUILT))),frontend,)
+
+# The tablet app is embedded too (-tags tabletapp) when a build of it and its
+# app.json are in internal/device/tabletapp/app/, where the release puts
+# them; otherwise the binary carries none and says so. See ADR-421.
+APP_DIR := internal/device/tabletapp/app
+APP_TAG := $(if $(and $(wildcard $(APP_DIR)/mez.apk),$(wildcard $(APP_DIR)/app.json)),tabletapp,)
+
+comma := ,
+empty :=
+space := $(empty) $(empty)
+TAGS  := $(subst $(space),$(comma),$(strip $(FRONTEND_TAG) $(APP_TAG)))
 
 .DEFAULT_GOAL := check
 .PHONY: check fmt fmt-web vet test typecheck build build-web run dev generate migrate migrate-new clean dist installer android help
@@ -93,7 +104,7 @@ else
 	@if [ -d "$(CMD)" ]; then \
 		mkdir -p bin && \
 		go build -trimpath -tags "$(TAGS)" -ldflags "$(LDFLAGS)" -o bin/$(BIN) $(CMD) && \
-		echo "  build bin/$(BIN) ($(if $(TAGS),real,placeholder) frontends)" && \
+		echo "  build bin/$(BIN) ($(if $(FRONTEND_TAG),real,placeholder) frontends$(if $(APP_TAG),$(comma) the tablet app,))" && \
 		go build -trimpath -ldflags "$(LDFLAGS)" -o bin/relay ./cmd/relay && \
 		echo "  build bin/relay"; \
 	else \
@@ -190,7 +201,8 @@ clean:
 	@rm -rf bin dist $(foreach a,$(WEB_APPS),web/$(a)/dist)
 	@echo "  clean ok"
 
-## dist: cross-compile release binaries, with the real frontends
+## dist: cross-compile release binaries, with the real frontends, and the
+##       tablet app when a build of it is in internal/device/tabletapp/app/
 dist: build-web
 	@if [ ! -d "$(CMD)" ]; then \
 		echo "no $(CMD) yet: it arrives in Phase 01"; exit 1; \
@@ -201,9 +213,9 @@ dist: build-web
 		ext=""; [ "$$os" = "windows" ] && ext=".exe"; \
 		out="dist/$(BIN)_$(VERSION)_$${os}_$${arch}$$ext"; \
 		echo "  $$out"; \
-		GOOS=$$os GOARCH=$$arch go build -trimpath -tags frontend -ldflags "$(LDFLAGS)" -o "$$out" $(CMD); \
+		GOOS=$$os GOARCH=$$arch go build -trimpath -tags "frontend$(if $(APP_TAG),$(comma)$(APP_TAG),)" -ldflags "$(LDFLAGS)" -o "$$out" $(CMD); \
 	done
-	@echo "  dist ok ($(VERSION))"
+	@echo "  dist ok ($(VERSION)$(comma) $(if $(APP_TAG),with,without) the tablet app)"
 
 ## installer: the Windows installer, dist/mez_<version>_windows_amd64_setup.exe,
 ##            around the binary `make dist` built. Needs Inno Setup 6: pass

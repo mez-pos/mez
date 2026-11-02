@@ -12,6 +12,9 @@
 *.db-shm
 *.sqlite
 
+# The tablet app a release embeds (ADR-421): built, never committed
+/internal/device/tabletapp/app/
+
 # Node
 node_modules/
 web/*/dist/

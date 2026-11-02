@@ -10,6 +10,16 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The tablet app served by the PC** (ADR-421, Phase 18 Task 7a;
+  2026-11-02). Seen with the app's debug build put in place by hand: the
+  package, its version and a till's pairing code carrying its QR, and the
+  same server built without it saying so. **Not yet:** a release that
+  carries the app (7b; until then every build is without it and says so),
+  the Devices page offering it (7c), a tablet installing it; `make
+  check` never compiles the tagged file (7b's CI will). **Left as is:** a
+  slow download keeps its connection as long as it takes, as any page
+  does on the venue's network.
+
 - **The tablet locked to mez** (ADR-420, Phase 18 Task 6b; 2026-11-02).
   Seen on an Android 13 tablet emulator: pinned when not the device owner;
   as the device owner, Home, Recents and the shade staying in mez, a reboot

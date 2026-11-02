@@ -16670,3 +16670,71 @@ pairing code, can pair a locked tablet to it and open that one's way out with th
 Neither is worse than what anyone holding the tablet can do with its buttons (a reset from
 recovery): the lock keeps a till a till in service, it does not guard the tablet from its
 holder.
+
+## ADR-421 - The tablet app carried by the PC: in the binary under a build tag, served at the venue
+2026-11 · Status: accepted. Phase 18 Task 7 (7a, the app served; 7b, the release building and
+signing it; 7c, the Devices page).
+Context: Task 7 installs the app from the venue's own PC: no Play Store, no internet, no Google
+account (the phase's "Offline is the default"). It asked first how the package reaches the PC:
+the release builds and signs it and the Go build embeds it under a build tag, or the installer
+carries it beside the binary. Then it is served at a fixed path with its version, and the
+Devices page draws "Install the mez app" beside the pairing QR. The release signing key is the
+human's, made once and kept out of the repository (the phase).
+Decision:
+  - **In the binary, under the build tag `tabletapp`**, as the frontends are under `frontend`
+    (ADR-025): `internal/device/tabletapp/app/` holds `mez.apk` and `app.json` (its version
+    name and code), written by the build and never committed. Every platform's binary carries
+    it, so the Windows installer, the Linux binary and the Docker image have it without a step
+    of their own, and the app a PC serves is the one built with that PC's mez, which Task 8's
+    updates count on. A build without the tag (every `make check`, any clone with no Android
+    SDK) carries none and says so: in its log at start, and on the app's path and version
+    route (404, `app_not_built`, "This mez was built without the tablet app"); the Devices
+    page then draws no QR (7c).
+  - **The release builds it and signs it with the human's key** (7b), from the repository's
+    secrets, in a job before the binaries, which embed it. Never a package signed with a
+    debug key: a tablet that installed one could not take the real one without uninstalling
+    it, which costs its pairing. A release made without the key carries no app, and its notes
+    say so.
+  - **Its versions follow the tag.** The version name is mez's (`git describe`). The version
+    code is ((major × 100 + minor) × 100 + patch) × 100, plus 99 for a release and, for a
+    pre-release, n for alpha.n, 33 + n for beta.n, 66 + n for rc.n (n up to 32): v0.2.0-beta.2
+    is 20035, v0.2.0 is 20099, so every release is above the one before, as Android requires
+    of an update. A build between tags takes its last tag's code (7b).
+  - **Served at `/app/mez.apk`**, with no token, since a tablet that has never seen mez has
+    none, and at the venue only: refused through the relay, since a tablet installs on the
+    venue's network and a few megabytes a time is not the relay's work. As
+    `application/vnd.android.package-archive`, an attachment named with its version, its
+    SHA-256 the ETag, ranges served so a download broken by poor wifi resumes. Its version at
+    `GET /api/v1/app` (version, version code, size, SHA-256, path), the same way: no token, at
+    the venue only.
+  - **The pairing code says where the app is.** For a till or a kitchen display, the tablets,
+    each address the code is offered at carries the app's address there and its QR
+    (`app_url`, `app_svg`), and the code says which app the build carries (`app_version`, ""
+    for none). The Devices page draws them beside the pairing QR and says that Android will
+    ask to allow installs from the browser (7c).
+Seen (7a), 2026-11-02: the app's debug build put in place with an `app.json`, `make build`
+said "real frontends, the tablet app" and the binary grew by the package's 12.4 MB; at start
+"carrying the tablet app" with its version and code; `GET /api/v1/app` its version, code, size,
+digest and path; `GET /app/mez.apk` the same bytes, as the package type, named with its
+version, its digest the ETag, a range answered 206, the ETag sent back answered 304. A till's
+pairing code made by the owner on a back office carried `app_url` at the PC's address and its
+QR, and the code's `app_version`; a back office's code carried no app. The package taken out and
+built again: "built without the tablet app" at start, and both routes 404 `app_not_built`. A
+relayed request is refused by the gate in the API's tests; from the venue's network the relay's
+mark is taken off before the gate (ADR-307), so it cannot be tried from there.
+A review (2026-11-02) found the package copied twice at start beyond the binary's own copy, and
+`app.json` refused for a field the server did not know (a release adding one would have left the
+venue with no app and a log line): the package is now embedded as bytes and served from where it
+is, and a field not known is let be. Built with the tag against a stand-in package, the binary
+said "carrying the tablet app" and served it. No `make check` compiles the tagged file; 7b's CI
+does.
+Rejected: the installer carrying it beside the binary (Windows only: a Linux or Docker venue
+would fetch it by hand, and the PC would serve a file whose version can drift from its own);
+the internet or the Play Store (offline, no Google account); a page at `/app` before the
+download (the Devices page says what to expect, and a QR straight to the file is a tap fewer on
+the tablet); reading the version out of the package's manifest (the same build writes
+`app.json`); serving it through the relay.
+Cost: every binary on every platform grows by the package's size (7b measures it), and a venue
+that never uses a tablet carries it. The first install trusts the network it comes over, plain
+HTTP at the venue (ADR-257), as the till's pages do; after that Android takes an update only
+signed by the same key.

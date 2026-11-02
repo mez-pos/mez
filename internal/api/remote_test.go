@@ -71,6 +71,9 @@ var staysAtTheVenue = []string{
 	// A tablet asking the PC at a new address to prove it holds its pairing
 	// (ADR-417): a question asked on the venue's network, and bound to it.
 	"GET /api/v1/devices/{id}/proof",
+	// The tablet app's version (ADR-421): a tablet installs on the venue's
+	// network, and its package, which is not under /api, is refused too.
+	"GET /api/v1/app",
 	// Letting a tablet out of mez (ADR-419): a manager standing at it.
 	"GET /api/v1/devices/me/way-out",
 	"POST /api/v1/devices/me/way-out",
