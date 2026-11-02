@@ -16145,3 +16145,73 @@ Cost: an address is refused while the PC is off, and typed again once it is on. 
 not walked: the emulator cannot resolve it, and Android before 12 does not (ADR-379). Typing
 an address is the only way in until 4b; the camera is next.
 
+
+## ADR-415 - The tablet app scans the pairing code: CameraX's preview alone, read by ZXing
+2026-11 · Status: accepted. Phase 18 Task 4b. Follows ADR-414.
+Context: Task 4a made "Pair this tablet" take an address typed as the PC shows it, checked by
+`readLink()` and asked once whether mez answers. The Devices page draws the same address, with
+its code, as a QR (ADR-367); Task 4 asks for a scanner that needs no Play services (ZXing).
+Decision:
+  - **CameraX for the camera, ZXing's core for the code.** `camera-core`, `camera-camera2` and
+    `camera-lifecycle` 1.6.2, not `camera-view`, whose `PreviewView` would bring AppCompat, a
+    Fragment and CameraX's video back for one view (ADR-412). `com.google.zxing:core` 3.5.4,
+    plain Java. No Play services, no network. The release APK is 1.45 MB, against 279 KB.
+  - **"Pair this tablet" leads with Scan the code**; typing the address is the second way in, as
+    4a left it. The camera is asked for when Scan is tapped, never before. A refusal, or a tablet
+    whose camera cannot be opened (or that has none: `android.hardware.camera` is not required),
+    opens the page again with its words and the box to type in; Open Settings for a refusal.
+  - **The page over the camera.** The preview is a TextureView under the WebView, which is
+    transparent while it scans; the page (`start.html#scanning`) draws a scrim, the frame to aim
+    with, the words and Cancel, in HTML like the app's other pages. A SurfaceView was tried
+    first: its picture sits under the window, and the transparent WebView over it showed the
+    window's ground instead. Cancel and Back go back to "Pair this tablet". Every page the app
+    loads goes through one `load()`, which stops the camera unless the page is the scanning one,
+    so no path leaves it running under another page.
+  - **One camera stream: the preview, read from what it shows.** A few times a second (every
+    200 ms) a copy of the preview, 960 pixels on its longer side, is read by ZXing on a thread of
+    its own (`qrText()`, `luminance()`); the first code read stops the camera and goes through
+    4a's path as if typed: `readLink()`, the health check, the address kept, the link opened with
+    its code. A second stream for analysis (CameraX's `ImageAnalysis`, YUV) is the usual way; on
+    the emulator it stalled the camera from its first frame, while the preview alone ran. One
+    stream, the one every camera app uses, is the safer bet on a cheap tablet's camera driver,
+    for a screen used once a tablet. The copy is taken at the shape the texture draws the picture:
+    `TextureView.getBitmap` leaves out the view's transform, and a copy at the screen's shape
+    squashed the code past reading. It is not turned; a QR code reads any way up. A frame ZXing
+    trips on is skipped, never the end of the app.
+  - **Each scan is a session of its own, and ends when it should.** Cancel, Back, the app going
+    behind another (the scan stops, and Scan starts it again), a page loaded, a code read. A
+    camera that reports a critical error, or draws nothing for 8 seconds, ends it with "The
+    camera could not be opened, or showed nothing" and the box to type in. A code read late
+    from an earlier session is never told in a later one. The picture follows the tablet turned
+    while it scans. The camera is asked for once at a time (a second tap on Scan while Android
+    asks is ignored, as for the local network). The texture is let go only once the camera has
+    stopped drawing into it.
+  - **The picture laid upright (`fit()` in `Fit.kt`).** The camera turns its picture to the
+    tablet's natural way up itself when it draws into a SurfaceTexture
+    (`TransformationInfo.hasCameraTransform()`, by the sensor's rotation); the view's transform
+    makes only the rest of CameraX's `rotationDegrees`, then scales to fill the screen without
+    squashing. The first build turned by the whole of it: the code showed a quarter turn too far
+    and stretched by (4/3)².
+Seen, 2026-11-02, on an Android 13 tablet emulator against a demo venue at `10.0.2.2:7777`, its
+back camera fed a picture (`-camera-back imagefile:`) of a pairing QR drawn by the server's own
+encoder (`internal/domain/qr`, through a scratch program). A kitchen display paired by scanning:
+the code read, the address kept as `http://10.0.2.2:7777/kitchen`, the display asking for its
+station. Its data cleared: Scan, Android's camera prompt, Don't allow, the page's words and Open
+Settings; Scan again, While using the app, a QR of `https://mezpos.com/menu` read and refused as
+off the venue's network, what was read in the box; a till's QR read and paired
+(`POST /api/v1/devices/pair` 201), the till at its sign-in screen. After a review, again: the
+kitchen paired by scanning on the second try, Home during a scan back at "Pair this tablet",
+Back during a scan the same. The emulator was hard to feed: its picture camera logs a bad
+timestamp on every session's first frame, and with a second stream for analysis delivered no
+frame at all; with the preview alone it ran, though two early sessions showed nothing. It shows
+only part of the picture, stretched, so the code was placed by trial (and a code cropped by
+mistake, 29 modules of 33, cost a round). Its default camera (a test pattern) always ran; its
+virtual scene delivered nothing while the analysis stream was asked for, and was not tried
+after. The 8-second check was not seen to fire: frames flowed in every later session.
+Rejected: `camera-view`'s `PreviewView` (AppCompat back for one view); `zxing-android-embedded`
+(its own capture activity and look, on the deprecated camera API, unmaintained since 2021);
+ML Kit's scanner (Play services); a JavaScript decoder in the page with `getUserMedia` (a camera
+permission for the WebView, and a decoder in the page); `ImageAnalysis` (above).
+Cost: 1.2 MB of APK. A copy of the preview five times a second while the page scans. Seen on an
+emulator fed a picture, not through a real tablet's lens: the camera's focus, glare off the PC's
+screen, and a front camera on a stand are a real tablet's to show.

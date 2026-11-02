@@ -1,8 +1,10 @@
 package com.mezpos.meztablet
 
+import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
@@ -38,6 +40,10 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var frame: FrameLayout
     private lateinit var web: WebView
+
+    // Under the WebView: the camera's picture while "Pair this tablet" scans.
+    private lateinit var camera: FrameLayout
+    private lateinit var scanner: Scanner
     private var showing: Start? = null
     private val prefs by lazy { getSharedPreferences(PREFS, MODE_PRIVATE) }
 
@@ -50,6 +56,17 @@ class MainActivity : ComponentActivity() {
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {
             asking = false
             show(where())
+        }
+
+    // True from Scan to Android's answer, as [asking] is for the local
+    // network: a second request meanwhile is answered "no" by Android.
+    private var askingCamera = false
+
+    private val askCamera =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            askingCamera = false
+            if (showing != Start.PAIR) return@registerForActivityResult
+            if (granted) startScan() else load(AppPages.pairWithoutCamera(AppPages.CAMERA_REFUSED))
         }
 
     // The PC's address and the app's path, kept once mez has answered there
@@ -116,7 +133,14 @@ class MainActivity : ComponentActivity() {
         // service: the screen stays on while mez is in front.
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         web = newWebView()
-        frame = FrameLayout(this).apply { addView(web) }
+        camera = FrameLayout(this).apply { visibility = View.GONE }
+        frame = FrameLayout(this).apply {
+            addView(camera)
+            addView(web)
+        }
+        scanner = Scanner(this, camera, found = ::scanned, failed = {
+            load(AppPages.pairWithoutCamera(AppPages.CAMERA_NONE))
+        })
         setContentView(frame)
         keepClearOfCutoutAndKeyboard(frame)
         onBackPressedDispatcher.addCallback(this) { back() }
@@ -160,11 +184,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         probe.stop()
+        // A scan ends when the app goes behind another: Scan starts it again.
+        if (::scanner.isInitialized && scanner.isRunning) load(AppPages.page(Start.PAIR.page.orEmpty()))
         super.onStop()
     }
 
     override fun onDestroy() {
         probe.close()
+        if (::scanner.isInitialized) scanner.stop()
         // Not made if the WebView itself failed to load (one being updated).
         if (::web.isInitialized) {
             (web.parent as? ViewGroup)?.removeView(web)
@@ -198,7 +225,7 @@ class MainActivity : ComponentActivity() {
             checked(link, isMez = false)
             return
         }
-        web.loadUrl(AppPages.checking(link.pc))
+        load(AppPages.checking(link.pc))
         probe.once(health) { isMez -> runOnUiThread { checked(link, isMez) } }
     }
 
@@ -210,7 +237,7 @@ class MainActivity : ComponentActivity() {
             open(link.open)
         } else {
             showing = Start.PAIR
-            web.loadUrl(AppPages.pairRefused(Why.NO_MEZ, candidateText))
+            load(AppPages.pairRefused(Why.NO_MEZ, candidateText))
         }
     }
 
@@ -222,6 +249,13 @@ class MainActivity : ComponentActivity() {
             opened = url
             forget = true
         }
+        load(url)
+    }
+
+    // Every page the app loads comes this way: any but the scanning page
+    // stops the camera, so no path leaves it running under another page.
+    private fun load(url: String) {
+        if (url != AppPages.page(AppPages.SCANNING)) stopScan()
         web.loadUrl(url)
     }
 
@@ -237,7 +271,45 @@ class MainActivity : ComponentActivity() {
             Action.RETRY -> retry()
             Action.ADDRESS -> typed(typedOf(link).orEmpty())
             Action.PAIR_AGAIN -> pairAgain()
+            Action.SCAN -> scan()
+            Action.CANCEL_SCAN -> load(AppPages.page(Start.PAIR.page.orEmpty()))
         }
+    }
+
+    // "Scan the code": the camera, asked for first; a tablet without one, or
+    // a refusal, leaves typing, and the page says so.
+    private fun scan() {
+        when {
+            !packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY) ->
+                load(AppPages.pairWithoutCamera(AppPages.CAMERA_NONE))
+            ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
+                PackageManager.PERMISSION_GRANTED -> startScan()
+            askingCamera -> Unit
+            else -> {
+                askingCamera = true
+                askCamera.launch(Manifest.permission.CAMERA)
+            }
+        }
+    }
+
+    // The page's words and Cancel, over the camera's picture: the WebView
+    // lets it show through while it scans.
+    private fun startScan() {
+        if (scanner.isRunning || showing != Start.PAIR) return
+        web.setBackgroundColor(Color.TRANSPARENT)
+        load(AppPages.page(AppPages.SCANNING))
+        scanner.start()
+    }
+
+    private fun stopScan() {
+        if (::scanner.isInitialized) scanner.stop()
+        if (::web.isInitialized) web.setBackgroundColor(getColor(R.color.parchment))
+    }
+
+    // A code read: checked and asked as if it had been typed.
+    private fun scanned(text: String) {
+        stopScan()
+        typed(text)
     }
 
     // The address typed on "Pair this tablet": kept, and opened with its code
@@ -251,7 +323,7 @@ class MainActivity : ComponentActivity() {
                 showing = null
                 show(where())
             }
-            is Pairing.Refused -> web.loadUrl(AppPages.pairRefused(link.why, text))
+            is Pairing.Refused -> load(AppPages.pairRefused(link.why, text))
         }
     }
 
@@ -287,7 +359,7 @@ class MainActivity : ComponentActivity() {
 
     private fun standIn(page: Away) {
         away = page
-        web.loadUrl(
+        load(
             if (page.page == AppPages.UNREACHABLE) AppPages.unreachable(page.url) else AppPages.page(page.page),
         )
     }
@@ -316,6 +388,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun back() {
+        // Back from the camera is Cancel.
+        if (scanner.isRunning) {
+            load(AppPages.page(Start.PAIR.page.orEmpty()))
+            return
+        }
         val history = web.copyBackForwardList()
         val behind = (0 until history.currentIndex).map { history.getItemAtIndex(it)?.url }
         if (goesBack(history.currentItem?.url, behind, web.canGoBack())) web.goBack()
@@ -329,7 +406,7 @@ class MainActivity : ComponentActivity() {
         frame.removeView(dead)
         dead.destroy()
         web = newWebView()
-        frame.addView(web, 0)
+        frame.addView(web) // On top: the camera's layer is under it.
 
         // Behind another app, Android takes a renderer for memory as a matter
         // of course: the page comes back with the app, and does not count

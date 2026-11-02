@@ -30,7 +30,8 @@ class AppPagesTest {
     fun `every page but mez has its section in start html`() {
         // Gradle runs unit tests in the module's directory.
         val html = File("src/main/assets/start.html").readText()
-        val pages = Start.entries.mapNotNull { it.page } + AppPages.UNREACHABLE + AppPages.STOPPED + AppPages.CHECKING
+        val pages = Start.entries.mapNotNull { it.page } + AppPages.UNREACHABLE + AppPages.STOPPED + AppPages.CHECKING +
+            AppPages.SCANNING
         for (page in pages) {
             assertTrue("start.html has no <section id=\"$page\">", html.contains("<section id=\"$page\">"))
         }
@@ -125,6 +126,22 @@ class AppPagesTest {
             AppPages.ASSETS + "start.html?why=not-an-address&typed=a%26b%23c#pair",
             AppPages.pairRefused(Why.NOT_AN_ADDRESS, "a&b#c"),
         )
+    }
+
+    @Test
+    fun `the camera, from the pair page`() {
+        val pair = AppPages.page("pair")
+        assertEquals(Action.SCAN, Action.of("mez-app:scan", from = pair))
+        assertEquals(Action.CANCEL_SCAN, Action.of("mez-app:cancel-scan", from = AppPages.page(AppPages.SCANNING)))
+        assertNull("from the network", Action.of("mez-app:scan", from = mez))
+        assertEquals(
+            AppPages.ASSETS + "start.html?camera=refused#pair",
+            AppPages.pairWithoutCamera(AppPages.CAMERA_REFUSED),
+        )
+        val html = File("src/main/assets/start.html").readText()
+        for (why in listOf(AppPages.CAMERA_REFUSED, AppPages.CAMERA_NONE)) {
+            assertTrue("start.html says nothing for camera=$why", html.contains("data-camera=\"$why\""))
+        }
     }
 
     @Test

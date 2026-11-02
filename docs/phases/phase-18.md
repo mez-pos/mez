@@ -109,7 +109,8 @@ Words in `docs/hardware.md`, `docs/deploy.md` and `docs/releasing.md`.
   (`kitchen/use-chime.ts`); if `AudioContext` still starts suspended, the
   fix is found and written in an ADR.
 
-- **Task 4 - Paired by scanning.** First run is the app's page "Scan the
+- [x] **Task 4 - Paired by scanning.** Done 2026-11-02 in two parts (ADR-414,
+  ADR-415), seen on emulators; a real tablet's camera is owed. First run is the app's page "Scan the
   pairing code". The camera reads the QR the Devices page draws (ADR-367:
   `http://<address>:<port>/<path>#code=XXXX-XXXX`) with a scanner that needs
   no Play services (ZXing). The app accepts only that shape: http or https,
@@ -138,7 +139,9 @@ Words in `docs/hardware.md`, `docs/deploy.md` and `docs/releasing.md`.
     addresses, the refusals' words, and the kept address opened on the
     next start.
 
-  - [ ] **Task 4b - Scanned.** The camera on the "Pair this tablet" page:
+  - [x] **Task 4b - Scanned.** Done 2026-11-02 (ADR-415), seen on an Android
+    13 emulator fed the QR as a picture; not yet through a real tablet's
+    camera. The camera on the "Pair this tablet" page:
     CameraX and ZXing's core, no Play services; the camera permission asked
     with words, a refusal leaving typing; the app's page over the preview
     (its words and Cancel in HTML, the preview native); a scanned link

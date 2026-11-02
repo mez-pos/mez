@@ -134,7 +134,14 @@ tasks.withType<Test>().configureEach {
 
 dependencies {
     implementation(libs.androidx.activity)
+    // The camera for "Pair this tablet" (ADR-415): CameraX without its
+    // camera-view, which would bring AppCompat back (ADR-412) for one view.
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.webkit)
+    // QR codes read in plain Java: no Play services.
+    implementation(libs.zxing.core)
     testImplementation(libs.junit)
 }

@@ -20,6 +20,13 @@ object AppPages {
     /** Asking an address whether mez answers there, before keeping it. */
     const val CHECKING = "checking"
 
+    /** The camera's picture under it: the page's words and Cancel over it. */
+    const val SCANNING = "scanning"
+
+    /** "Pair this tablet" when the camera is refused, or there is none. */
+    const val CAMERA_REFUSED = "refused"
+    const val CAMERA_NONE = "none"
+
     /** The address [start] opens: the PC's own, [mez], or the app's page for it. */
     fun address(start: Start, mez: String): String =
         start.page?.let(::page) ?: mez
@@ -46,6 +53,9 @@ object AppPages {
     fun pairRefused(why: Why, typed: String): String =
         "${ASSETS}start.html?why=${why.id}&typed=${URLEncoder.encode(typed, "UTF-8")}#${Start.PAIR.page}"
 
+    /** "Pair this tablet", saying why the camera cannot scan: [why], [CAMERA_REFUSED] or [CAMERA_NONE]. */
+    fun pairWithoutCamera(why: String): String = "${ASSETS}start.html?camera=$why#${Start.PAIR.page}"
+
     /** The app's page [id], one `<section id>` of `start.html`. */
     fun page(id: String): String = "${ASSETS}start.html#$id"
 
@@ -69,6 +79,12 @@ enum class Action(val link: String, val takesQuery: Boolean = false) {
 
     /** Forget the PC's address and pair again, from "Can't reach the mez PC". */
     PAIR_AGAIN("mez-app:pair-again"),
+
+    /** The camera, from "Pair this tablet". */
+    SCAN("mez-app:scan"),
+
+    /** Back to "Pair this tablet" from the camera. */
+    CANCEL_SCAN("mez-app:cancel-scan"),
     ;
 
     companion object {

@@ -10,6 +10,20 @@
 > struck from a "not seen by eye" list when someone has seen it in a browser, and
 > not before: the walk of Task 17h2 (ADR-199) struck what it saw, and no more.
 
+- **The tablet app's scanner** (ADR-415, Phase 18 Task 4b; 2026-11-02).
+  Seen on an Android 13 tablet emulator whose back camera was fed a QR
+  picture drawn by mez's own encoder: a kitchen display and a till paired
+  by scanning, the camera refused (the words, Open Settings), a QR that is
+  not mez's refused with the network words. **Not seen:** a real tablet's
+  camera (focus, glare off the PC's screen, a front camera on a stand); the
+  Devices page's own QR on a screen (the emulator cannot reach the PC's LAN
+  address here, so the picture carried `10.0.2.2`); Android 17 since 4a;
+  the tablet turned while it scans; a camera that stops drawing (the
+  8-second check did not fire on the emulator, whose frames flowed).
+  **Left as is:** the emulator's picture camera shows part of the
+  picture, stretched, and stalls with a second stream: the code is placed
+  in the picture by trial (`poster.sh` in the session's scratch, ADR-415).
+
 - **The tablet app's address** (ADR-414, Phase 18 Task 4a; 2026-11-02).
   Seen on an Android 13 tablet emulator: "Pair this tablet" on first run,
   every refusal's words, an address refused while mez was stopped and at a

@@ -6,6 +6,13 @@
          that targets SDK 37 reaches it only with this, asked on first run.
          Older Androids do not have it and let INTERNET cover the LAN. -->
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+    <!-- "Pair this tablet" scans the PC's QR code (ADR-415), asked for when
+         Scan is tapped. A tablet without a camera installs the app all the
+         same, and types the address. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
 
     <!-- No backup: the WebView's storage holds the device's pairing token
          (ADR-338), and a copy restored onto another tablet would be a second

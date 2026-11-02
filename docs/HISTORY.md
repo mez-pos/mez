@@ -8,6 +8,20 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 18, Task 4a: the address, checked, kept and typed**, 2026-11-02
+(ADR-414). Task 4 split in two, the camera apart (4b). First run is the
+app's page "Pair this tablet": the address typed as the PC shows it,
+checked by `readLink()` (http or https, a private IPv4 address or
+`mez.local`, the till or `/kitchen`, an optional `#code=`), then asked
+once whether mez answers there before it is kept (a router or a printer
+answers too, and a kept address holds the WebView). The app keeps the
+address and path, never the code, which it opens once. On Android 17 the
+local network page comes after the address. "Pair again" on "Can't reach
+the mez PC" asks, then forgets the address. A debug build starts from no
+address unless `-PmezUrl` seeds one, once. Seen on Android 13 (a till and
+a kitchen display paired, every refusal) and Android 17 (the code across
+the prompt).
+
 **Phase 18, Task 3: a tablet that stays a till**, 2026-11-02 (ADR-413).
 Full screen (the bars back for a moment by a swipe), the screen kept on,
 Back between the PC's pages only (never out of the app, never onto the

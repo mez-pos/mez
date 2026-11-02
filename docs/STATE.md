@@ -11,7 +11,7 @@
 `docs/phases/phase-18.md`, opened 2026-11-01 (ADR-409): a native Kotlin
 WebView shell in `android-app/` around the screens the PC serves, so a
 tablet is full screen, awake, back in mez after a reboot, paired by
-scanning and not unpaired by a new address. Tasks 1 to 3 and 4a are done.
+scanning and not unpaired by a new address. Tasks 1 to 4 are done.
 `make check` never builds the app; `make android` does (a JDK and the
 Android SDK).
 
@@ -30,33 +30,32 @@ list below.
 
 ## Last completed task
 
-**Phase 18, Task 4a: the address, checked, kept and typed**, 2026-11-02
-(ADR-414). Task 4 split in two, the camera apart (4b). First run is the
-app's page "Pair this tablet": the address typed as the PC shows it,
-checked by `readLink()` (http or https, a private IPv4 address or
-`mez.local`, the till or `/kitchen`, an optional `#code=`), then asked
-once whether mez answers there before it is kept (a router or a printer
-answers too, and a kept address holds the WebView). The app keeps the
-address and path, never the code, which it opens once. On Android 17 the
-local network page comes after the address. "Pair again" on "Can't reach
-the mez PC" asks, then forgets the address. A debug build starts from no
-address unless `-PmezUrl` seeds one, once. Seen on Android 13 (a till and
-a kitchen display paired, every refusal) and Android 17 (the code across
-the prompt).
+**Phase 18, Task 4b: scanned**, 2026-11-02 (ADR-415). "Pair this
+tablet" leads with Scan the code: CameraX's preview (core, camera2,
+lifecycle; not camera-view, which brings AppCompat) on a TextureView under
+the transparent WebView, the page's words, frame and Cancel over it, and a
+copy of the preview read by ZXing's core five times a second. One camera
+stream, no ImageAnalysis: on the emulator a second stream stalled the
+camera. The code read goes through 4a's `readLink()` and health check.
+The camera asked for at Scan; a refusal or no camera leaves typing, with
+words. Release APK 1.45 MB. Seen on an Android 13 emulator fed a QR
+picture from mez's own encoder: a kitchen display and a till paired by
+scanning, the camera refused, a QR that is not mez's refused.
 
 ## Next task
 
-**Here: Phase 18 Task 4b, scanned**: the camera on "Pair this tablet"
-(CameraX and ZXing's core, no Play services), the camera permission with
-words, the app's page over the preview, a scanned link through 4a's
-`readLink()` and its health check. It needs a JDK and the Android SDK,
-never `make check`. The emulator's camera can be fed the QR as a picture:
-`emulator -avd mez_tablet_33 -camera-back imagefile:<png>` (a PNG of the
-Devices page's QR, from `POST /api/v1/devices/codes`'s `svg`). **On this
-PC the Android 17 image aborts in its graphics driver** (ADR-412) and its
-keyboard did not take the emulator's typing: walk on `mez_tablet_33`.
-`adb` trusts the key under `D:\AndroidSDK\Android\.android`. The
-WebView takes the DevTools protocol through `adb forward tcp:9222
+**Here: Phase 18 Task 5, the PC found again**: ADR first. When the kept
+address stops answering, the app finds the PC (`mez.local` by a one-shot
+multicast DNS query with a `MulticastLock`, or a DNS-SD service added to
+`internal/device/announce`) and goes back to it, the pairing kept across
+the new origin (the ADR chooses how: the token handed over before the
+page's scripts run, a bridge the web app asks, or one origin that never
+changes). Tests on both sides. It needs a JDK and the Android SDK for the
+app's side. Walk on the AVD `mez_tablet_33` (the Android 17 image aborts
+on this PC, ADR-412); the emulator's own network is NAT, so a "new
+address" is best walked by the PC's port or by a real tablet on the LAN.
+`adb` trusts the key under `D:\AndroidSDK\Android\.android`; the WebView
+takes the DevTools protocol through `adb forward tcp:9222
 localabstract:webview_devtools_remote_<pid>` in a debug build.
 
 **Out of phase, before the venue's install: the re-run's other two P1s**

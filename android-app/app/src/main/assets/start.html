@@ -41,6 +41,8 @@
     --hairline-strong: #DCCDB4;
     --muted: #6E6359;
     --danger: #A8321C;
+    --well: #F2EADB;
+    --scrim: rgba(36, 26, 22, .72);
     --on-fill: #FFFDF8;
     --focus-ring: #B9522F;
     --shadow-card: 0 2px 6px rgba(91, 31, 31, .04), 0 12px 26px rgba(91, 31, 31, .06);
@@ -151,6 +153,47 @@
   .confirm { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--hairline); }
   .confirm .button.secondary { margin-left: 0; }
   .confirm button.link { margin-left: 16px; }
+  form .button.secondary { margin-left: 0; }
+
+  p.notice { margin: 12px 0 0; padding: 12px 16px; border-radius: 14px; background: var(--well); }
+  p.notice a { color: inherit; font-weight: 700; }
+
+  /* Scanning: the camera's picture is under the page, which lets it show
+     through and draws only the words, the frame to aim with, and Cancel. */
+  html.scanning, html.scanning body { background: transparent; }
+  html.scanning body { display: block; padding: 0; }
+  #scanning:target {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    max-width: none;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .viewfinder {
+    width: min(56vh, 56vw);
+    aspect-ratio: 1;
+    border: 3px solid var(--on-fill);
+    border-radius: 24px;
+    box-shadow: 0 0 0 100vmax var(--scrim);
+  }
+  .scan-words {
+    position: absolute;
+    top: 32px;
+    left: 50%;
+    width: min(36rem, calc(100% - 48px));
+    transform: translateX(-50%);
+    color: var(--on-fill);
+    text-align: center;
+  }
+  .scan-words h1 { color: var(--on-fill); }
+  .scan-cancel { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); }
+  .scan-cancel .button.secondary { margin: 0; }
 </style>
 </head>
 <body>
@@ -224,16 +267,24 @@
   <img src="brand/mez-mark.svg" alt="">
   <h1>Pair this tablet</h1>
   <p>On the mez PC, open <strong>Devices</strong> and choose <strong>Pair a
-    device</strong>, for a till or a kitchen display. It shows an address
-    to open and a code.</p>
+    device</strong>, for a till or a kitchen display. It shows a code to
+    scan.</p>
+  <a class="button" href="mez-app:scan">Scan the code</a>
+  <p class="notice" data-camera="refused" hidden>mez can't use the camera
+    without the permission. Type the address instead, or allow the camera in
+    Settings: <strong>Permissions</strong>, then <strong>Camera</strong>.
+    <a href="mez-app:settings">Open Settings</a></p>
+  <p class="notice" data-camera="none" hidden>The camera could not be opened,
+    or showed nothing. Scan again, or type the address instead.</p>
   <form id="address-form" novalidate>
-    <label for="address">The address the PC shows</label>
+    <label for="address">Or type the address the PC shows</label>
     <input id="address" type="text" inputmode="url" autocomplete="off"
       autocapitalize="off" autocorrect="off" spellcheck="false"
       maxlength="200" placeholder="192.168.1.20:7777" aria-describedby="why">
     <div id="why" aria-live="polite">
       <p class="refusal" data-why="not-an-address" hidden>That isn't an address
-        mez can open. Type it as the PC shows it, such as 192.168.1.20:7777.</p>
+        mez can open. Scan the code on the PC's Devices page, or type the
+        address it shows, such as 192.168.1.20:7777.</p>
       <p class="refusal" data-why="not-on-the-network" hidden>That address isn't
         on the venue's network. The PC's address starts with 192.168, 10 or
         172.16 to 172.31, or is mez.local.</p>
@@ -241,17 +292,30 @@
         address. On a tablet, mez opens the till or the kitchen display: pair
         one of those from the PC.</p>
       <p class="refusal" data-why="not-an-app" hidden>That address isn't the
-        till's or the kitchen display's. Type it as the PC shows it for the
-        device you are pairing.</p>
+        till's or the kitchen display's. Scan or type the one the PC shows for
+        the device you are pairing.</p>
       <p class="refusal" data-why="not-a-code" hidden>What follows the # isn't a
         pairing code. Leave it off, and type the code on the next screen.</p>
       <p class="refusal" data-why="no-mez" hidden>Nothing at that address
         answers as mez. Check it against the PC's Devices page, that mez is
         running on the PC, and that this tablet is on the venue's wifi.</p>
     </div>
-    <button class="button" type="submit">Open</button>
+    <button class="button secondary" type="submit">Open</button>
   </form>
-  <p class="aside">Then type the code on the next screen.</p>
+  <p class="aside">An address typed without its code goes to a screen that
+    asks for the code.</p>
+</section>
+
+<section id="scanning">
+  <div class="viewfinder"></div>
+  <div class="scan-words">
+    <h1>Scan the pairing code</h1>
+    <p>Hold the tablet so the code on the PC's <strong>Devices</strong> page
+      fills the frame.</p>
+  </div>
+  <div class="scan-cancel">
+    <a class="button secondary" href="mez-app:cancel-scan">Cancel</a>
+  </div>
 </section>
 
 <script>
@@ -270,6 +334,15 @@
   field.value = params.get("typed") ?? "";
   for (const el of document.querySelectorAll("[data-why]")) el.hidden = el.dataset.why !== why;
   if (why) field.setAttribute("aria-invalid", "true");
+
+  // Why the camera cannot scan, from ?camera=.
+  const camera = params.get("camera");
+  for (const el of document.querySelectorAll("[data-camera]")) el.hidden = el.dataset.camera !== camera;
+
+  // The camera's picture shows through the page while it scans.
+  const scanning = () => document.documentElement.classList.toggle("scanning", location.hash === "#scanning");
+  scanning();
+  window.addEventListener("hashchange", scanning);
   document.getElementById("address-form").addEventListener("submit", (event) => {
     event.preventDefault();
     location.href = "mez-app:address?typed=" + encodeURIComponent(field.value);
