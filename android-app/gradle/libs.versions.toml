@@ -2,7 +2,7 @@
 agp = "9.3.3"
 activity = "1.13.0"
 camerax = "1.6.2"
-coreKtx = "1.19.0"
+coreKtx = "1.19.1"
 junit = "4.13.2"
 webkit = "1.18.0"
 zxing = "3.5.4"
