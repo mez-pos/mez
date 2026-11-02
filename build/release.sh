@@ -44,6 +44,20 @@ checksums() {
 	echo "  checksums $dir/$out"
 }
 
+# tablet_app is what the notes say of the tablet app, from TABLET_APP (the
+# release workflow's yes or no; ADR-421). Unset, as on a developer's run,
+# nothing.
+tablet_app() {
+	case "${TABLET_APP:-}" in
+	yes)
+		printf '\n%s\n' "**The mez app for Android tablets** comes with mez, in every download above and the Docker image: a tablet on the venue's wifi gets it from the venue's PC, at the PC's address with \`/app/mez.apk\` on the end (\`http://192.168.1.45:7777/app/mez.apk\`)."
+		;;
+	no)
+		printf '\n%s\n' "**This release carries no tablet app.** It was made without the app's signing key; tablets use mez in their browser, as before."
+		;;
+	esac
+}
+
 notes() {
 	v=${1:-$(version)}
 	# The tag before this one, if there is one: what is new is what came since.
@@ -68,6 +82,7 @@ notes() {
 | macOS, Apple silicon | \`mez_${v}_darwin_arm64\` |
 
 [docs/deploy.md](https://github.com/mez-pos/mez/blob/${v}/docs/deploy.md) says what to do with each.
+$(tablet_app)
 
 **Windows will warn you about the installer.** It is not signed, so
 SmartScreen says "Windows protected your PC". Choose **More info**, then

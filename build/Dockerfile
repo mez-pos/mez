@@ -39,8 +39,13 @@ ARG BUILD_DATE=unknown
 # and Go builds for the machine it is on, as it did before.
 ARG TARGETOS
 ARG TARGETARCH
-RUN CGO_ENABLED=0 GOOS=${TARGETOS:-$(go env GOOS)} GOARCH=${TARGETARCH:-$(go env GOARCH)} \
-    go build -trimpath -tags frontend \
+# The tablet app is carried when the release put it in place (ADR-421).
+RUN tags=frontend; \
+    if [ -f internal/device/tabletapp/app/mez.apk ] && [ -f internal/device/tabletapp/app/app.json ]; then \
+      tags=frontend,tabletapp; \
+    fi; \
+    CGO_ENABLED=0 GOOS=${TARGETOS:-$(go env GOOS)} GOARCH=${TARGETARCH:-$(go env GOARCH)} \
+    go build -trimpath -tags "$tags" \
       -ldflags "-s -w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.buildDate=${BUILD_DATE}" \
       -o /out/mez ./cmd/mez \
  && mkdir -p /out/data /out/backup

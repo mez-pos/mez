@@ -246,6 +246,44 @@ android:
 		assembleDebug testDebugUnitTest lintDebug
 	@echo "  android ok: android-app/app/build/outputs/apk/debug/app-debug.apk"
 
+## android-release: the tablet app's release build (ADR-421), signed with
+##          the key the environment names (MEZ_ANDROID_KEYSTORE, its full
+##          path; MEZ_ANDROID_KEYSTORE_PASSWORD, MEZ_ANDROID_KEY_ALIAS,
+##          MEZ_ANDROID_KEY_PASSWORD; docs/releasing.md), its version
+##          git describe's and its code the build number (ADR-410), put
+##          with its app.json in internal/device/tabletapp/app/ for make
+##          build and make dist to embed. Refuses with no key: never a
+##          package signed otherwise. With MEZ_ANDROID_KEY_SHA256, the
+##          key's fingerprint, refuses a package another key signed.
+APP_KEY := MEZ_ANDROID_KEYSTORE MEZ_ANDROID_KEYSTORE_PASSWORD MEZ_ANDROID_KEY_ALIAS MEZ_ANDROID_KEY_PASSWORD
+android-release:
+	@for v in $(APP_KEY); do \
+		eval "val=\$${$$v:-}"; \
+		[ -n "$$val" ] || { echo "no $$v: the release key is named by the environment (docs/releasing.md)"; exit 1; }; \
+	done
+	@# A full path: Gradle reads a relative one from android-app/app.
+	@case "$$MEZ_ANDROID_KEYSTORE" in /*|[A-Za-z]:*) ;; *) echo "MEZ_ANDROID_KEYSTORE: give the keystore's full path"; exit 1;; esac
+	@[ -f "$$MEZ_ANDROID_KEYSTORE" ] || { echo "no keystore at MEZ_ANDROID_KEYSTORE"; exit 1; }
+	@# The build number counts every commit: a shallow clone has too few.
+	@[ "$$(git rev-parse --is-shallow-repository)" = false ] || { echo "a shallow clone: its build number is wrong (git fetch --unshallow)"; exit 1; }
+	@# The old pair goes first: a build that fails leaves no app, never a
+	@# stale package beside a new app.json.
+	@rm -f $(APP_DIR)/mez.apk $(APP_DIR)/app.json $(APP_DIR)/mez.apk.new $(APP_DIR)/app.json.new
+	@code=$$(git rev-list --count HEAD) && [ "$$code" -gt 0 ] && \
+	(cd android-app && ./gradlew --console=plain '-PmezVersion=$(VERSION)' "-PmezVersionCode=$$code" assembleRelease) && \
+	mkdir -p $(APP_DIR) && \
+	cp android-app/app/build/outputs/apk/release/app-release.apk $(APP_DIR)/mez.apk.new && \
+	if [ -n "$${MEZ_ANDROID_KEY_SHA256:-}" ]; then \
+		tools=$$(ls -d "$${ANDROID_HOME:?ANDROID_HOME names the Android SDK}"/build-tools/*/ | sort -V | tail -1); \
+		signer="$${tools}apksigner"; [ -f "$$signer" ] || signer="$${tools}apksigner.bat"; \
+		got=$$("$$signer" verify --print-certs $(APP_DIR)/mez.apk.new | tr -d '\r' | sed -n 's/^Signer #1 certificate SHA-256 digest: //p'); \
+		want=$$(printf '%s' "$$MEZ_ANDROID_KEY_SHA256" | tr -d ': ' | tr 'A-F' 'a-f'); \
+		[ -n "$$got" ] && [ "$$got" = "$$want" ] || { rm -f $(APP_DIR)/mez.apk.new; echo "signed by $${got:-no key apksigner could read}, not the tablets' key $$want"; exit 1; }; \
+	fi && \
+	printf '{"version":"%s","version_code":%s}\n' "$(VERSION)" "$$code" > $(APP_DIR)/app.json.new && \
+	mv $(APP_DIR)/mez.apk.new $(APP_DIR)/mez.apk && mv $(APP_DIR)/app.json.new $(APP_DIR)/app.json && \
+	echo "  android-release ok: $(APP_DIR)/mez.apk, $(VERSION), code $$code"
+
 ## help: list targets
 help:
 	@grep -E '^## ' $(MAKEFILE_LIST) | sed 's/^## /  /'

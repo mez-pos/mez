@@ -31,6 +31,34 @@ require(mezMdns.isEmpty() || Regex("""^\d{1,3}(\.\d{1,3}){3}:\d{1,5}$""").matche
     "mezMdns \"$mezMdns\": want an IPv4 address and a port, as 10.0.2.2:5354"
 }
 
+// The version (ADR-410): `make android-release` passes mez's version as git
+// describe writes it, and the build number, the commit count of main, as
+// Android's code, so a tablet's app and its PC are named by the same tag.
+// Without them a build is "dev", code 1.
+val mezVersion: String = providers.gradleProperty("mezVersion").getOrElse("dev")
+require(Regex("""^[0-9A-Za-z][0-9A-Za-z.+-]{0,63}$""").matches(mezVersion)) {
+    "mezVersion \"$mezVersion\": want a version as git describe writes it"
+}
+val mezVersionCode: Int = providers.gradleProperty("mezVersionCode").getOrElse("1").let { raw ->
+    requireNotNull(raw.toIntOrNull()?.takeIf { it in 1..2_100_000_000 }) {
+        "mezVersionCode \"$raw\": want a whole number from 1 to 2100000000"
+    }
+}
+
+// The release key, named by the environment and never kept in the
+// repository (ADR-421): the keystore's path, its password, the key's alias
+// and the key's password. Without all four a release build is not signed,
+// and `make android-release` refuses to make one: a tablet that installed a
+// package signed with any other key could not take the real one without
+// uninstalling it, which costs its pairing.
+val releaseKey: Map<String, String> = listOf(
+    "MEZ_ANDROID_KEYSTORE",
+    "MEZ_ANDROID_KEYSTORE_PASSWORD",
+    "MEZ_ANDROID_KEY_ALIAS",
+    "MEZ_ANDROID_KEY_PASSWORD",
+).associateWith { providers.environmentVariable(it).getOrElse("") }
+val releaseSigned = releaseKey.values.all { it.isNotEmpty() }
+
 android {
     namespace = "com.mezpos.meztablet"
     compileSdk {
@@ -41,8 +69,8 @@ android {
         applicationId = "com.mezpos.meztablet"
         minSdk = 29
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = mezVersionCode
+        versionName = mezVersion
 
         // A release build starts from no address: "Pair this tablet".
         buildConfigField("String", "MEZ_URL", "\"\"")
@@ -54,6 +82,17 @@ android {
         buildConfig = true
     }
 
+    signingConfigs {
+        if (releaseSigned) {
+            create("release") {
+                storeFile = file(releaseKey.getValue("MEZ_ANDROID_KEYSTORE"))
+                storePassword = releaseKey.getValue("MEZ_ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = releaseKey.getValue("MEZ_ANDROID_KEY_ALIAS")
+                keyPassword = releaseKey.getValue("MEZ_ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             buildConfigField("String", "MEZ_URL", "\"$mezUrl\"")
@@ -62,6 +101,9 @@ android {
         release {
             optimization {
                 enable = true
+            }
+            if (releaseSigned) {
+                signingConfig = signingConfigs.getByName("release")
             }
         }
     }

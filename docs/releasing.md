@@ -26,6 +26,55 @@ nothing is "latest" until you have read the draft and published it.
    would mean nothing to an owner, that is fixed in the draft afterwards,
    by hand, not by rewriting history.
 
+## The tablet app's key
+
+Made once, by you, and never put in the repository (ADR-421). Every
+tablet that installs the app trusts this key from then on: lose it, and
+each one must uninstall the app and pair again; let it out, and someone
+else can make an "update" a tablet would take.
+
+```sh
+keytool -genkeypair -keystore mez-release.jks -storetype PKCS12 \
+  -alias mez -keyalg RSA -keysize 4096 -validity 10000 \
+  -dname "CN=mez, O=mez-pos"
+```
+
+`keytool` (in any JDK) asks for a password, which a PKCS12 keystore uses
+for the key as well. Back up `mez-release.jks` and its password, apart,
+where the venue's backups go. Then, in the repository's **Settings**,
+**Secrets and variables**, **Actions**, add four repository secrets:
+
+| Secret | What |
+|---|---|
+| `MEZ_ANDROID_KEYSTORE_BASE64` | The keystore as base64: `base64 -w0 mez-release.jks`, or on Windows `[Convert]::ToBase64String([IO.File]::ReadAllBytes("mez-release.jks"))` |
+| `MEZ_ANDROID_KEYSTORE_PASSWORD` | Its password |
+| `MEZ_ANDROID_KEY_ALIAS` | `mez` |
+| `MEZ_ANDROID_KEY_PASSWORD` | The key's password: the keystore's, for PKCS12 |
+
+And one repository **variable** (the same page, **Variables**; it is not a
+secret), `MEZ_ANDROID_KEY_SHA256`: the key's fingerprint, the `SHA256:`
+line of `keytool -list -v -keystore mez-release.jks -alias mez`. The
+release checks the package's signer against it and stops if they differ:
+a wrong keystore in the secrets would otherwise make an app that no tablet
+already holding the real one can update to. A key with no fingerprint
+named stops the release too.
+
+Without `MEZ_ANDROID_KEYSTORE_BASE64` a release is made without the app,
+the run shows a warning, and the notes say "This release carries no
+tablet app". To build it signed on your own PC: the same four names as
+environment variables, `MEZ_ANDROID_KEYSTORE` the keystore's full path
+in place of the base64, `MEZ_ANDROID_KEY_SHA256` if you want the same
+check, then `make android-release`, and `make build` or `make dist` carry
+what it made. Gradle keeps the passwords, encrypted, in its configuration
+cache under `android-app/.gradle`. The app's version code is the build
+number, the commit count of `main` (ADR-410), so a release is tagged on
+`main` and from a full clone: `make android-release` refuses a shallow
+one. Never a package signed with any other
+key: a tablet that installed one could not take the real one without
+uninstalling it. Before Google's developer verification reaches India
+(2027 at the earliest), register as a developer ($25), naming the app's
+id, `com.mezpos.meztablet`, and this key.
+
 ## The tag
 
 ```sh
@@ -67,9 +116,10 @@ The rules (ADR-410):
 | Job | Makes |
 |---|---|
 | make check | Nothing. It runs `make build-web` and `make check`, and stops the release if either fails. |
-| binaries | `make dist`: Windows, Linux amd64 and arm64, macOS arm64 |
+| tablet app | `make android-release`: the Android app, signed with the key above, for the binaries and the image to carry (ADR-421). Nothing without the key. |
+| binaries | `make dist`: Windows, Linux amd64 and arm64, macOS arm64, each carrying the tablet app when there is one |
 | Windows installer | `mez_<version>_windows_amd64_setup.exe`, on a Windows runner with Inno Setup |
-| Docker image | `ghcr.io/mez-pos/mez:<version>` for amd64 and arm64. Pushed at once. |
+| Docker image | `ghcr.io/mez-pos/mez:<version>` for amd64 and arm64, carrying the tablet app when there is one. Pushed at once. |
 | draft release | The files above, `mez.service`, `docker-compose.yml`, `mez_<version>_checksums.txt`, and the notes |
 
 The image is the one thing that is public before you publish: it is pushed
@@ -117,3 +167,10 @@ workflow through `actionlint`. **The workflow itself has never run**: no
 tag has been pushed, so the Windows runner's Inno Setup, the push to
 `ghcr.io` and the making of the draft are as written and not as seen. Expect
 the first release to need a second try.
+
+On 2026-11-02 (Phase 18 Task 7b): `make android-release` with a throwaway
+key on the developer's PC, the package checked with `apksigner` and
+`aapt2`, the fingerprint check stopping another key's package, and `make
+dist` carrying it. The workflow's tablet app job, the
+secrets and the image carrying the app are as written, not as seen, and
+`actionlint` was not run on them.

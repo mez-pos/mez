@@ -34,6 +34,18 @@ jobs:
 
       - run: make check
 
+      # The tablet app's embed (ADR-421) compiles only with a package in
+      # place, and no `make check` has one: a stand-in, never a real app.
+      - name: Build with the tablet app's tag
+        run: |
+          app=internal/device/tabletapp/app
+          mkdir -p "$app"
+          printf 'PK\003\004stand-in' > "$app/mez.apk"
+          printf '{"version":"v0.0.0","version_code":1}' > "$app/app.json"
+          go vet -tags tabletapp ./internal/device/tabletapp/ ./cmd/mez/
+          go test -tags tabletapp ./internal/device/tabletapp/
+          rm -r "$app"
+
   web:
     name: make build-web
     runs-on: ubuntu-24.04
@@ -72,3 +84,9 @@ jobs:
       # the Android SDK. A separate job so `make check` never needs Java or
       # Gradle (ADR-409).
       - run: make android
+
+      # The release build too, shrunk by R8 as a release's is, and unsigned:
+      # the key is the release workflow's alone (ADR-421).
+      - name: Release build, unsigned
+        working-directory: android-app
+        run: ./gradlew --console=plain assembleRelease

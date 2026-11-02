@@ -13,10 +13,14 @@
 - **The tablet app served by the PC** (ADR-421, Phase 18 Task 7a;
   2026-11-02). Seen with the app's debug build put in place by hand: the
   package, its version and a till's pairing code carrying its QR, and the
-  same server built without it saying so. **Not yet:** a release that
-  carries the app (7b; until then every build is without it and says so),
-  the Devices page offering it (7c), a tablet installing it; `make
-  check` never compiles the tagged file (7b's CI will). **Left as is:** a
+  same server built without it saying so. 7b (2026-11-02): the release
+  build signed with a throwaway key, carried by `make dist` and served,
+  installed on the emulator and paired. **Not yet:** the release workflow
+  run (no key, no tag since); the Devices page offering it (7c); a tablet
+  installing it from the PC. **Left as is:** a tablet that ever had a
+  debug build (a developer's) must uninstall it, and pair again, to take a
+  release: Android refuses the other key's package; a release made before
+  the human's key exists carries no app, and says so in its notes. **Left as is:** a
   slow download keeps its connection as long as it takes, as any page
   does on the venue's network.
 

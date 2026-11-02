@@ -253,6 +253,7 @@ class MainActivity : ComponentActivity() {
             }
             askVenue()
             noteHeld()
+            engageIfPaired()
             lockIfDue()
         }
         override fun gone(view: WebView, crashed: Boolean) = this@MainActivity.gone(view, crashed)
@@ -314,6 +315,9 @@ class MainActivity : ComponentActivity() {
         inFront = true
         hideSystemBars()
         if (!asking) show(where())
+        // A pairing finished with no page after it engages here, at the
+        // latest, as does a kiosk made again after a release.
+        engageIfPaired()
         lockIfDue()
     }
 
@@ -947,20 +951,35 @@ class MainActivity : ComponentActivity() {
         lockIfDue()
     }
 
-    // Locks the tablet to mez when it is due (ADR-420): the till has shown
-    // once on this tablet, and from then on on every page, while mez is in
-    // front. As the device owner, the kiosk's rules are set each time.
-    // Called from onResume and when the PC's page shows; Android refuses a
-    // lock asked from behind another app, which is let go, and asked again
-    // at the next resume.
+    // The lock engages once the till has shown here paired (ADR-420): the
+    // PC's page holding this tablet's pairing, and not the pairing screen
+    // before it, where a code is still to be typed. Kept, and from then on
+    // lockIfDue holds it.
+    private fun engageIfPaired() {
+        if (prefs.getBoolean(LOCKED, false) || prefs.getBoolean(RELEASED, false)) return
+        val here = pc
+        if (here.isEmpty()) return
+        web.evaluateJavascript(HAS_PAIRING) { has ->
+            if (has != "true" || pc != here || showing != Start.MEZ || isDestroyed) return@evaluateJavascript
+            if (prefs.getBoolean(RELEASED, false)) return@evaluateJavascript
+            prefs.edit { putBoolean(LOCKED, true) }
+            lockIfDue()
+        }
+    }
+
+    // Locks the tablet to mez when it is due (ADR-420): engaged, and from
+    // then on on every page, while mez is in front. As the device owner, the
+    // kiosk's rules are set once a start. Called from onResume and when the
+    // PC's page shows; Android refuses a lock asked from behind another app,
+    // which is let go, and asked again at the next resume.
     private fun lockIfDue() {
         if (!inFront || isFinishing || isDestroyed) return
         val kiosk = owner
-        // Made the device owner again after a release: a kiosk again.
-        if (kiosk && prefs.getBoolean(RELEASED, false)) prefs.edit { remove(RELEASED) }
-        val released = prefs.getBoolean(RELEASED, false)
-        if (showing == Start.MEZ && pc.isNotEmpty() && !released && !prefs.getBoolean(LOCKED, false)) {
-            prefs.edit { putBoolean(LOCKED, true) }
+        // Made the device owner again after a release: a kiosk again, once
+        // the page holds its pairing.
+        if (kiosk && prefs.getBoolean(RELEASED, false)) {
+            prefs.edit { remove(RELEASED) }
+            engageIfPaired()
         }
         val engaged = prefs.getBoolean(LOCKED, false)
         if (kiosk && engaged) holdAsKiosk()

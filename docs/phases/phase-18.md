@@ -286,10 +286,13 @@ Words in `docs/hardware.md`, `docs/deploy.md` and `docs/releasing.md`.
     it (ranges, the ETag), its version and the pairing code's app QR; one
     without says so.
 
-  - [ ] **Task 7b - The release builds and signs it.** ADR-421. A signed
+  - [x] **Task 7b - The release builds and signs it.** Done 2026-11-02
+    (ADR-421), with a throwaway key: signed, its code the build number,
+    carried by `make dist` and served; the release build installed on the
+    emulator and paired. The workflow as written, not run. ADR-421. A signed
     release build from Gradle with the key from the environment (never in
-    the repository), the version name and code from the tag (ADR-421's
-    rule, with tests), `app.json` written beside it into
+    the repository), the version name `git describe` and the code the
+    build number (ADR-410), `app.json` written beside it into
     `internal/device/tabletapp/app/`; an Android job in `release.yml`
     before `binaries`, from the repository's secrets, the binaries and the
     Docker image embedding what it made, the package and its `app.json`
@@ -297,7 +300,7 @@ Words in `docs/hardware.md`, `docs/deploy.md` and `docs/releasing.md`.
     notes say so. CI builds with the tag against a stand-in package, since
     no `make check` compiles `embed_app.go` (7a's review). `docs/releasing.md`: the key, the
     secrets. **Seen:** a release build signed with a throwaway key, its
-    version code as the rule says, embedded in a `make dist` binary that
+    version code the build number, embedded in a `make dist` binary that
     serves it.
 
   - [ ] **Task 7c - On the Devices page.** ADR-421. Pairing a till or a

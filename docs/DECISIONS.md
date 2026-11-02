@@ -16650,6 +16650,14 @@ checks). Walked again after: as the device owner, `dumpsys user` showing the thr
 restrictions; the PC stopped, the Wi-Fi panel inside the lock, and after it the lock's list mez
 alone again; the till back by itself when the PC was; "Leave mez" and Home as before; "Release
 it" leaving no owner, no admin and no restriction, and mez not pinned.
+Corrected in Phase 18 Task 7b (2026-11-02): the lock engaged on the first page of the PC's,
+which on a tablet not yet paired is the PC's pairing screen, so a new tablet was pinned while
+its code was still to be typed. It now engages once the PC's page holds this tablet's pairing
+(the page asked, as the carry asks it), at each page and each resume, so that a tablet made
+the device owner again after a release locks as soon as it is in front (7b's review). Walked on
+a freshly installed release build: the PC's pairing screen not pinned; paired with a code, the
+till, and "App is pinned"; made the owner, a kiosk; released, made the owner again, and locked
+on coming to the front with no page changed.
 Not seen: a real tablet; Android 10 to 12, or 14 and on (Android 17's grant above included);
 a pinned tablet's reboot (it lands in mez only where mez was chosen as the home app); the Wi-Fi
 panel joining another network; the kitchen display locked; "Leave mez" on a pinned tablet, or
@@ -16695,11 +16703,11 @@ Decision:
     debug key: a tablet that installed one could not take the real one without uninstalling
     it, which costs its pairing. A release made without the key carries no app, and its notes
     say so.
-  - **Its versions follow the tag.** The version name is mez's (`git describe`). The version
-    code is ((major × 100 + minor) × 100 + patch) × 100, plus 99 for a release and, for a
-    pre-release, n for alpha.n, 33 + n for beta.n, 66 + n for rc.n (n up to 32): v0.2.0-beta.2
-    is 20035, v0.2.0 is 20099, so every release is above the one before, as Android requires
-    of an update. A build between tags takes its last tag's code (7b).
+  - **Its versions are ADR-410's**: the version name is `git describe` of the commit the app
+    is built from, the version code the build number, the commit count of `main`
+    (`git rev-list --count HEAD`), which only grows while `main` only moves forward, as Android
+    requires of an update. (7a wrote a rule of its own here, a code made from the tag's
+    numbers; 7b found ADR-410 had settled it, at the human's word, and follows that.)
   - **Served at `/app/mez.apk`**, with no token, since a tablet that has never seen mez has
     none, and at the venue only: refused through the relay, since a tablet installs on the
     venue's network and a few megabytes a time is not the relay's work. As
@@ -16728,6 +16736,25 @@ venue with no app and a log line): the package is now embedded as bytes and serv
 is, and a field not known is let be. Built with the tag against a stand-in package, the binary
 said "carrying the tablet app" and served it. No `make check` compiles the tagged file; 7b's CI
 does.
+Seen (7b), 2026-11-02, with a throwaway key made by `keytool` in a scratch folder: `make
+android-release` without the key refused, naming the first variable missing; with it, R8's
+build in 41 s, a package of 1.5 MB (the debug build is 12.4 MB), `apksigner` saying it verifies
+under the v2 scheme with the throwaway key's name as its signer, `aapt2` its version name
+`git describe`'s and its code 519, the build number; `make dist` "with the tablet app", each
+binary 1.5 MB larger; the Windows one from `dist/` saying "carrying the tablet app" and serving
+the same package. On the Android 13 emulator the release build would not install over the debug
+build there (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`: the signatures differ, as the decision above
+expects); uninstalled, it installed, started on "Pair this tablet", opened the PC's pairing
+screen at a typed address, paired with a code and showed the till: R8 left nothing out that the
+app needs. A second build with the same key installed over the first. The release workflow's
+tablet app job, the secrets and the image carrying the app are as written, not run: nothing is
+tagged until the human has a key.
+A review (2026-11-02) found that a wrong keystore in the secrets would make an app no tablet
+could update to: the release now checks the package's signer against the key's fingerprint, a
+repository variable (`MEZ_ANDROID_KEY_SHA256`), and stops with a key and no fingerprint. Also a
+shallow clone's build number too low, and a relative keystore path read two ways: both refused.
+Walked: another key's fingerprint stopped the build and left no package; its own let it
+through.
 Rejected: the installer carrying it beside the binary (Windows only: a Linux or Docker venue
 would fetch it by hand, and the PC would serve a file whose version can drift from its own);
 the internet or the Play Store (offline, no Google account); a page at `/app` before the

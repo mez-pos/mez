@@ -40,9 +40,83 @@ jobs:
       - run: make build-web
       - run: make check
 
+  # The tablet app (ADR-421), built and signed with the human's key from the
+  # repository's secrets, for the binaries and the image to carry. With no
+  # key, no app: the release goes out without one, and its notes say so.
+  app:
+    name: tablet app
+    needs: check
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      built: ${{ steps.key.outputs.built }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The version is `git describe`, and the code the commit count
+          # (ADR-410): both need the whole history.
+          fetch-depth: 0
+      # The keystore is a secret, base64; it is written where only this job
+      # reads it, and gone when the job ends. With a key, the key's
+      # fingerprint must be named too, so that a wrong keystore in the
+      # secrets is never a release that no tablet can update to.
+      - id: key
+        name: The release key
+        shell: bash
+        env:
+          KEYSTORE: ${{ secrets.MEZ_ANDROID_KEYSTORE_BASE64 }}
+          FINGERPRINT: ${{ vars.MEZ_ANDROID_KEY_SHA256 }}
+        run: |
+          if [ -z "$KEYSTORE" ]; then
+            echo "built=no" >> "$GITHUB_OUTPUT"
+            echo "::warning::no MEZ_ANDROID_KEYSTORE_BASE64 secret: this release carries no tablet app (docs/releasing.md)"
+            exit 0
+          fi
+          if [ -z "$FINGERPRINT" ]; then
+            echo "::error::a release key and no MEZ_ANDROID_KEY_SHA256 variable to check it by (docs/releasing.md)"
+            exit 1
+          fi
+          umask 077
+          printf '%s' "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/mez-release.jks"
+          echo "built=yes" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-go@v7
+        if: steps.key.outputs.built == 'yes'
+        with:
+          go-version-file: go.mod
+          check-latest: true
+      # The Gradle daemon asks for JDK 25
+      # (android-app/gradle/gradle-daemon-jvm.properties).
+      - uses: actions/setup-java@v6
+        if: steps.key.outputs.built == 'yes'
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        if: steps.key.outputs.built == 'yes'
+      - name: Build and sign
+        if: steps.key.outputs.built == 'yes'
+        env:
+          MEZ_ANDROID_KEYSTORE: ${{ runner.temp }}/mez-release.jks
+          MEZ_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.MEZ_ANDROID_KEYSTORE_PASSWORD }}
+          MEZ_ANDROID_KEY_ALIAS: ${{ secrets.MEZ_ANDROID_KEY_ALIAS }}
+          MEZ_ANDROID_KEY_PASSWORD: ${{ secrets.MEZ_ANDROID_KEY_PASSWORD }}
+          MEZ_ANDROID_KEY_SHA256: ${{ vars.MEZ_ANDROID_KEY_SHA256 }}
+        run: make android-release
+      - name: Forget the key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/mez-release.jks"
+      - uses: actions/upload-artifact@v7
+        if: steps.key.outputs.built == 'yes'
+        with:
+          name: tablet-app
+          path: internal/device/tabletapp/app/
+          if-no-files-found: error
+          retention-days: 7
+
   binaries:
     name: binaries
-    needs: check
+    needs: [check, app]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -59,6 +133,12 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: web/package-lock.json
+      # The tablet app, where `make dist` looks for it (ADR-421).
+      - uses: actions/download-artifact@v8
+        if: needs.app.outputs.built == 'yes'
+        with:
+          name: tablet-app
+          path: internal/device/tabletapp/app
       # Every platform from this one machine: no cgo (ADR-003). The same
       # recipe anyone runs from a clone, so a release is checkable against it.
       - run: make dist
@@ -115,7 +195,7 @@ jobs:
 
   image:
     name: Docker image
-    needs: check
+    needs: [check, app]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -124,6 +204,12 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      # The tablet app, where the Dockerfile looks for it (ADR-421).
+      - uses: actions/download-artifact@v8
+        if: needs.app.outputs.built == 'yes'
+        with:
+          name: tablet-app
+          path: internal/device/tabletapp/app
       # Docker's actions are somebody else's code, run in the one job that
       # may write packages. Each is pinned to the commit it was read at and
       # not to a tag, which its owner can move; Dependabot proposes the next
@@ -166,7 +252,7 @@ jobs:
 
   release:
     name: draft release
-    needs: [binaries, installer, image]
+    needs: [app, binaries, installer, image]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -188,6 +274,9 @@ jobs:
       - run: cp build/mez.service build/docker-compose.yml dist/
       - run: sh build/release.sh checksums dist "${GITHUB_REF_NAME}"
       - run: sh build/release.sh notes "${GITHUB_REF_NAME}" > notes.md
+        env:
+          # Whether this release carries the tablet app, for the notes to say.
+          TABLET_APP: ${{ needs.app.outputs.built }}
       # A draft: nobody is told, and nothing is "latest", until a person has
       # read it and published it. Run twice for one tag, it adds to the draft
       # that is there and does not make a second.

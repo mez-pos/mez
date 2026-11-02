@@ -8,6 +8,16 @@
 > When a task is done, its entry in `STATE.md` under "Last completed task" replaces
 > the one before it, and the one before it is put at the top of this file.
 
+**Phase 18, Task 7a: the app served**, 2026-11-02 (ADR-421). Task 7 split
+in three. The PC carries the tablet app in its binary, under the build
+tag `tabletapp` (`internal/device/tabletapp`; the package and its
+`app.json` in `app/` there, gitignored; `make build` and `make dist` add
+the tag when both are in place). `GET /app/mez.apk` and its version at
+`GET /api/v1/app`, no token, refused through the relay; a build without
+the app says so (its log, 404 `app_not_built`). A till's or kitchen
+display's pairing code carries the app's address and QR at each address,
+and `app_version`. Seen with the app's debug build put in place.
+
 **Phase 18, Task 6b: locked**, 2026-11-02 (ADR-420). Once the till has
 shown, the tablet locks whenever mez is in front: as the device owner
 (`adb shell dpm set-device-owner com.mezpos.meztablet/.Admin`, no
